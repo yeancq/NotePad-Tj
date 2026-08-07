@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { detectReferences } from '../lib/verseDetector'
-import { getVerseText, isBibleImported } from '../lib/epubBible'
+import { useBibleReady, useVerseSegments } from '../hooks/useVerseSegments'
+import VerseCardBody from './VerseCardBody'
 
 // Curva "emphasized" de Material Design 3: entra rápido, se asienta despacio.
 const EASE = [0.2, 0, 0, 1]
@@ -17,14 +18,10 @@ function refKey(ref) {
  * a su lado en vez de quedar tapado.
  */
 export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChange }) {
-  const [bibleReady, setBibleReady] = useState(true)
+  const bibleReady = useBibleReady()
   const [activeRef, setActiveRef] = useState(null)
   const [closedKey, setClosedKey] = useState(null)
-  const [segmentTexts, setSegmentTexts] = useState([])
-
-  useEffect(() => {
-    isBibleImported().then(setBibleReady)
-  }, [])
+  const segmentTexts = useVerseSegments(activeRef, bibleReady)
 
   useEffect(() => {
     const refs = detectReferences(text)
@@ -43,27 +40,6 @@ export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChan
     onActiveChange?.(Boolean(next))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, cursorPos])
-
-  useEffect(() => {
-    if (!activeRef || !bibleReady) {
-      setSegmentTexts([])
-      return
-    }
-    let cancelled = false
-    ;(async () => {
-      const results = []
-      for (const seg of activeRef.segments) {
-        const parts = await Promise.all(
-          seg.verses.map((v) => getVerseText(activeRef.book, seg.chapter, v))
-        )
-        results.push({ verseLabel: seg.verseLabel, text: parts.filter(Boolean).join(' ') })
-      }
-      if (!cancelled) setSegmentTexts(results)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [activeRef, bibleReady])
 
   const handleClose = () => {
     if (activeRef) setClosedKey(refKey(activeRef))
@@ -90,70 +66,16 @@ export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChan
                      bg-parchment/90 dark:bg-night-surface/90 backdrop-blur-md
                      border-l border-ink/[0.06] dark:border-night-text/[0.06]"
         >
-          <div className="flex items-center gap-1.5 px-3.5 md:px-5 pt-4 pb-3 border-b border-ink/[0.06] dark:border-night-text/[0.06]">
-            <p className="flex-1 font-display font-medium text-ink dark:text-night-text text-[13px] md:text-[15px] tracking-tight truncate">
-              {activeRef.label}
-            </p>
-            <IconButton onClick={handleCopy} label="Copiar">
-              ⧉
-            </IconButton>
-            <IconButton onClick={handleClose} label="Cerrar">
-              ✕
-            </IconButton>
-          </div>
-
-          <div className="px-3.5 md:px-5 py-4 flex-1 overflow-y-auto">
-            {!bibleReady ? (
-              <p className="text-sm text-ink-soft dark:text-night-text/60">
-                Aún no has importado tu Biblia.{' '}
-                <button onClick={onNeedImport} className="text-leather dark:text-gilt-soft underline underline-offset-2">
-                  Importarla ahora
-                </button>
-              </p>
-            ) : segmentTexts.length === 0 ? (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.4 }}
-                className="text-sm text-ink-soft/60 dark:text-night-text/30"
-              >
-                Buscando…
-              </motion.p>
-            ) : (
-              <p className="text-[14px] md:text-[15px] leading-[1.75] text-ink/90 dark:text-night-text/90">
-                {segmentTexts.map((s, i) => (
-                  <span key={i}>
-                    <span className="text-[11px] md:text-[12px] font-medium text-ink-soft/60 dark:text-night-text/40 align-super mr-0.5">
-                      {s.verseLabel}
-                    </span>
-                    {s.text || (
-                      <em className="text-ink-soft/50 dark:text-night-text/30 not-italic">no encontrado</em>
-                    )}
-                    {i < segmentTexts.length - 1 ? '  ' : ''}
-                  </span>
-                ))}
-              </p>
-            )}
-          </div>
+          <VerseCardBody
+            activeRef={activeRef}
+            segmentTexts={segmentTexts}
+            bibleReady={bibleReady}
+            onNeedImport={onNeedImport}
+            onCopy={handleCopy}
+            onClose={handleClose}
+          />
         </motion.aside>
       )}
     </AnimatePresence>
-  )
-}
-
-function IconButton({ onClick, label, children }) {
-  return (
-    <button
-      onClick={onClick}
-      title={label}
-      aria-label={label}
-      className="w-8 h-8 flex items-center justify-center rounded-full text-[13px]
-                 text-ink-soft/50 dark:text-night-text/40
-                 hover:text-ink dark:hover:text-night-text
-                 hover:bg-ink/5 dark:hover:bg-night-text/10
-                 transition-colors duration-300"
-    >
-      {children}
-    </button>
   )
 }

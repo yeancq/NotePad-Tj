@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import VersePanel from './VersePanel'
+import SpeakerMode from './SpeakerMode'
 
 export default function NoteEditor({
   note,
@@ -16,6 +17,7 @@ export default function NoteEditor({
   const [folder, setFolder] = useState(note.folder)
   const [cursorPos, setCursorPos] = useState(0)
   const [hasActiveVerse, setHasActiveVerse] = useState(false)
+  const [showSpeaker, setShowSpeaker] = useState(false)
   const textareaRef = useRef(null)
 
   const dirty = title !== note.title || body !== note.body || folder !== note.folder
@@ -56,6 +58,17 @@ export default function NoteEditor({
         </select>
 
         <div className="flex-1 min-w-0" />
+
+        {!note.trashed && (
+          <button
+            onClick={() => setShowSpeaker(true)}
+            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-ink-soft dark:text-night-text/60 hover:bg-ink/5 dark:hover:bg-night-text/10"
+            title="Modo orador"
+            aria-label="Modo orador"
+          >
+            👁
+          </button>
+        )}
 
         {note.trashed ? (
           <>
@@ -137,6 +150,14 @@ export default function NoteEditor({
           />
         )}
       </div>
+
+      {showSpeaker && (
+        <SpeakerMode
+          note={{ ...note, title, body }}
+          onClose={() => setShowSpeaker(false)}
+          onNeedImport={onNeedImport}
+        />
+      )}
     </div>
   )
 }
