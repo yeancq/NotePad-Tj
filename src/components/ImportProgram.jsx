@@ -68,7 +68,13 @@ export default function ImportProgram({ onBack, onCreateNotes }) {
                 lo que se diga en cada discurso.
               </p>
             </div>
-            <input ref={fileRef} type="file" accept=".rtf" onChange={handleFile} className="hidden" />
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".rtf,application/rtf,text/rtf,application/msword,application/octet-stream"
+              onChange={handleFile}
+              className="hidden"
+            />
             <button
               onClick={() => fileRef.current?.click()}
               className="px-5 py-2.5 rounded-full bg-leather text-parchment text-sm font-medium hover:bg-leather-deep transition-colors"
