@@ -92,7 +92,6 @@ export default function App() {
       tags: [],
       pinned: false,
       trashed: false,
-      linkedNoteIds: [],
       updatedAt: new Date().toISOString(),
     }
     setNotes((prev) => [newNote, ...prev])
@@ -148,17 +147,8 @@ export default function App() {
       tags: [],
       pinned: false,
       trashed: false,
-      linkedNoteIds: [],
       updatedAt: now,
     }))
-    // Enlazar cada nota con la anterior y la siguiente del mismo programa,
-    // para poder ir saltando de un discurso al otro en orden.
-    newNotes.forEach((n, i) => {
-      const links = []
-      if (newNotes[i - 1]) links.push(newNotes[i - 1].id)
-      if (newNotes[i + 1]) links.push(newNotes[i + 1].id)
-      n.linkedNoteIds = links
-    })
     setNotes((prev) => [...newNotes, ...prev])
     setShowImportProgram(false)
     setActiveFolder(folderId)
@@ -180,7 +170,6 @@ export default function App() {
         <NoteEditor
           key={openNote.id}
           note={openNote}
-          allNotes={notes}
           folders={folders}
           onBack={() => setOpenNoteId(null)}
           onSave={saveNote}
@@ -188,7 +177,6 @@ export default function App() {
           onRestore={restoreNote}
           onDeleteForever={deleteForever}
           onNeedImport={() => setShowImport(true)}
-          onOpenNote={(id) => setOpenNoteId(id)}
         />
       </div>
     )
