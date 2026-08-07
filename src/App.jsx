@@ -7,8 +7,9 @@ import Fab from './components/Fab'
 import NoteEditor from './components/NoteEditor'
 import ImportBible from './components/ImportBible'
 import ImportProgram from './components/ImportProgram'
-import { folders as folderDefs, notes as initialNotes } from './data/mockNotes'
+import { folders as defaultFolders, notes as initialNotes } from './data/mockNotes'
 import { useLocalStorageNotes } from './hooks/useLocalStorageNotes'
+import { useLocalStorageFolders } from './hooks/useLocalStorageFolders'
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -19,6 +20,7 @@ function getGreeting() {
 
 export default function App() {
   const [notes, setNotes] = useLocalStorageNotes(initialNotes)
+  const [folders, setFolders] = useLocalStorageFolders(defaultFolders)
   const [activeFolder, setActiveFolder] = useState(null)
   const [search, setSearch] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -35,7 +37,7 @@ export default function App() {
 
   const counts = useMemo(() => {
     const c = { all: 0, pinned: 0, trash: 0 }
-    folderDefs.forEach((f) => (c[f.id] = 0))
+    folders.forEach((f) => (c[f.id] = 0))
     notes.forEach((n) => {
       if (n.trashed) {
         c.trash++
@@ -46,13 +48,17 @@ export default function App() {
       if (c[n.folder] !== undefined) c[n.folder]++
     })
     return c
-  }, [notes])
+  }, [notes, folders])
 
   const filteredNotes = useMemo(() => {
     let list = notes.filter((n) => (activeFolder === 'trash' ? n.trashed : !n.trashed))
 
     if (activeFolder === 'pinned') list = list.filter((n) => n.pinned)
-    else if (activeFolder && activeFolder !== 'trash') list = list.filter((n) => n.folder === activeFolder)
+    else if (activeFolder && activeFolder !== 'trash') {
+      const childIds = folders.filter((f) => f.parentId === activeFolder).map((f) => f.id)
+      const scope = new Set([activeFolder, ...childIds])
+      list = list.filter((n) => scope.has(n.folder))
+    }
 
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -68,7 +74,7 @@ export default function App() {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
       return new Date(b.updatedAt) - new Date(a.updatedAt)
     })
-  }, [notes, activeFolder, search])
+  }, [notes, folders, activeFolder, search])
 
   const openNote = notes.find((n) => n.id === openNoteId) ?? null
 
@@ -82,7 +88,7 @@ export default function App() {
       id,
       title: '',
       body: '',
-      folder: activeFolder && folderDefs.some((f) => f.id === activeFolder) ? activeFolder : 'estudio',
+      folder: activeFolder && folders.some((f) => f.id === activeFolder) ? activeFolder : 'estudio',
       tags: [],
       pinned: false,
       trashed: false,
@@ -115,14 +121,30 @@ export default function App() {
     setOpenNoteId(null)
   }
 
-  const createNotesFromProgram = (programTitle, items) => {
+  const createNotesFromProgram = (folderName, items) => {
+    const cleanName = folderName.trim() || 'Asamblea sin nombre'
+
+    // Reutiliza la subcarpeta si ya existe una con el mismo nombre bajo "Asamblea"
+    // (por si el usuario importa el mismo programa dos veces).
+    let folderId
+    const existing = folders.find((f) => f.parentId === 'asamblea' && f.name === cleanName)
+    if (existing) {
+      folderId = existing.id
+    } else {
+      folderId = `asamblea-${Date.now()}`
+      setFolders((prev) => [
+        ...prev,
+        { id: folderId, name: cleanName, icon: '🎟️', parentId: 'asamblea' },
+      ])
+    }
+
     const baseId = Date.now()
     const now = new Date().toISOString()
     const newNotes = items.map((item, i) => ({
       id: baseId + i,
       title: `${String(i + 1).padStart(2, '0')}. ${item.title}`.slice(0, 120),
       body: `Orador:\n\n${item.bullets.map((b) => `• ${b}`).join('\n')}`.trim() + '\n',
-      folder: 'asamblea',
+      folder: folderId,
       tags: [],
       pinned: false,
       trashed: false,
@@ -139,7 +161,7 @@ export default function App() {
     })
     setNotes((prev) => [...newNotes, ...prev])
     setShowImportProgram(false)
-    setActiveFolder('asamblea')
+    setActiveFolder(folderId)
   }
 
   if (showImportProgram) {
@@ -159,6 +181,7 @@ export default function App() {
           key={openNote.id}
           note={openNote}
           allNotes={notes}
+          folders={folders}
           onBack={() => setOpenNoteId(null)}
           onSave={saveNote}
           onTrash={trashNote}
@@ -174,7 +197,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-parchment dark:bg-night paper-texture flex text-ink dark:text-night-text">
       <Sidebar
-        folders={folderDefs}
+        folders={folders}
         activeFolder={activeFolder}
         onSelect={(f) => {
           setActiveFolder(f)
