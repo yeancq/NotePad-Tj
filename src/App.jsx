@@ -166,7 +166,7 @@ export default function App() {
 
   if (openNote) {
     return (
-      <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex">
+      <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex overflow-x-hidden">
         <NoteEditor
           key={openNote.id}
           note={openNote}
