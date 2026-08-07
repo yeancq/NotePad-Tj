@@ -29,14 +29,14 @@ export default function NoteEditor({
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen">
-      <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-3 flex items-center gap-3">
+    <div className="flex-1 min-w-0 flex flex-col min-h-screen overflow-x-hidden">
+      <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-3 sm:px-4 md:px-8 py-3 flex items-center gap-2 sm:gap-3 min-w-0">
         <button
           onClick={() => {
             if (dirty) handleSave()
             onBack()
           }}
-          className="w-9 h-9 flex items-center justify-center rounded-full text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
+          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
           aria-label="Volver"
         >
           ←
@@ -45,7 +45,7 @@ export default function NoteEditor({
         <select
           value={folder}
           onChange={(e) => setFolder(e.target.value)}
-          className="text-sm bg-transparent border border-ink/15 dark:border-night-text/15 rounded-full px-3 py-1.5
+          className="min-w-0 max-w-[38vw] sm:max-w-[220px] truncate text-sm bg-transparent border border-ink/15 dark:border-night-text/15 rounded-full px-3 py-1.5
                      text-ink dark:text-night-text focus:outline-none focus:ring-2 focus:ring-gilt/60"
         >
           {folders
@@ -55,19 +55,19 @@ export default function NoteEditor({
             ))}
         </select>
 
-        <div className="flex-1" />
+        <div className="flex-1 min-w-0" />
 
         {note.trashed ? (
           <>
             <button
               onClick={() => onRestore(note.id)}
-              className="text-sm px-3 py-1.5 rounded-full bg-sage/15 text-sage hover:bg-sage/25 transition-colors"
+              className="shrink-0 text-sm px-3 py-1.5 rounded-full bg-sage/15 text-sage hover:bg-sage/25 transition-colors"
             >
               Restaurar
             </button>
             <button
               onClick={() => onDeleteForever(note.id)}
-              className="text-sm px-3 py-1.5 rounded-full text-leather hover:bg-leather/10 transition-colors"
+              className="shrink-0 text-sm px-3 py-1.5 rounded-full text-leather hover:bg-leather/10 transition-colors"
             >
               Eliminar
             </button>
@@ -76,7 +76,7 @@ export default function NoteEditor({
           <>
             <button
               onClick={() => onTrash(note.id)}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-ink-soft dark:text-night-text/60 hover:bg-ink/5 dark:hover:bg-night-text/10"
+              className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-ink-soft dark:text-night-text/60 hover:bg-ink/5 dark:hover:bg-night-text/10"
               title="Mover a la papelera"
             >
               🗑️
@@ -84,7 +84,7 @@ export default function NoteEditor({
             <button
               onClick={handleSave}
               disabled={!dirty}
-              className="text-sm px-4 py-1.5 rounded-full bg-leather text-parchment disabled:opacity-40 disabled:cursor-default hover:bg-leather-deep transition-colors"
+              className="shrink-0 text-sm px-4 py-1.5 rounded-full bg-leather text-parchment disabled:opacity-40 disabled:cursor-default hover:bg-leather-deep transition-colors"
             >
               Guardar
             </button>
