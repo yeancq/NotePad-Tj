@@ -26,9 +26,15 @@
 
 html {
   color-scheme: light;
+  overflow-x: hidden;
 }
 html.dark {
   color-scheme: dark;
+}
+
+body, #root {
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 body {
