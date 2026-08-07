@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import VerseFloatingCard from './VerseFloatingCard'
+import VersePanel from './VersePanel'
 import LinkNotePicker from './LinkNotePicker'
 
 export default function NoteEditor({
@@ -64,11 +64,7 @@ export default function NoteEditor({
     .filter((n) => n && !n.trashed)
 
   return (
-    <div
-      className={`flex-1 flex flex-col min-h-screen
-                  transition-[padding] duration-500 ease-out
-                  ${hasActiveVerse ? 'lg:pr-[380px]' : ''}`}
-    >
+    <div className="flex-1 flex flex-col min-h-screen">
       <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-3 flex items-center gap-3">
         <button
           onClick={() => {
@@ -131,7 +127,9 @@ export default function NoteEditor({
         )}
       </header>
 
-      <main className="flex-1 px-4 md:px-8 py-6 pb-24 max-w-3xl w-full mx-auto">
+      <div className="flex-1 flex flex-row min-h-0">
+        <main className="flex-1 min-w-0 overflow-y-auto px-4 md:px-8 py-6 pb-24">
+        <div className="max-w-3xl w-full mx-auto">
         {note.trashed && (
           <div className="mb-4 text-sm px-3 py-2 rounded-lg bg-leather/10 text-leather dark:text-gilt-soft">
             Esta nota está en la papelera. Restáurala para poder editarla.
@@ -212,16 +210,18 @@ export default function NoteEditor({
             )}
           </div>
         )}
-      </main>
+        </div>
+        </main>
 
-      {!note.trashed && (
-        <VerseFloatingCard
-          text={body}
-          cursorPos={cursorPos}
-          onNeedImport={onNeedImport}
-          onActiveChange={setHasActiveVerse}
-        />
-      )}
+        {!note.trashed && (
+          <VersePanel
+            text={body}
+            cursorPos={cursorPos}
+            onNeedImport={onNeedImport}
+            onActiveChange={setHasActiveVerse}
+          />
+        )}
+      </div>
 
       {showLinkPicker && (
         <LinkNotePicker
