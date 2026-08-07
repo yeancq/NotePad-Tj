@@ -86,7 +86,7 @@ export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChan
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: '100%', opacity: 0 }}
           transition={{ duration: 0.5, ease: EASE }}
-          className="w-[38%] min-w-[200px] max-w-[380px] shrink-0 flex flex-col
+          className="w-[42%] sm:w-[38%] max-w-[380px] min-w-0 shrink-0 flex flex-col
                      bg-parchment/90 dark:bg-night-surface/90 backdrop-blur-md
                      border-l border-ink/[0.06] dark:border-night-text/[0.06]"
         >

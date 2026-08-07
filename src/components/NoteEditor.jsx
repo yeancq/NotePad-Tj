@@ -1,10 +1,8 @@
 import { useRef, useState } from 'react'
 import VersePanel from './VersePanel'
-import LinkNotePicker from './LinkNotePicker'
 
 export default function NoteEditor({
   note,
-  allNotes,
   folders,
   onBack,
   onSave,
@@ -12,56 +10,23 @@ export default function NoteEditor({
   onRestore,
   onDeleteForever,
   onNeedImport,
-  onOpenNote,
 }) {
   const [title, setTitle] = useState(note.title)
   const [body, setBody] = useState(note.body)
   const [folder, setFolder] = useState(note.folder)
-  const [linkedNoteIds, setLinkedNoteIds] = useState(note.linkedNoteIds || [])
   const [cursorPos, setCursorPos] = useState(0)
   const [hasActiveVerse, setHasActiveVerse] = useState(false)
-  const [showLinkPicker, setShowLinkPicker] = useState(false)
   const textareaRef = useRef(null)
 
-  const dirty =
-    title !== note.title ||
-    body !== note.body ||
-    folder !== note.folder ||
-    JSON.stringify(linkedNoteIds) !== JSON.stringify(note.linkedNoteIds || [])
-
-  const buildUpdated = () => ({
-    ...note,
-    title: title.trim() || 'Sin título',
-    body,
-    folder,
-    linkedNoteIds,
-  })
+  const dirty = title !== note.title || body !== note.body || folder !== note.folder
 
   const handleSave = () => {
-    onSave(buildUpdated())
+    onSave({ ...note, title: title.trim() || 'Sin título', body, folder })
   }
 
   const syncCursor = () => {
     if (textareaRef.current) setCursorPos(textareaRef.current.selectionStart)
   }
-
-  const addLink = (targetId) => {
-    setLinkedNoteIds((prev) => (prev.includes(targetId) ? prev : [...prev, targetId]))
-    setShowLinkPicker(false)
-  }
-
-  const removeLink = (targetId) => {
-    setLinkedNoteIds((prev) => prev.filter((id) => id !== targetId))
-  }
-
-  const openLinkedNote = (targetId) => {
-    onSave(buildUpdated())
-    onOpenNote(targetId)
-  }
-
-  const linkedNotes = linkedNoteIds
-    .map((id) => allNotes.find((n) => n.id === id))
-    .filter((n) => n && !n.trashed)
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
@@ -127,90 +92,40 @@ export default function NoteEditor({
         )}
       </header>
 
-      <div className="flex-1 flex flex-row min-h-0">
+      <div className="flex-1 flex flex-row min-h-0 min-w-0 overflow-x-hidden">
         <main className="flex-1 min-w-0 overflow-y-auto px-4 md:px-8 py-6 pb-24">
-        <div className="max-w-3xl w-full mx-auto">
-        {note.trashed && (
-          <div className="mb-4 text-sm px-3 py-2 rounded-lg bg-leather/10 text-leather dark:text-gilt-soft">
-            Esta nota está en la papelera. Restáurala para poder editarla.
-          </div>
-        )}
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          disabled={note.trashed}
-          placeholder="Título de la nota"
-          className="w-full font-display text-2xl md:text-3xl bg-transparent focus:outline-none
-                     text-ink dark:text-night-text placeholder:text-ink-soft/40 mb-4 disabled:opacity-60"
-        />
-        <textarea
-          ref={textareaRef}
-          value={body}
-          onChange={(e) => {
-            setBody(e.target.value)
-            // El cursor se mueve junto con el texto que se escribe.
-            requestAnimationFrame(syncCursor)
-          }}
-          onClick={syncCursor}
-          onKeyUp={syncCursor}
-          onSelect={syncCursor}
-          disabled={note.trashed}
-          placeholder="Escribe aquí… (ej. Filipenses 4:6, 7)"
-          rows={10}
-          className="w-full bg-transparent focus:outline-none resize-none
-                     text-ink dark:text-night-text placeholder:text-ink-soft/40 leading-relaxed disabled:opacity-60"
-        />
-
-        {!note.trashed && (
-          <div className="mt-8 pt-5 border-t border-ink/[0.06] dark:border-night-text/[0.06]">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-medium uppercase tracking-wide text-ink-soft/60 dark:text-night-text/40">
-                Notas enlazadas
-              </p>
-              <button
-                onClick={() => setShowLinkPicker(true)}
-                className="text-xs text-leather dark:text-gilt-soft hover:underline underline-offset-2"
-              >
-                + Enlazar nota
-              </button>
-            </div>
-
-            {linkedNotes.length === 0 ? (
-              <p className="text-sm text-ink-soft/50 dark:text-night-text/30">
-                Sin notas enlazadas todavía.
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {linkedNotes.map((n) => (
-                  <div
-                    key={n.id}
-                    className="group flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full
-                               bg-white/60 dark:bg-night-surface border border-ink/10 dark:border-night-text/10
-                               hover:border-gilt/40 transition-colors"
-                  >
-                    <button
-                      onClick={() => openLinkedNote(n.id)}
-                      className="text-sm text-ink dark:text-night-text max-w-[180px] truncate"
-                      title={n.title || 'Sin título'}
-                    >
-                      🔗 {n.title || 'Sin título'}
-                    </button>
-                    <button
-                      onClick={() => removeLink(n.id)}
-                      className="w-5 h-5 flex items-center justify-center rounded-full text-xs
-                                 text-ink-soft/40 dark:text-night-text/30 hover:text-leather dark:hover:text-gilt-soft
-                                 hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
-                      aria-label="Quitar enlace"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+          <div className="max-w-3xl w-full mx-auto">
+            {note.trashed && (
+              <div className="mb-4 text-sm px-3 py-2 rounded-lg bg-leather/10 text-leather dark:text-gilt-soft">
+                Esta nota está en la papelera. Restáurala para poder editarla.
               </div>
             )}
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={note.trashed}
+              placeholder="Título de la nota"
+              className="w-full font-display text-2xl md:text-3xl bg-transparent focus:outline-none
+                         text-ink dark:text-night-text placeholder:text-ink-soft/40 mb-4 disabled:opacity-60"
+            />
+            <textarea
+              ref={textareaRef}
+              value={body}
+              onChange={(e) => {
+                setBody(e.target.value)
+                // El cursor se mueve junto con el texto que se escribe.
+                requestAnimationFrame(syncCursor)
+              }}
+              onClick={syncCursor}
+              onKeyUp={syncCursor}
+              onSelect={syncCursor}
+              disabled={note.trashed}
+              placeholder="Escribe aquí… (ej. Filipenses 4:6, 7)"
+              rows={16}
+              className="w-full bg-transparent focus:outline-none resize-none
+                         text-ink dark:text-night-text placeholder:text-ink-soft/40 leading-relaxed disabled:opacity-60"
+            />
           </div>
-        )}
-        </div>
         </main>
 
         {!note.trashed && (
@@ -222,16 +137,6 @@ export default function NoteEditor({
           />
         )}
       </div>
-
-      {showLinkPicker && (
-        <LinkNotePicker
-          notes={allNotes}
-          excludeId={note.id}
-          excludeIds={linkedNoteIds}
-          onPick={addLink}
-          onClose={() => setShowLinkPicker(false)}
-        />
-      )}
     </div>
   )
 }
