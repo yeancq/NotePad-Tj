@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/NotePad-Tj/',
+  base: './',
   plugins: [
     react(),
     VitePWA({
@@ -14,8 +14,8 @@ export default defineConfig({
         name: 'Cuaderno — Notas de estudio',
         short_name: 'Cuaderno',
         description: 'App local de notas para estudio bíblico, reuniones y predicación',
-        theme_color: '#efe6d0',
-        background_color: '#efe6d0',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
         display: 'standalone',
         start_url: './',
         scope: './',
