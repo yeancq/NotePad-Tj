@@ -76,7 +76,7 @@ export default function SplashScreen({ onFinish }) {
             className="flex flex-col items-center gap-4"
           >
             <img src="./icons/icon-512.png" alt="" className="w-24 h-24 rounded-[22%] shadow-2xl" />
-            <p className="font-display text-lg text-[#5ff2e8] tracking-wide">Cuaderno</p>
+            <p className="font-display text-lg text-[#5ff2e8] tracking-wide">NotePad TJ</p>
           </motion.div>
         )}
       </AnimatePresence>

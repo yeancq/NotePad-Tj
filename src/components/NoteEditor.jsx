@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import VersePanel from './VersePanel'
 import SpeakerMode from './SpeakerMode'
+import SpeakerIcon from './SpeakerIcon'
 
 export default function NoteEditor({
   note,
@@ -66,7 +67,7 @@ export default function NoteEditor({
             title="Modo orador"
             aria-label="Modo orador"
           >
-            👁
+            <SpeakerIcon className="w-[18px] h-[18px]" />
           </button>
         )}
 

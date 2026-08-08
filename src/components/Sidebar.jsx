@@ -19,7 +19,7 @@ export default function Sidebar({ folders, activeFolder, onSelect, counts, open,
       >
         <div className="px-5 pt-6 pb-4">
           <p className="font-display text-2xl text-ink dark:text-night-text tracking-tight">
-            Cuaderno
+            NotePad TJ
           </p>
           <p className="text-xs text-ink-soft dark:text-night-text/60 mt-0.5">
             Estudio, reuniones y predicación
