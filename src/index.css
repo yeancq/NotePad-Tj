@@ -5,9 +5,9 @@
   --font-display: "Fraunces", serif;
   --font-body: "Public Sans", sans-serif;
 
-  /* Paleta "cuaderno de estudio": tapa de cuero, papel envejecido, hoja de oro */
-  --color-parchment: #efe6d0;
-  --color-parchment-dim: #e6dabd;
+  /* Paleta "cuaderno de estudio": tapa de cuero, papel blanco, hoja de oro */
+  --color-parchment: #ffffff;
+  --color-parchment-dim: #f5f4f1;
   --color-ink: #241f1c;
   --color-ink-soft: #4a423a;
   --color-leather: #6b1e23;
