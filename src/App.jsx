@@ -9,6 +9,7 @@ import NoteEditor from './components/NoteEditor'
 import ImportBible from './components/ImportBible'
 import ImportProgram from './components/ImportProgram'
 import Settings from './components/Settings'
+import SplashScreen from './components/SplashScreen'
 import { folders as defaultFolders, notes as initialNotes } from './data/mockNotes'
 import { useLocalStorageNotes } from './hooks/useLocalStorageNotes'
 import { useLocalStorageFolders } from './hooks/useLocalStorageFolders'
@@ -33,6 +34,7 @@ export default function App() {
   const [showNewFolder, setShowNewFolder] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const { themeMode, setThemeMode, accentId, setAccentId, dark } = useThemeSettings()
+  const [showSplash, setShowSplash] = useState(true)
 
   const counts = useMemo(() => {
     const c = { all: 0, pinned: 0, trash: 0 }
@@ -158,6 +160,10 @@ export default function App() {
     setFolders((prev) => [...prev, { id, name, icon: '📁', parentId: null }])
     setShowNewFolder(false)
     setActiveFolder(id)
+  }
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />
   }
 
   if (showSettings) {
