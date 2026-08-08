@@ -1,4 +1,4 @@
-export default function Sidebar({ folders, activeFolder, onSelect, counts, open, onClose, onOpenImport, onOpenImportProgram }) {
+export default function Sidebar({ folders, activeFolder, onSelect, counts, open, onClose, onOpenImport, onOpenImportProgram, onOpenSettings }) {
   return (
     <>
       {open && (
@@ -100,6 +100,12 @@ export default function Sidebar({ folders, activeFolder, onSelect, counts, open,
             className="w-full text-left text-xs text-ink-soft dark:text-night-text/60 hover:text-leather dark:hover:text-gilt-soft transition-colors mt-2"
           >
             🎟️ Importar programa
+          </button>
+          <button
+            onClick={onOpenSettings}
+            className="w-full text-left text-xs text-ink-soft dark:text-night-text/60 hover:text-leather dark:hover:text-gilt-soft transition-colors mt-2"
+          >
+            ⚙️ Configuración
           </button>
         </div>
       </aside>
