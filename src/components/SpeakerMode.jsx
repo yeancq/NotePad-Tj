@@ -76,7 +76,7 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
                       className="text-leather dark:text-gilt-soft underline decoration-dotted underline-offset-2
                                  font-medium hover:decoration-solid transition-all"
                     >
-                      {p.value}
+                      {p.ref.raw}
                     </button>
                   )
                 )}
