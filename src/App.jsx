@@ -1,15 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import NoteCard from './components/NoteCard'
 import EmptyState from './components/EmptyState'
 import Fab from './components/Fab'
+import NewFolderDialog from './components/NewFolderDialog'
 import NoteEditor from './components/NoteEditor'
 import ImportBible from './components/ImportBible'
 import ImportProgram from './components/ImportProgram'
+import Settings from './components/Settings'
 import { folders as defaultFolders, notes as initialNotes } from './data/mockNotes'
 import { useLocalStorageNotes } from './hooks/useLocalStorageNotes'
 import { useLocalStorageFolders } from './hooks/useLocalStorageFolders'
+import { useThemeSettings } from './hooks/useThemeSettings'
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -27,13 +30,9 @@ export default function App() {
   const [openNoteId, setOpenNoteId] = useState(null)
   const [showImport, setShowImport] = useState(false)
   const [showImportProgram, setShowImportProgram] = useState(false)
-  const [dark, setDark] = useState(
-    () => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
-  )
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark)
-  }, [dark])
+  const [showNewFolder, setShowNewFolder] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const { themeMode, setThemeMode, accentId, setAccentId, dark } = useThemeSettings()
 
   const counts = useMemo(() => {
     const c = { all: 0, pinned: 0, trash: 0 }
@@ -154,6 +153,25 @@ export default function App() {
     setActiveFolder(folderId)
   }
 
+  const createFolder = (name) => {
+    const id = `folder-${Date.now()}`
+    setFolders((prev) => [...prev, { id, name, icon: '📁', parentId: null }])
+    setShowNewFolder(false)
+    setActiveFolder(id)
+  }
+
+  if (showSettings) {
+    return (
+      <Settings
+        themeMode={themeMode}
+        setThemeMode={setThemeMode}
+        accentId={accentId}
+        setAccentId={setAccentId}
+        onBack={() => setShowSettings(false)}
+      />
+    )
+  }
+
   if (showImportProgram) {
     return (
       <ImportProgram onBack={() => setShowImportProgram(false)} onCreateNotes={createNotesFromProgram} />
@@ -196,6 +214,7 @@ export default function App() {
         onClose={() => setSidebarOpen(false)}
         onOpenImport={() => setShowImport(true)}
         onOpenImportProgram={() => setShowImportProgram(true)}
+        onOpenSettings={() => setShowSettings(true)}
       />
 
       <div className="flex-1 min-w-0 flex flex-col">
@@ -203,7 +222,7 @@ export default function App() {
           search={search}
           onSearch={setSearch}
           dark={dark}
-          onToggleDark={() => setDark((d) => !d)}
+          onToggleDark={() => setThemeMode(dark ? 'light' : 'dark')}
           onOpenSidebar={() => setSidebarOpen(true)}
           greeting={`${getGreeting()} · ${filteredNotes.length} ${
             filteredNotes.length === 1 ? 'nota' : 'notas'
@@ -228,7 +247,17 @@ export default function App() {
         </main>
       </div>
 
-      {activeFolder !== 'trash' && <Fab onClick={createNote} />}
+      {activeFolder !== 'trash' && (
+        <Fab
+          onNewNote={createNote}
+          onNewFolder={() => setShowNewFolder(true)}
+          onImportProgram={() => setShowImportProgram(true)}
+        />
+      )}
+
+      {showNewFolder && (
+        <NewFolderDialog onCreate={createFolder} onClose={() => setShowNewFolder(false)} />
+      )}
     </div>
   )
 }
