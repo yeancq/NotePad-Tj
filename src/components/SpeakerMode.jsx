@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { detectReferences } from '../lib/verseDetector'
 import { useBibleReady, useVerseSegments } from '../hooks/useVerseSegments'
+import { linkifyHtml } from '../lib/linkifyHtml'
 import VerseCardBody from './VerseCardBody'
 
 const EASE = [0.2, 0, 0, 1]
@@ -14,24 +14,6 @@ function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60)
   const s = totalSeconds % 60
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
-
-/**
- * Divide una línea de texto en fragmentos planos + referencias bíblicas
- * tocables, según lo que detectReferences encuentre en esa línea.
- */
-function splitLineWithRefs(line) {
-  const refs = detectReferences(line)
-  if (refs.length === 0) return [{ type: 'text', value: line }]
-  const parts = []
-  let cursor = 0
-  refs.forEach((r) => {
-    if (r.start > cursor) parts.push({ type: 'text', value: line.slice(cursor, r.start) })
-    parts.push({ type: 'ref', ref: r })
-    cursor = r.end
-  })
-  if (cursor < line.length) parts.push({ type: 'text', value: line.slice(cursor) })
-  return parts
 }
 
 export default function SpeakerMode({ note, onClose, onNeedImport }) {
@@ -49,7 +31,16 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
     return () => clearInterval(id)
   }, [running])
 
-  const lines = (note.body || '').split('\n')
+  const linked = useMemo(() => linkifyHtml(note.body || ''), [note.body])
+  const contentRef = useRef(null)
+
+  const handleContentClick = (e) => {
+    const btn = e.target.closest('[data-ref-id]')
+    if (!btn) return
+    const ref = linked.refsById[btn.getAttribute('data-ref-id')]
+    if (!ref) return
+    setActiveRef((cur) => (refKey(cur) === refKey(ref) ? null : ref))
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex flex-col">
@@ -58,31 +49,17 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
           <h1 className="font-display text-3xl md:text-4xl font-semibold mb-8 leading-tight">
             {note.title}
           </h1>
-          {lines.map((line, i) => {
-            if (!line.trim()) return <div key={i} className="h-4" />
-            const bullet = line.trim().startsWith('•')
-            const content = bullet ? line.trim().slice(1).trim() : line
-            const parts = splitLineWithRefs(content)
-            return (
-              <p key={i} className={`mb-3 leading-relaxed ${bullet ? 'pl-5' : ''}`}>
-                {bullet && <span className="mr-2 text-gilt">•</span>}
-                {parts.map((p, j) =>
-                  p.type === 'text' ? (
-                    <span key={j}>{p.value}</span>
-                  ) : (
-                    <button
-                      key={j}
-                      onClick={() => setActiveRef((cur) => (refKey(cur) === refKey(p.ref) ? null : p.ref))}
-                      className="text-leather dark:text-gilt-soft underline decoration-dotted underline-offset-2
-                                 font-medium hover:decoration-solid transition-all"
-                    >
-                      {p.ref.raw}
-                    </button>
-                  )
-                )}
-              </p>
-            )
-          })}
+          <div
+            ref={contentRef}
+            onClick={handleContentClick}
+            className="speaker-content leading-relaxed
+                       [&_button]:text-leather [&_button]:dark:text-gilt-soft
+                       [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:mb-2
+                       [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2
+                       [&_h3]:font-display [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-1
+                       [&_p]:mb-3"
+            dangerouslySetInnerHTML={{ __html: linked.html }}
+          />
         </div>
       </div>
 

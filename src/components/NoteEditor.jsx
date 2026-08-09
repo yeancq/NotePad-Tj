@@ -1,7 +1,9 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import VersePanel from './VersePanel'
 import SpeakerMode from './SpeakerMode'
 import SpeakerIcon from './SpeakerIcon'
+import RichEditor from './RichEditor'
+import { ensureHtml } from '../lib/htmlUtils'
 
 export default function NoteEditor({
   note,
@@ -14,21 +16,17 @@ export default function NoteEditor({
   onNeedImport,
 }) {
   const [title, setTitle] = useState(note.title)
-  const [body, setBody] = useState(note.body)
+  const [body, setBody] = useState(() => ensureHtml(note.body))
+  const [plainText, setPlainText] = useState('')
   const [folder, setFolder] = useState(note.folder)
   const [cursorPos, setCursorPos] = useState(0)
   const [hasActiveVerse, setHasActiveVerse] = useState(false)
   const [showSpeaker, setShowSpeaker] = useState(false)
-  const textareaRef = useRef(null)
 
   const dirty = title !== note.title || body !== note.body || folder !== note.folder
 
   const handleSave = () => {
     onSave({ ...note, title: title.trim() || 'Sin título', body, folder })
-  }
-
-  const syncCursor = () => {
-    if (textareaRef.current) setCursorPos(textareaRef.current.selectionStart)
   }
 
   return (
@@ -122,29 +120,22 @@ export default function NoteEditor({
               className="w-full font-display text-2xl md:text-3xl bg-transparent focus:outline-none
                          text-ink dark:text-night-text placeholder:text-ink-soft/40 mb-4 disabled:opacity-60"
             />
-            <textarea
-              ref={textareaRef}
-              value={body}
-              onChange={(e) => {
-                setBody(e.target.value)
-                // El cursor se mueve junto con el texto que se escribe.
-                requestAnimationFrame(syncCursor)
+            <RichEditor
+              html={body}
+              onChange={setBody}
+              onCursorChange={(text, offset) => {
+                setPlainText(text)
+                setCursorPos(offset)
               }}
-              onClick={syncCursor}
-              onKeyUp={syncCursor}
-              onSelect={syncCursor}
               disabled={note.trashed}
               placeholder="Escribe aquí… (ej. Filipenses 4:6, 7)"
-              rows={16}
-              className="w-full bg-transparent focus:outline-none resize-none
-                         text-ink dark:text-night-text placeholder:text-ink-soft/40 leading-relaxed disabled:opacity-60"
             />
           </div>
         </main>
 
         {!note.trashed && (
           <VersePanel
-            text={body}
+            text={plainText}
             cursorPos={cursorPos}
             onNeedImport={onNeedImport}
             onActiveChange={setHasActiveVerse}

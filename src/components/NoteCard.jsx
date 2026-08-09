@@ -1,3 +1,5 @@
+import { stripHtml } from '../lib/htmlUtils'
+
 const folderMeta = {
   estudio: { icon: '📖', color: 'sage' },
   reunion: { icon: '🗓️', color: 'leather' },
@@ -59,7 +61,7 @@ export default function NoteCard({ note, onOpen, onTogglePin }) {
       </h3>
 
       <p className="text-sm text-ink-soft dark:text-night-text/60 line-clamp-2 mb-3">
-        {note.body}
+        {stripHtml(note.body)}
       </p>
 
       <div className="flex items-center gap-2 flex-wrap">
