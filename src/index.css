@@ -54,6 +54,17 @@ body {
     radial-gradient(circle at 80% 60%, rgba(0,0,0,0.02) 0%, transparent 45%);
 }
 
+.rich-editor:empty:before {
+  content: attr(data-placeholder);
+  color: var(--color-ink-soft);
+  opacity: 0.4;
+  pointer-events: none;
+}
+html.dark .rich-editor:empty:before {
+  color: var(--color-night-text);
+  opacity: 0.3;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
