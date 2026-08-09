@@ -14,6 +14,7 @@ import { folders as defaultFolders, notes as initialNotes } from './data/mockNot
 import { useLocalStorageNotes } from './hooks/useLocalStorageNotes'
 import { useLocalStorageFolders } from './hooks/useLocalStorageFolders'
 import { useThemeSettings } from './hooks/useThemeSettings'
+import { stripHtml } from './lib/htmlUtils'
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -66,7 +67,7 @@ export default function App() {
       list = list.filter(
         (n) =>
           n.title.toLowerCase().includes(q) ||
-          n.body.toLowerCase().includes(q) ||
+          stripHtml(n.body).toLowerCase().includes(q) ||
           n.tags.some((t) => t.toLowerCase().includes(q))
       )
     }
