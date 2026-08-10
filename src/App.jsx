@@ -4,6 +4,7 @@ import TopBar from './components/TopBar'
 import NoteCard from './components/NoteCard'
 import EmptyState from './components/EmptyState'
 import Fab from './components/Fab'
+import FolderGrid from './components/FolderGrid'
 import NewFolderDialog from './components/NewFolderDialog'
 import NoteEditor from './components/NoteEditor'
 import ImportBible from './components/ImportBible'
@@ -36,6 +37,8 @@ export default function App() {
   const [showImportOutline, setShowImportOutline] = useState(false)
   const [showNewFolder, setShowNewFolder] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showHome, setShowHome] = useState(true)
+  const [editingFolderId, setEditingFolderId] = useState(null)
   const { themeMode, setThemeMode, accentId, setAccentId, dark } = useThemeSettings()
   const [showSplash, setShowSplash] = useState(true)
 
@@ -176,11 +179,25 @@ export default function App() {
     setOpenNoteId(id)
   }
 
-  const createFolder = (name) => {
+  const createFolder = (name, icon) => {
     const id = `folder-${Date.now()}`
-    setFolders((prev) => [...prev, { id, name, icon: '📁', parentId: null }])
+    setFolders((prev) => [...prev, { id, name, icon: icon || '📁', parentId: null }])
     setShowNewFolder(false)
     setActiveFolder(id)
+    setShowHome(false)
+  }
+
+  const updateFolder = (id, name, icon) => {
+    setFolders((prev) => prev.map((f) => (f.id === id ? { ...f, name, icon } : f)))
+    setEditingFolderId(null)
+  }
+
+  const deleteFolderAndContents = (id) => {
+    const childIds = folders.filter((f) => f.parentId === id).map((f) => f.id)
+    const idsToRemove = new Set([id, ...childIds])
+    setFolders((prev) => prev.filter((f) => !idsToRemove.has(f.id)))
+    setNotes((prev) => prev.filter((n) => !idsToRemove.has(n.folder)))
+    setEditingFolderId(null)
   }
 
   if (showSplash) {
@@ -234,13 +251,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-parchment dark:bg-night paper-texture flex text-ink dark:text-night-text">
       <Sidebar
-        folders={folders}
-        activeFolder={activeFolder}
-        onSelect={(f) => {
-          setActiveFolder(f)
-          setSidebarOpen(false)
-        }}
-        counts={counts}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onOpenImport={() => setShowImport(true)}
@@ -249,33 +259,103 @@ export default function App() {
       />
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <TopBar
-          search={search}
-          onSearch={setSearch}
-          dark={dark}
-          onToggleDark={() => setThemeMode(dark ? 'light' : 'dark')}
-          onOpenSidebar={() => setSidebarOpen(true)}
-          greeting={`${getGreeting()} · ${filteredNotes.length} ${
-            filteredNotes.length === 1 ? 'nota' : 'notas'
-          }`}
-        />
-
-        <main className="flex-1 px-4 md:px-8 py-6 pb-28">
-          {filteredNotes.length === 0 ? (
-            <EmptyState onCreate={createNote} filtered={Boolean(search || activeFolder)} />
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 max-w-6xl">
-              {filteredNotes.map((note) => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  onOpen={() => setOpenNoteId(note.id)}
-                  onTogglePin={() => togglePin(note.id)}
+        {showHome ? (
+          <>
+            <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-4">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="min-w-0">
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="md:hidden mb-1 w-9 h-9 -ml-1.5 flex items-center justify-center rounded-full text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
+                    aria-label="Abrir menú"
+                  >
+                    ☰
+                  </button>
+                  <p className="font-display text-2xl md:text-3xl text-ink dark:text-night-text tracking-tight">
+                    NotePad TJ
+                  </p>
+                  <p className="text-xs text-ink-soft dark:text-night-text/60 mt-0.5">
+                    Estudio, reuniones y predicación
+                  </p>
+                </div>
+                <button
+                  onClick={() => setThemeMode(dark ? 'light' : 'dark')}
+                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full
+                             text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
+                  aria-label="Cambiar modo oscuro"
+                >
+                  {dark ? '☀️' : '🌙'}
+                </button>
+              </div>
+              <div className="relative max-w-md">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-soft/50 dark:text-night-text/40 text-sm">
+                  ⌕
+                </span>
+                <input
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value)
+                    setActiveFolder(null)
+                    setShowHome(false)
+                  }}
+                  type="text"
+                  placeholder="Buscar en tus notas…"
+                  className="w-full bg-white/60 dark:bg-night-surface-2 border border-ink/10 dark:border-night-text/10
+                             rounded-full pl-9 pr-4 py-2.5 text-sm text-ink dark:text-night-text
+                             placeholder:text-ink-soft/50 dark:placeholder:text-night-text/30
+                             focus:outline-none focus:ring-2 focus:ring-gilt/60 transition-shadow"
                 />
-              ))}
-            </div>
-          )}
-        </main>
+              </div>
+            </header>
+
+            <main className="flex-1 px-4 md:px-8 py-6 pb-28">
+              <FolderGrid
+                folders={folders}
+                counts={counts}
+                onSelect={(f) => {
+                  setActiveFolder(f)
+                  setShowHome(false)
+                }}
+                onEditFolder={setEditingFolderId}
+              />
+            </main>
+          </>
+        ) : (
+          <>
+            <TopBar
+              search={search}
+              onSearch={setSearch}
+              dark={dark}
+              onToggleDark={() => setThemeMode(dark ? 'light' : 'dark')}
+              onOpenSidebar={() => setSidebarOpen(true)}
+              onGoHome={() => {
+                setShowHome(true)
+                setSearch('')
+              }}
+              showBack
+              greeting={`${getGreeting()} · ${filteredNotes.length} ${
+                filteredNotes.length === 1 ? 'nota' : 'notas'
+              }`}
+            />
+
+            <main className="flex-1 px-4 md:px-8 py-6 pb-28">
+              {filteredNotes.length === 0 ? (
+                <EmptyState onCreate={createNote} filtered={Boolean(search || activeFolder)} />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 max-w-6xl">
+                  {filteredNotes.map((note) => (
+                    <NoteCard
+                      key={note.id}
+                      note={note}
+                      onOpen={() => setOpenNoteId(note.id)}
+                      onTogglePin={() => togglePin(note.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </main>
+          </>
+        )}
       </div>
 
       {activeFolder !== 'trash' && (
@@ -289,6 +369,15 @@ export default function App() {
 
       {showNewFolder && (
         <NewFolderDialog onCreate={createFolder} onClose={() => setShowNewFolder(false)} />
+      )}
+
+      {editingFolderId && (
+        <NewFolderDialog
+          initial={folders.find((f) => f.id === editingFolderId)}
+          onCreate={(name, icon) => updateFolder(editingFolderId, name, icon)}
+          onDelete={() => deleteFolderAndContents(editingFolderId)}
+          onClose={() => setEditingFolderId(null)}
+        />
       )}
     </div>
   )
