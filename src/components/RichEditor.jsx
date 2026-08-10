@@ -86,6 +86,21 @@ export default function RichEditor({ html, onChange, onCursorChange, placeholder
     onCursorChange?.(text, offset)
   }
 
+  // selectionchange es la única señal 100% confiable de "el cursor ya se
+  // movió de verdad" — a diferencia de click/keyup, que a veces se disparan
+  // justo ANTES de que el navegador termine de reubicar el cursor (sobre
+  // todo al tocar la pantalla en celular), dejando la lectura desfasada un
+  // párrafo.
+  useEffect(() => {
+    const handler = () => {
+      if (ref.current && ref.current.contains(document.activeElement)) {
+        reportCursor()
+      }
+    }
+    document.addEventListener('selectionchange', handler)
+    return () => document.removeEventListener('selectionchange', handler)
+  })
+
   const handleInput = () => {
     onChange?.(ref.current.innerHTML)
     reportCursor()
@@ -148,8 +163,6 @@ export default function RichEditor({ html, onChange, onCursorChange, placeholder
         contentEditable={!disabled}
         suppressContentEditableWarning
         onInput={handleInput}
-        onClick={reportCursor}
-        onKeyUp={reportCursor}
         data-placeholder={placeholder}
         className="rich-editor min-h-[240px] outline-none text-ink dark:text-night-text leading-relaxed
                    [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:mb-2
