@@ -8,6 +8,7 @@ import NewFolderDialog from './components/NewFolderDialog'
 import NoteEditor from './components/NoteEditor'
 import ImportBible from './components/ImportBible'
 import ImportProgram from './components/ImportProgram'
+import ImportOutline from './components/ImportOutline'
 import Settings from './components/Settings'
 import SplashScreen from './components/SplashScreen'
 import { folders as defaultFolders, notes as initialNotes } from './data/mockNotes'
@@ -32,6 +33,7 @@ export default function App() {
   const [openNoteId, setOpenNoteId] = useState(null)
   const [showImport, setShowImport] = useState(false)
   const [showImportProgram, setShowImportProgram] = useState(false)
+  const [showImportOutline, setShowImportOutline] = useState(false)
   const [showNewFolder, setShowNewFolder] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const { themeMode, setThemeMode, accentId, setAccentId, dark } = useThemeSettings()
@@ -156,6 +158,24 @@ export default function App() {
     setActiveFolder(folderId)
   }
 
+  const createNoteFromOutline = (title, html) => {
+    const id = Date.now()
+    const newNote = {
+      id,
+      title: title.trim() || 'Bosquejo importado',
+      body: html,
+      folder: 'bosquejos',
+      tags: [],
+      pinned: false,
+      trashed: false,
+      updatedAt: new Date().toISOString(),
+    }
+    setNotes((prev) => [newNote, ...prev])
+    setShowImportOutline(false)
+    setActiveFolder('bosquejos')
+    setOpenNoteId(id)
+  }
+
   const createFolder = (name) => {
     const id = `folder-${Date.now()}`
     setFolders((prev) => [...prev, { id, name, icon: '📁', parentId: null }])
@@ -177,6 +197,10 @@ export default function App() {
         onBack={() => setShowSettings(false)}
       />
     )
+  }
+
+  if (showImportOutline) {
+    return <ImportOutline onBack={() => setShowImportOutline(false)} onCreateNote={createNoteFromOutline} />
   }
 
   if (showImportProgram) {
@@ -259,6 +283,7 @@ export default function App() {
           onNewNote={createNote}
           onNewFolder={() => setShowNewFolder(true)}
           onImportProgram={() => setShowImportProgram(true)}
+          onImportOutline={() => setShowImportOutline(true)}
         />
       )}
 

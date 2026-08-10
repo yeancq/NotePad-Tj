@@ -65,6 +65,10 @@ html.dark .rich-editor:empty:before {
   opacity: 0.3;
 }
 
+.indent-1 { margin-left: 1.4em; }
+.indent-2 { margin-left: 2.8em; }
+.indent-3 { margin-left: 4.2em; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
