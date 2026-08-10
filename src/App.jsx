@@ -16,6 +16,7 @@ import { folders as defaultFolders, notes as initialNotes } from './data/mockNot
 import { useLocalStorageNotes } from './hooks/useLocalStorageNotes'
 import { useLocalStorageFolders } from './hooks/useLocalStorageFolders'
 import { useThemeSettings } from './hooks/useThemeSettings'
+import { useBackHandler } from './hooks/useBackHandler'
 import { stripHtml } from './lib/htmlUtils'
 
 function getGreeting() {
@@ -84,6 +85,17 @@ export default function App() {
   }, [notes, folders, activeFolder, search])
 
   const openNote = notes.find((n) => n.id === openNoteId) ?? null
+
+  // El botón/gesto de "atrás" del celular navega por dentro de la app en vez
+  // de cerrarla, hasta llegar a la pantalla de inicio. El orden de estas
+  // llamadas no importa: cada una se activa/desactiva según su propio estado,
+  // y la pila del hook respeta el orden real en que se abrieron las cosas.
+  useBackHandler(Boolean(openNote), () => setOpenNoteId(null))
+  useBackHandler(showSettings, () => setShowSettings(false))
+  useBackHandler(showImportOutline, () => setShowImportOutline(false))
+  useBackHandler(showImportProgram, () => setShowImportProgram(false))
+  useBackHandler(showImport, () => setShowImport(false))
+  useBackHandler(!showHome, () => setShowHome(true))
 
   const togglePin = (id) => {
     setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n)))
