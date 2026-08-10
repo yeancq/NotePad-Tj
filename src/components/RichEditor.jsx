@@ -41,19 +41,49 @@ export default function RichEditor({ html, onChange, onCursorChange, placeholder
     }
   }, [html])
 
-  const reportCursor = () => {
-    if (!ref.current) return
+  /**
+   * Calcula el texto plano y la posición del cursor con el MISMO método
+   * (recorriendo los bloques de nivel superior y uniéndolos con "\n"), para
+   * que ambos valores queden alineados sin importar cuántos párrafos haya.
+   */
+  const getTextAndOffset = () => {
     const el = ref.current
-    const plainText = el.innerText || ''
-    let offset = plainText.length
+    if (!el) return { text: '', offset: 0 }
+
     const sel = window.getSelection()
-    if (sel && sel.rangeCount > 0 && el.contains(sel.anchorNode)) {
-      const range = sel.getRangeAt(0).cloneRange()
-      range.selectNodeContents(el)
-      range.setEnd(sel.focusNode, sel.focusOffset)
-      offset = range.toString().length
-    }
-    onCursorChange?.(plainText, offset)
+    const focusNode = sel && el.contains(sel.focusNode) ? sel.focusNode : null
+    const focusOffset = sel ? sel.focusOffset : 0
+
+    const blocks = el.childNodes.length ? Array.from(el.childNodes) : []
+    let text = ''
+    let offset = null
+
+    blocks.forEach((block, i) => {
+      if (i > 0) text += '\n'
+      const blockRange = document.createRange()
+      blockRange.selectNodeContents(block)
+      const blockText = blockRange.toString()
+
+      if (offset === null && focusNode && (block === focusNode || block.contains?.(focusNode))) {
+        try {
+          const preRange = document.createRange()
+          preRange.selectNodeContents(block)
+          preRange.setEnd(focusNode, focusOffset)
+          offset = text.length + preRange.toString().length
+        } catch {
+          offset = text.length
+        }
+      }
+      text += blockText
+    })
+
+    if (offset === null) offset = text.length
+    return { text, offset }
+  }
+
+  const reportCursor = () => {
+    const { text, offset } = getTextAndOffset()
+    onCursorChange?.(text, offset)
   }
 
   const handleInput = () => {
