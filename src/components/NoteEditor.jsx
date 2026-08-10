@@ -4,6 +4,7 @@ import SpeakerMode from './SpeakerMode'
 import SpeakerIcon from './SpeakerIcon'
 import RichEditor from './RichEditor'
 import { ensureHtml } from '../lib/htmlUtils'
+import { useBackHandler } from '../hooks/useBackHandler'
 
 export default function NoteEditor({
   note,
@@ -22,6 +23,7 @@ export default function NoteEditor({
   const [cursorPos, setCursorPos] = useState(0)
   const [hasActiveVerse, setHasActiveVerse] = useState(false)
   const [showSpeaker, setShowSpeaker] = useState(false)
+  useBackHandler(showSpeaker, () => setShowSpeaker(false))
 
   const dirty = title !== note.title || body !== note.body || folder !== note.folder
 
