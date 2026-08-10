@@ -30,7 +30,7 @@ export default function NoteEditor({
   }
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col min-h-screen overflow-x-hidden">
+    <div className="flex-1 min-w-0 flex flex-col h-dvh overflow-x-hidden">
       <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-3 sm:px-4 md:px-8 py-3 flex items-center gap-2 sm:gap-3 min-w-0">
         <button
           onClick={() => {
