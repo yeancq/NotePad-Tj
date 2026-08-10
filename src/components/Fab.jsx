@@ -4,15 +4,20 @@ import { AnimatePresence, motion } from 'framer-motion'
 const EASE = [0.2, 0, 0, 1]
 
 const actions = [
+  { key: 'outline', icon: '📜', label: 'Importar bosquejo' },
   { key: 'program', icon: '📅', label: 'Programas de asambleas' },
   { key: 'folder', icon: '📁', label: 'Nueva carpeta' },
   { key: 'note', icon: '📝', label: 'Nueva nota' },
 ]
 
-export default function Fab({ onNewNote, onNewFolder, onImportProgram }) {
+export default function Fab({ onNewNote, onNewFolder, onImportProgram, onImportOutline }) {
   const [open, setOpen] = useState(false)
 
   const handlers = {
+    outline: () => {
+      setOpen(false)
+      onImportOutline()
+    },
     program: () => {
       setOpen(false)
       onImportProgram()
