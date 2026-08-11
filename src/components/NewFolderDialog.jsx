@@ -14,7 +14,7 @@ function suggestIcon(name) {
   return '📁'
 }
 
-export default function NewFolderDialog({ initial, onCreate, onClose, onDelete }) {
+export default function NewFolderDialog({ initial, parentName, onCreate, onClose, onDelete }) {
   const [name, setName] = useState(initial?.name || '')
   const [icon, setIcon] = useState(initial?.icon || '📁')
   const [iconTouched, setIconTouched] = useState(Boolean(initial))
@@ -43,9 +43,14 @@ export default function NewFolderDialog({ initial, onCreate, onClose, onDelete }
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-sm bg-parchment dark:bg-night-surface rounded-2xl shadow-xl p-5"
       >
-        <h2 className="font-display text-lg text-ink dark:text-night-text mb-3">
+        <h2 className={`font-display text-lg text-ink dark:text-night-text ${!isEdit && parentName ? 'mb-1' : 'mb-3'}`}>
           {isEdit ? 'Editar carpeta' : 'Nueva carpeta'}
         </h2>
+        {!isEdit && parentName && (
+          <p className="text-xs text-ink-soft/60 dark:text-night-text/40 mb-3">
+            Se creará dentro de <strong>{parentName}</strong>
+          </p>
+        )}
 
         <div className="flex gap-2 mb-3">
           <div className="w-11 h-11 shrink-0 rounded-full bg-white/60 dark:bg-night-surface-2 border border-ink/10 dark:border-night-text/10 flex items-center justify-center text-xl">
