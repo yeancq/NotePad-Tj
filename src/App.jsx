@@ -62,11 +62,12 @@ export default function App() {
   const filteredNotes = useMemo(() => {
     let list = notes.filter((n) => (activeFolder === 'trash' ? n.trashed : !n.trashed))
 
-    if (activeFolder === 'pinned') list = list.filter((n) => n.pinned)
-    else if (activeFolder && activeFolder !== 'trash') {
-      const childIds = folders.filter((f) => f.parentId === activeFolder).map((f) => f.id)
-      const scope = new Set([activeFolder, ...childIds])
-      list = list.filter((n) => scope.has(n.folder))
+    if (activeFolder === 'pinned') {
+      list = list.filter((n) => n.pinned)
+    } else if (activeFolder && activeFolder !== 'trash') {
+      // SOLO notas que pertenecen directamente a la carpeta activa
+      // (las notas de subcarpetas NO se muestran aquí)
+      list = list.filter((n) => n.folder === activeFolder)
     }
 
     if (search.trim()) {
@@ -396,7 +397,7 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* Notas */}
+                    {/* Notas sueltas de la carpeta actual (sin las de subcarpetas) */}
                     {filteredNotes.length > 0 && (
                       <div>
                         {subfolders.length > 0 && (
@@ -453,4 +454,4 @@ export default function App() {
       )}
     </div>
   )
-              }
+                                }
