@@ -101,6 +101,14 @@ export default function App() {
     setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n)))
   }
 
+  const moveNoteToFolder = (noteId, folderId) => {
+    setNotes((prev) =>
+      prev.map((n) =>
+        n.id === noteId ? { ...n, folder: folderId } : n
+      )
+    )
+  }
+
   const createNote = () => {
     const id = Date.now()
     const newNote = {
@@ -416,8 +424,10 @@ export default function App() {
                             <NoteCard
                               key={note.id}
                               note={note}
+                              folders={folders}
                               onOpen={() => setOpenNoteId(note.id)}
                               onTogglePin={() => togglePin(note.id)}
+                              onMoveNote={moveNoteToFolder}
                             />
                           ))}
                         </div>
@@ -458,4 +468,4 @@ export default function App() {
       )}
     </div>
   )
-        }
+      }
