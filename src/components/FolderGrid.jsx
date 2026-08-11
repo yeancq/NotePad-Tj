@@ -1,8 +1,6 @@
-import { useRef } from 'react'
+import FolderCard from './FolderCard'
 
-const LONG_PRESS_MS = 480
-
-export default function FolderGrid({ folders, counts, onSelect, onEditFolder }) {
+export default function FolderGrid({ folders, counts, onSelect, onEditFolder, onDeleteFolder }) {
   const topLevel = folders.filter((f) => !f.parentId)
 
   const folderCards = topLevel.map((f) => {
@@ -54,16 +52,18 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder }) 
           Carpetas
         </p>
         <p className="text-[11px] text-ink-soft/40 dark:text-night-text/30">
-          Mantén presionada una carpeta para editarla
+          ⋮ para opciones
         </p>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 mb-6">
         {folderCards.map((c) => (
           <FolderCard
             key={c.id}
-            card={c}
+            folder={{ id: c.id, name: c.name, icon: c.icon }}
+            noteCount={c.count}
             onOpen={() => onSelect(c.id)}
             onEdit={() => onEditFolder(c.id)}
+            onDelete={() => onDeleteFolder?.(c.id)}
           />
         ))}
       </div>
@@ -75,62 +75,5 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder }) 
         🗑️ Papelera {counts.trash > 0 ? `(${counts.trash})` : ''}
       </button>
     </div>
-  )
-}
-
-function FolderCard({ card, onOpen, onEdit }) {
-  const timerRef = useRef(null)
-  const longPressedRef = useRef(false)
-
-  const startPress = () => {
-    longPressedRef.current = false
-    timerRef.current = setTimeout(() => {
-      longPressedRef.current = true
-      if (navigator.vibrate) navigator.vibrate(12)
-      onEdit()
-    }, LONG_PRESS_MS)
-  }
-
-  const cancelPress = () => {
-    clearTimeout(timerRef.current)
-  }
-
-  const handleClick = () => {
-    // Si el press largo ya disparó la edición, no abrimos la carpeta también.
-    if (longPressedRef.current) {
-      longPressedRef.current = false
-      return
-    }
-    onOpen()
-  }
-
-  return (
-    <button
-      onClick={handleClick}
-      onPointerDown={startPress}
-      onPointerUp={cancelPress}
-      onPointerLeave={cancelPress}
-      onPointerCancel={cancelPress}
-      onContextMenu={(e) => e.preventDefault()}
-      className="group relative flex flex-col items-start gap-3 p-4 rounded-xl text-left select-none
-                 bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10
-                 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] transition-all duration-150"
-      style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
-    >
-      <span className="text-2xl">{card.icon}</span>
-      <span className="w-full">
-        <span className="block font-display text-[15px] text-ink dark:text-night-text truncate">
-          {card.name}
-        </span>
-        <span className="block text-xs text-ink-soft/60 dark:text-night-text/40 mt-0.5">
-          {card.count} {card.count === 1 ? 'nota' : 'notas'}
-        </span>
-      </span>
-      <span className="hidden md:flex absolute top-3 right-3 w-6 h-6 items-center justify-center rounded-full
-                        text-ink-soft/40 dark:text-night-text/30 opacity-0 group-hover:opacity-100
-                        transition-opacity text-xs pointer-events-none">
-        ✏️
-      </span>
-    </button>
   )
 }
