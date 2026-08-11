@@ -12,10 +12,8 @@ function refKey(ref) {
 }
 
 /**
- * Panel lateral fijo (siempre a la derecha del texto, en cualquier tamaño de
- * pantalla) que muestra el versículo bajo el cursor. No es un overlay: es una
- * columna más de la fila del editor, así que el texto de la nota se acomoda
- * a su lado en vez de quedar tapado.
+ * Panel flotante superpuesto al editor. Aparece a la derecha como un modal
+ * flotante con fondo semitransparente, sin desplazar el contenido principal.
  */
 export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChange }) {
   const bibleReady = useBibleReady()
@@ -56,25 +54,42 @@ export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChan
   return (
     <AnimatePresence>
       {activeRef && (
-        <motion.aside
-          key={refKey(activeRef)}
-          initial={{ x: '100%', opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: '100%', opacity: 0 }}
-          transition={{ duration: 0.5, ease: EASE }}
-          className="w-[42%] sm:w-[38%] max-w-[380px] min-w-0 shrink-0 flex flex-col
-                     bg-parchment/90 dark:bg-night-surface/90 backdrop-blur-md
-                     border-l border-ink/[0.06] dark:border-night-text/[0.06]"
-        >
-          <VerseCardBody
-            activeRef={activeRef}
-            segmentTexts={segmentTexts}
-            bibleReady={bibleReady}
-            onNeedImport={onNeedImport}
-            onCopy={handleCopy}
-            onClose={handleClose}
+        <>
+          {/* Fondo semitransparente para oscurecer el contenido detrás */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: EASE }}
+            className="fixed inset-0 z-40 bg-black/10 dark:bg-black/30"
+            onClick={handleClose}
           />
-        </motion.aside>
+          
+          {/* Panel flotante */}
+          <motion.aside
+            key={refKey(activeRef)}
+            initial={{ x: '100%', opacity: 0, scale: 0.95 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            exit={{ x: '100%', opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.4, ease: EASE }}
+            className="fixed top-1/2 -translate-y-1/2 right-4 z-50
+                       w-[85vw] sm:w-[420px] max-w-[460px] max-h-[85vh]
+                       bg-parchment/92 dark:bg-night-surface/92 backdrop-blur-xl
+                       rounded-2xl shadow-2xl
+                       border border-ink/10 dark:border-night-text/10
+                       overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <VerseCardBody
+              activeRef={activeRef}
+              segmentTexts={segmentTexts}
+              bibleReady={bibleReady}
+              onNeedImport={onNeedImport}
+              onCopy={handleCopy}
+              onClose={handleClose}
+            />
+          </motion.aside>
+        </>
       )}
     </AnimatePresence>
   )
