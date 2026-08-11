@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react'
 // con un solo listener de popstate para toda la app.
 const stack = []
 let ignoreNextPopstate = false
+let handlingPopstate = false
 let listenerInstalled = false
 
 function ensureListener() {
@@ -17,7 +18,16 @@ function ensureListener() {
       return
     }
     const top = stack.pop()
-    if (top) top.current()
+    if (top) {
+      // Se marca mientras dure la actualización de React que dispara esto,
+      // para que el useEffect de abajo sepa que NO debe consumir otra
+      // entrada del historial (ya se consumió sola, al hacer popstate).
+      handlingPopstate = true
+      top.current()
+      setTimeout(() => {
+        handlingPopstate = false
+      }, 0)
+    }
   })
 }
 
@@ -46,8 +56,10 @@ export function useBackHandler(active, onBack) {
       pushedRef.current = false
       const idx = stack.indexOf(onBackRef)
       if (idx !== -1) stack.splice(idx, 1)
-      ignoreNextPopstate = true
-      window.history.back()
+      if (!handlingPopstate) {
+        ignoreNextPopstate = true
+        window.history.back()
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active])
