@@ -5,6 +5,7 @@ import NoteCard from './components/NoteCard'
 import EmptyState from './components/EmptyState'
 import Fab from './components/Fab'
 import FolderGrid from './components/FolderGrid'
+import FolderCard from './components/FolderCard'
 import NewFolderDialog from './components/NewFolderDialog'
 import NoteEditor from './components/NoteEditor'
 import ImportBible from './components/ImportBible'
@@ -86,10 +87,6 @@ export default function App() {
 
   const openNote = notes.find((n) => n.id === openNoteId) ?? null
 
-  // El botón/gesto de "atrás" del celular navega por dentro de la app en vez
-  // de cerrarla, hasta llegar a la pantalla de inicio. El orden de estas
-  // llamadas no importa: cada una se activa/desactiva según su propio estado,
-  // y la pila del hook respeta el orden real en que se abrieron las cosas.
   useBackHandler(Boolean(openNote), () => setOpenNoteId(null))
   useBackHandler(showSettings, () => setShowSettings(false))
   useBackHandler(showImportOutline, () => setShowImportOutline(false))
@@ -150,8 +147,6 @@ export default function App() {
   const createNotesFromProgram = (folderName, items) => {
     const cleanName = folderName.trim() || 'Asamblea sin nombre'
 
-    // Reutiliza la subcarpeta si ya existe una con el mismo nombre bajo "Asamblea"
-    // (por si el usuario importa el mismo programa dos veces).
     let folderId
     const existing = folders.find((f) => f.parentId === 'asamblea' && f.name === cleanName)
     if (existing) {
@@ -202,10 +197,6 @@ export default function App() {
   const createFolder = (name, icon) => {
     const id = `folder-${Date.now()}`
     const current = folders.find((f) => f.id === activeFolder)
-    // Si estamos dentro de una carpeta, la nueva se crea como subcarpeta de
-    // esa. Si esa carpeta ya era en sí una subcarpeta, se usa su carpeta
-    // "abuela" en vez de anidar un tercer nivel (la pantalla de inicio solo
-    // muestra 2 niveles de profundidad).
     const parentId = !showHome && current ? current.parentId || current.id : null
     setFolders((prev) => [...prev, { id, name, icon: icon || '📁', parentId }])
     setShowNewFolder(false)
@@ -343,6 +334,7 @@ export default function App() {
                   setShowHome(false)
                 }}
                 onEditFolder={setEditingFolderId}
+                onDeleteFolder={deleteFolderAndContents}
               />
             </main>
           </>
@@ -366,7 +358,6 @@ export default function App() {
 
             <main className="flex-1 px-4 md:px-8 py-6 pb-28">
               {(() => {
-                // Obtener subcarpetas de la carpeta activa
                 const subfolders = folders.filter(f => f.parentId === activeFolder)
                 const hasContent = filteredNotes.length > 0 || subfolders.length > 0
 
@@ -376,42 +367,36 @@ export default function App() {
 
                 return (
                   <div className="space-y-6 max-w-6xl">
-                    {/* Mostrar subcarpetas si existen */}
+                    {/* Subcarpetas */}
                     {subfolders.length > 0 && (
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40 mb-3">
-                          Subcarpetas
-                        </p>
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40">
+                            Subcarpetas
+                          </p>
+                          <p className="text-[11px] text-ink-soft/40 dark:text-night-text/30">
+                            ⋮ para opciones
+                          </p>
+                        </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
                           {subfolders.map((folder) => {
                             const noteCount = notes.filter(n => n.folder === folder.id && !n.trashed).length
                             return (
-                              <button
+                              <FolderCard
                                 key={folder.id}
-                                onClick={() => {
-                                  setActiveFolder(folder.id)
-                                }}
-                                className="flex flex-col items-start gap-3 p-4 rounded-xl text-left select-none
-                                           bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10
-                                           hover:-translate-y-0.5 hover:shadow-md transition-all duration-150"
-                              >
-                                <span className="text-2xl">{folder.icon || '📁'}</span>
-                                <span className="w-full">
-                                  <span className="block font-display text-[15px] text-ink dark:text-night-text truncate">
-                                    {folder.name}
-                                  </span>
-                                  <span className="block text-xs text-ink-soft/60 dark:text-night-text/40 mt-0.5">
-                                    {noteCount} {noteCount === 1 ? 'nota' : 'notas'}
-                                  </span>
-                                </span>
-                              </button>
+                                folder={folder}
+                                noteCount={noteCount}
+                                onOpen={() => setActiveFolder(folder.id)}
+                                onEdit={() => setEditingFolderId(folder.id)}
+                                onDelete={() => deleteFolderAndContents(folder.id)}
+                              />
                             )
                           })}
                         </div>
                       </div>
                     )}
 
-                    {/* Mostrar notas */}
+                    {/* Notas */}
                     {filteredNotes.length > 0 && (
                       <div>
                         {subfolders.length > 0 && (
@@ -468,4 +453,4 @@ export default function App() {
       )}
     </div>
   )
-      }
+              }
