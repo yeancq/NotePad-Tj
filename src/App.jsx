@@ -193,7 +193,13 @@ export default function App() {
 
   const createFolder = (name, icon) => {
     const id = `folder-${Date.now()}`
-    setFolders((prev) => [...prev, { id, name, icon: icon || '📁', parentId: null }])
+    const current = folders.find((f) => f.id === activeFolder)
+    // Si estamos dentro de una carpeta, la nueva se crea como subcarpeta de
+    // esa. Si esa carpeta ya era en sí una subcarpeta, se usa su carpeta
+    // "abuela" en vez de anidar un tercer nivel (la pantalla de inicio solo
+    // muestra 2 niveles de profundidad).
+    const parentId = !showHome && current ? current.parentId || current.id : null
+    setFolders((prev) => [...prev, { id, name, icon: icon || '📁', parentId }])
     setShowNewFolder(false)
     setActiveFolder(id)
     setShowHome(false)
@@ -380,7 +386,11 @@ export default function App() {
       )}
 
       {showNewFolder && (
-        <NewFolderDialog onCreate={createFolder} onClose={() => setShowNewFolder(false)} />
+        <NewFolderDialog
+          parentName={!showHome ? folders.find((f) => f.id === activeFolder)?.name : null}
+          onCreate={createFolder}
+          onClose={() => setShowNewFolder(false)}
+        />
       )}
 
       {editingFolderId && (
