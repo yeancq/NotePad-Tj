@@ -106,44 +106,44 @@ export default function NoteEditor({
         )}
       </header>
 
-      <div className="flex-1 flex flex-row min-h-0 min-w-0 overflow-x-hidden">
-        <main className="flex-1 min-w-0 overflow-y-auto px-4 md:px-8 py-6 pb-24">
-          <div className="max-w-3xl w-full mx-auto">
-            {note.trashed && (
-              <div className="mb-4 text-sm px-3 py-2 rounded-lg bg-leather/10 text-leather dark:text-gilt-soft">
-                Esta nota está en la papelera. Restáurala para poder editarla.
-              </div>
-            )}
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              disabled={note.trashed}
-              placeholder="Título de la nota"
-              className="w-full font-display text-2xl md:text-3xl bg-transparent focus:outline-none
-                         text-ink dark:text-night-text placeholder:text-ink-soft/40 mb-4 disabled:opacity-60"
-            />
-            <RichEditor
-              html={body}
-              onChange={setBody}
-              onCursorChange={(text, offset) => {
-                setPlainText(text)
-                setCursorPos(offset)
-              }}
-              disabled={note.trashed}
-              placeholder="Escribe aquí… (ej. Filipenses 4:6, 7)"
-            />
-          </div>
-        </main>
-
-        {!note.trashed && (
-          <VersePanel
-            text={plainText}
-            cursorPos={cursorPos}
-            onNeedImport={onNeedImport}
-            onActiveChange={setHasActiveVerse}
+      {/* El editor ahora ocupa todo el ancho, el panel es flotante */}
+      <div className="flex-1 min-h-0 min-w-0 overflow-y-auto px-4 md:px-8 py-6 pb-24">
+        <div className="max-w-3xl w-full mx-auto">
+          {note.trashed && (
+            <div className="mb-4 text-sm px-3 py-2 rounded-lg bg-leather/10 text-leather dark:text-gilt-soft">
+              Esta nota está en la papelera. Restáurala para poder editarla.
+            </div>
+          )}
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            disabled={note.trashed}
+            placeholder="Título de la nota"
+            className="w-full font-display text-2xl md:text-3xl bg-transparent focus:outline-none
+                       text-ink dark:text-night-text placeholder:text-ink-soft/40 mb-4 disabled:opacity-60"
           />
-        )}
+          <RichEditor
+            html={body}
+            onChange={setBody}
+            onCursorChange={(text, offset) => {
+              setPlainText(text)
+              setCursorPos(offset)
+            }}
+            disabled={note.trashed}
+            placeholder="Escribe aquí… (ej. Filipenses 4:6, 7)"
+          />
+        </div>
       </div>
+
+      {/* Panel flotante - se renderiza al final para estar por encima */}
+      {!note.trashed && (
+        <VersePanel
+          text={plainText}
+          cursorPos={cursorPos}
+          onNeedImport={onNeedImport}
+          onActiveChange={setHasActiveVerse}
+        />
+      )}
 
       {showSpeaker && (
         <SpeakerMode
