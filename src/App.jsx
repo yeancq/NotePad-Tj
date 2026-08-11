@@ -357,20 +357,75 @@ export default function App() {
             />
 
             <main className="flex-1 px-4 md:px-8 py-6 pb-28">
-              {filteredNotes.length === 0 ? (
-                <EmptyState onCreate={createNote} filtered={Boolean(search || activeFolder)} />
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5 max-w-6xl">
-                  {filteredNotes.map((note) => (
-                    <NoteCard
-                      key={note.id}
-                      note={note}
-                      onOpen={() => setOpenNoteId(note.id)}
-                      onTogglePin={() => togglePin(note.id)}
-                    />
-                  ))}
-                </div>
-              )}
+              {(() => {
+                // Obtener subcarpetas de la carpeta activa
+                const subfolders = folders.filter(f => f.parentId === activeFolder)
+                const hasContent = filteredNotes.length > 0 || subfolders.length > 0
+
+                if (!hasContent) {
+                  return <EmptyState onCreate={createNote} filtered={Boolean(search || activeFolder)} />
+                }
+
+                return (
+                  <div className="space-y-6 max-w-6xl">
+                    {/* Mostrar subcarpetas si existen */}
+                    {subfolders.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40 mb-3">
+                          Subcarpetas
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                          {subfolders.map((folder) => {
+                            const noteCount = notes.filter(n => n.folder === folder.id && !n.trashed).length
+                            return (
+                              <button
+                                key={folder.id}
+                                onClick={() => {
+                                  setActiveFolder(folder.id)
+                                }}
+                                className="flex flex-col items-start gap-3 p-4 rounded-xl text-left select-none
+                                           bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10
+                                           hover:-translate-y-0.5 hover:shadow-md transition-all duration-150"
+                              >
+                                <span className="text-2xl">{folder.icon || '📁'}</span>
+                                <span className="w-full">
+                                  <span className="block font-display text-[15px] text-ink dark:text-night-text truncate">
+                                    {folder.name}
+                                  </span>
+                                  <span className="block text-xs text-ink-soft/60 dark:text-night-text/40 mt-0.5">
+                                    {noteCount} {noteCount === 1 ? 'nota' : 'notas'}
+                                  </span>
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mostrar notas */}
+                    {filteredNotes.length > 0 && (
+                      <div>
+                        {subfolders.length > 0 && (
+                          <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40 mb-3">
+                            Notas
+                          </p>
+                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                          {filteredNotes.map((note) => (
+                            <NoteCard
+                              key={note.id}
+                              note={note}
+                              onOpen={() => setOpenNoteId(note.id)}
+                              onTogglePin={() => togglePin(note.id)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
             </main>
           </>
         )}
@@ -403,4 +458,4 @@ export default function App() {
       )}
     </div>
   )
-}
+        }
