@@ -43,7 +43,6 @@ export default function App() {
   const [editingFolderId, setEditingFolderId] = useState(null)
   const { themeMode, setThemeMode, accentId, setAccentId, dark } = useThemeSettings()
   const [showSplash, setShowSplash] = useState(true)
-  const [isCheckingVersion, setIsCheckingVersion] = useState(true)
 
   // ============================================================
   // 🔄 SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA (versión.json)
@@ -51,67 +50,42 @@ export default function App() {
   useEffect(() => {
     const checkVersion = async () => {
       try {
-        // Obtener versión del servidor (con timestamp para evitar caché)
         const response = await fetch('/version.json?t=' + Date.now())
         if (!response.ok) throw new Error('No se pudo obtener version.json')
         
         const data = await response.json()
         const serverVersion = data.version
-        
-        // Obtener versión guardada localmente
         const savedVersion = localStorage.getItem('appVersion')
         
         if (savedVersion && savedVersion !== serverVersion) {
-          console.log(`🔄 Nueva versión disponible: ${savedVersion} → ${serverVersion}`)
-          
-          // Guardar nueva versión
+          console.log(`🔄 Nueva versión: ${savedVersion} → ${serverVersion}`)
           localStorage.setItem('appVersion', serverVersion)
           
-          // Limpiar caché del service worker
           if ('serviceWorker' in navigator) {
-            try {
-              const registrations = await navigator.serviceWorker.getRegistrations()
-              for (const registration of registrations) {
-                await registration.unregister()
-              }
-            } catch (swError) {
-              console.warn('Error limpiando service worker:', swError)
+            const registrations = await navigator.serviceWorker.getRegistrations()
+            for (const registration of registrations) {
+              await registration.unregister()
             }
           }
           
-          // Limpiar caché de archivos estáticos
           if ('caches' in window) {
-            try {
-              const cacheKeys = await caches.keys()
-              for (const key of cacheKeys) {
-                // Limpiar solo cachés de la app (no las de Google Fonts, etc.)
-                if (key.includes('assets') || key.includes('workbox') || key.includes('pages')) {
-                  await caches.delete(key)
-                }
+            const cacheKeys = await caches.keys()
+            for (const key of cacheKeys) {
+              if (key.includes('assets') || key.includes('workbox')) {
+                await caches.delete(key)
               }
-            } catch (cacheError) {
-              console.warn('Error limpiando caché:', cacheError)
             }
           }
           
-          // Recargar la página después de 500ms
           setTimeout(() => {
             window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now()
           }, 500)
-          
           return
         } else if (!savedVersion) {
-          // Primera vez que se abre la app
           localStorage.setItem('appVersion', serverVersion)
         }
-        
-        // Si no hay actualización, mostrar la app
-        setIsCheckingVersion(false)
-        
       } catch (error) {
         console.warn('⚠️ Error verificando versión:', error)
-        // Si falla la verificación, mostrar la app de todas formas
-        setIsCheckingVersion(false)
       }
     }
 
@@ -290,8 +264,7 @@ export default function App() {
     setEditingFolderId(null)
   }
 
-  // Mostrar Splash mientras se verifica la versión
-  if (isCheckingVersion || showSplash) {
+  if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />
   }
 
@@ -525,4 +498,4 @@ export default function App() {
       )}
     </div>
   )
-      }
+  }
