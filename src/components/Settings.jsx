@@ -10,22 +10,19 @@ const themeOptions = [
 export default function Settings({ themeMode, setThemeMode, accentId, setAccentId, onBack }) {
   const [version, setVersion] = useState('Cargando...')
   const [isChecking, setIsChecking] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
 
-  // Función para obtener la versión (siempre sin caché)
   const fetchVersion = async (showUpdate = false) => {
     try {
       setIsChecking(true)
-      // ✅ Usa la URL DIRECTA del repositorio (no la de GitHub Pages)
       const response = await fetch('https://raw.githubusercontent.com/yeancq/NotePad-Tj/main/public/version.json?t=' + Date.now())
       if (response.ok) {
         const data = await response.json()
         setVersion(data.version)
         
-        // Si se llamó con 'showUpdate', verificar si hay una nueva versión
         if (showUpdate) {
           const savedVersion = localStorage.getItem('appVersion')
           if (savedVersion && savedVersion !== data.version) {
-            // Hay una nueva versión, recargar la página
             localStorage.setItem('appVersion', data.version)
             setTimeout(() => window.location.reload(), 500)
           }
@@ -41,12 +38,10 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
     }
   }
 
-  // Obtener versión al cargar la pantalla
   useEffect(() => {
     fetchVersion()
   }, [])
 
-  // Forzar verificación de actualización
   const handleCheckForUpdate = () => {
     fetchVersion(true)
   }
@@ -66,8 +61,12 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
 
       <main className="flex-1 px-4 md:px-8 py-6 max-w-xl mx-auto w-full flex flex-col">
         <div className="flex-1">
-          <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-5">
-            <div className="grid grid-cols-3 gap-3 mb-6">
+          {/* Tema */}
+          <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-4">
+            <p className="text-sm font-medium text-ink-soft dark:text-night-text/50 mb-3 text-center">
+              Tema
+            </p>
+            <div className="grid grid-cols-3 gap-3">
               {themeOptions.map((opt) => (
                 <button
                   key={opt.id}
@@ -84,8 +83,11 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
                 </button>
               ))}
             </div>
+          </section>
 
-            <p className="text-center text-sm font-medium text-ink-soft dark:text-night-text/50 mb-3">
+          {/* Color de acento */}
+          <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-4">
+            <p className="text-sm font-medium text-ink-soft dark:text-night-text/50 mb-3 text-center">
               Color de acento
             </p>
             <div className="flex justify-center gap-3 flex-wrap">
@@ -102,6 +104,146 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
                 </button>
               ))}
             </div>
+          </section>
+
+          {/* Cómo funciona NotePad TJ */}
+          <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-4">
+            <button
+              onClick={() => setAboutOpen(!aboutOpen)}
+              className="w-full flex items-center justify-between text-left"
+            >
+              <span className="text-sm font-medium text-ink-soft dark:text-night-text/50">
+                📖 Cómo funciona NotePad TJ
+              </span>
+              <span className="text-ink-soft/40 dark:text-night-text/30 text-sm">
+                {aboutOpen ? '▲' : '▼'}
+              </span>
+            </button>
+
+            {aboutOpen && (
+              <div className="mt-4 text-sm text-ink-soft/80 dark:text-night-text/70 space-y-4 border-t border-ink/10 dark:border-night-text/10 pt-4">
+
+                {/* Introducción */}
+                <div>
+                  <p>
+                    <strong className="text-ink dark:text-night-text">NotePad TJ</strong> es una aplicación de notas 
+                    diseñada especialmente para el estudio bíblico, reuniones de congregación y predicación. 
+                    Todo se guarda en tu dispositivo, sin necesidad de internet ni servidores externos.
+                  </p>
+                </div>
+
+                {/* 📂 Organización */}
+                <div>
+                  <p className="font-medium text-ink dark:text-night-text text-xs uppercase tracking-wider mb-1.5">
+                    📂 Organización
+                  </p>
+                  <p>
+                    Crea <strong>carpetas y subcarpetas</strong> para organizar tus notas por tema, 
+                    reunión o programa. Mantén todo en orden con un sistema de jerarquía simple e intuitivo.
+                  </p>
+                  <p className="text-xs text-ink-soft/50 dark:text-night-text/40 mt-1">
+                    💡 Mantén presionada una carpeta para editarla o eliminarla.
+                  </p>
+                </div>
+
+                {/* 📖 Referencias bíblicas */}
+                <div>
+                  <p className="font-medium text-ink dark:text-night-text text-xs uppercase tracking-wider mb-1.5">
+                    📖 Referencias bíblicas
+                  </p>
+                  <p>
+                    Escribe una cita bíblica (ej. <span className="font-mono text-xs bg-ink/5 dark:bg-night-text/10 px-1.5 py-0.5 rounded">Filipenses 4:6, 7</span>) 
+                    y la app detectará automáticamente la referencia. Si has importado la Biblia (TNM), 
+                    verás el texto completo en un panel flotante.
+                  </p>
+                </div>
+
+                {/* 📥 Importar la Biblia (TNM) */}
+                <div className="bg-ink/5 dark:bg-night-text/5 rounded-lg p-3 border-l-2 border-leather dark:border-gilt-soft">
+                  <p className="font-medium text-ink dark:text-night-text text-xs uppercase tracking-wider mb-1.5">
+                    📥 Importar la Biblia (TNM)
+                  </p>
+                  <ol className="list-decimal list-inside space-y-1 text-xs">
+                    <li>Ve a <strong className="text-ink dark:text-night-text">jw.org</strong> (la página oficial de los Testigos de Jehová)</li>
+                    <li>Busca <strong>"Publicaciones"</strong> → <strong>"La Biblia"</strong> → <strong>"Descargar"</strong></li>
+                    <li>Selecciona el formato <strong className="text-ink dark:text-night-text">EPUB</strong> (es el que usa NotePad TJ)</li>
+                    <li>Elige el idioma <strong>Español</strong> y descarga el archivo <span className="font-mono text-xs bg-ink/5 dark:bg-night-text/10 px-1.5 py-0.5 rounded">.epub</span></li>
+                    <li>En la app, abre el <strong>menú lateral</strong> (☰) y toca <strong>"📖 Importar Biblia (TNM)"</strong></li>
+                    <li>Selecciona el archivo <span className="font-mono text-xs bg-ink/5 dark:bg-night-text/10 px-1.5 py-0.5 rounded">.epub</span> que descargaste</li>
+                    <li>La app lo procesará y guardará en tu dispositivo <strong>una sola vez</strong></li>
+                  </ol>
+                  <p className="text-xs text-ink-soft/50 dark:text-night-text/40 mt-1.5">
+                    ⚠️ El archivo EPUB se procesa completamente en tu navegador. <strong>No se sube a ningún servidor.</strong>
+                  </p>
+                </div>
+
+                {/* 🎟️ Importar programas de asamblea */}
+                <div className="bg-ink/5 dark:bg-night-text/5 rounded-lg p-3 border-l-2 border-leather dark:border-gilt-soft">
+                  <p className="font-medium text-ink dark:text-night-text text-xs uppercase tracking-wider mb-1.5">
+                    🎟️ Importar programas de asamblea
+                  </p>
+                  <ol className="list-decimal list-inside space-y-1 text-xs">
+                    <li>Descarga el programa de la asamblea desde <strong className="text-ink dark:text-night-text">jw.org</strong> en formato <strong className="text-ink dark:text-night-text">.rtf</strong></li>
+                    <li>En la app, abre el <strong>menú lateral</strong> (☰) y toca <strong>"🎟️ Importar programa"</strong></li>
+                    <li>Selecciona el archivo <span className="font-mono text-xs bg-ink/5 dark:bg-night-text/10 px-1.5 py-0.5 rounded">.rtf</span> que descargaste</li>
+                    <li>La app creará automáticamente una carpeta con el nombre del programa y una nota por cada discurso</li>
+                    <li>Todas las notas quedarán organizadas en la carpeta <strong>"Asamblea"</strong></li>
+                  </ol>
+                  <p className="text-xs text-ink-soft/50 dark:text-night-text/40 mt-1.5">
+                    💡 Si importas el mismo programa dos veces, la app reutilizará la carpeta existente.
+                  </p>
+                </div>
+
+                {/* 📄 Importar bosquejos */}
+                <div className="bg-ink/5 dark:bg-night-text/5 rounded-lg p-3 border-l-2 border-leather dark:border-gilt-soft">
+                  <p className="font-medium text-ink dark:text-night-text text-xs uppercase tracking-wider mb-1.5">
+                    📄 Importar bosquejos
+                  </p>
+                  <ol className="list-decimal list-inside space-y-1 text-xs">
+                    <li>Prepara tu bosquejo en formato <strong className="text-ink dark:text-night-text">.docx</strong> (Word)</li>
+                    <li>En la app, toca el botón <strong>"+"</strong> (flotante) y selecciona <strong>"📄 Importar bosquejo"</strong></li>
+                    <li>Selecciona el archivo <span className="font-mono text-xs bg-ink/5 dark:bg-night-text/10 px-1.5 py-0.5 rounded">.docx</span></li>
+                    <li>La app extraerá el contenido y creará una nota en la carpeta <strong>"Bosquejos"</strong></li>
+                  </ol>
+                  <p className="text-xs text-ink-soft/50 dark:text-night-text/40 mt-1.5">
+                    💡 El bosquejo se convierte automáticamente a HTML para que puedas editarlo con el editor enriquecido.
+                  </p>
+                </div>
+
+                {/* 🔗 Enlaces entre notas */}
+                <div>
+                  <p className="font-medium text-ink dark:text-night-text text-xs uppercase tracking-wider mb-1.5">
+                    🔗 Enlaces entre notas
+                  </p>
+                  <p>
+                    Conecta tus notas entre sí para crear un sistema de estudio interconectado. 
+                    Ideal para seguir temas, referencias cruzadas o preparar discursos.
+                  </p>
+                </div>
+
+                {/* 💾 Almacenamiento local y privacidad */}
+                <div>
+                  <p className="font-medium text-ink dark:text-night-text text-xs uppercase tracking-wider mb-1.5">
+                    💾 Almacenamiento local y privacidad
+                  </p>
+                  <p>
+                    Todos tus datos se guardan <strong>exclusivamente en tu dispositivo</strong> 
+                    (IndexedDB y localStorage). <strong>No se envían a ningún servidor.</strong> 
+                    Tus notas son completamente privadas.
+                  </p>
+                  <p className="text-xs text-ink-soft/50 dark:text-night-text/40 mt-1">
+                    💡 Puedes exportar tus datos desde el menú lateral para hacer respaldos.
+                  </p>
+                </div>
+
+                {/* Créditos */}
+                <div className="pt-2 text-xs text-ink-soft/40 dark:text-night-text/30 border-t border-ink/10 dark:border-night-text/10 mt-2">
+                  <p>Desarrollada por <strong className="text-ink-soft/60 dark:text-night-text/40">yeancq</strong></p>
+                  <p className="mt-0.5">Hecha con React, Vite, Tailwind y mucho cariño ❤️</p>
+                  <p className="mt-0.5">💡 Todo el código es abierto y público en GitHub.</p>
+                </div>
+              </div>
+            )}
           </section>
 
           <p className="text-xs text-ink-soft/60 dark:text-night-text/40 px-1">
