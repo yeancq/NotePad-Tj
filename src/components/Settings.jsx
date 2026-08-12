@@ -9,26 +9,46 @@ const themeOptions = [
 
 export default function Settings({ themeMode, setThemeMode, accentId, setAccentId, onBack }) {
   const [version, setVersion] = useState('Cargando...')
+  const [isChecking, setIsChecking] = useState(false)
 
-  // Obtener la versión del archivo version.json
-  useEffect(() => {
-    const fetchVersion = async () => {
-      try {
-        const response = await fetch('/version.json?t=' + Date.now())
-        if (response.ok) {
-          const data = await response.json()
-          setVersion(data.version)
-        } else {
-          setVersion('1.0.0')
+  // Función para obtener la versión (siempre sin caché)
+  const fetchVersion = async (showUpdate = false) => {
+    try {
+      setIsChecking(true)
+      const response = await fetch('/version.json?t=' + Date.now())
+      if (response.ok) {
+        const data = await response.json()
+        setVersion(data.version)
+        
+        // Si se llamó con 'showUpdate', verificar si hay una nueva versión
+        if (showUpdate) {
+          const savedVersion = localStorage.getItem('appVersion')
+          if (savedVersion && savedVersion !== data.version) {
+            // Hay una nueva versión, recargar la página
+            localStorage.setItem('appVersion', data.version)
+            setTimeout(() => window.location.reload(), 500)
+          }
         }
-      } catch (error) {
-        console.warn('Error obteniendo versión:', error)
+      } else {
         setVersion('1.0.0')
       }
+    } catch (error) {
+      console.warn('Error obteniendo versión:', error)
+      setVersion('1.0.0')
+    } finally {
+      setIsChecking(false)
     }
+  }
 
+  // Obtener versión al cargar la pantalla
+  useEffect(() => {
     fetchVersion()
   }, [])
+
+  // Forzar verificación de actualización
+  const handleCheckForUpdate = () => {
+    fetchVersion(true)
+  }
 
   return (
     <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex flex-col">
@@ -90,9 +110,27 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
 
         {/* ═══ VERSIÓN EN LA PARTE INFERIOR ═══ */}
         <div className="mt-8 pt-4 border-t border-ink/10 dark:border-night-text/10">
-          <p className="text-center text-xs text-ink-soft/40 dark:text-night-text/30 font-mono tracking-wide">
-            Versión {version}
-          </p>
+          <div className="flex items-center justify-center gap-3">
+            <p className="text-center text-xs text-ink-soft/40 dark:text-night-text/30 font-mono tracking-wide">
+              Versión {version}
+            </p>
+            <button
+              onClick={handleCheckForUpdate}
+              disabled={isChecking}
+              className={`text-[10px] px-2 py-1 rounded-full transition-colors
+                ${isChecking 
+                  ? 'text-ink-soft/30 dark:text-night-text/20 cursor-not-allowed' 
+                  : 'text-leather/60 dark:text-gilt-soft/60 hover:text-leather dark:hover:text-gilt-soft hover:bg-leather/10 dark:hover:bg-gilt-soft/10'
+                }`}
+            >
+              {isChecking ? '🔄' : '↻'}
+            </button>
+          </div>
+          {isChecking && (
+            <p className="text-center text-[10px] text-ink-soft/40 dark:text-night-text/30 mt-1">
+              Verificando...
+            </p>
+          )}
         </div>
       </main>
     </div>
