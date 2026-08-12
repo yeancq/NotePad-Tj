@@ -14,25 +14,31 @@ export default defineConfig({
         description: 'Notas para estudio y predicación',
         theme_color: '#d4a373',
         background_color: '#f5efe9',
+        display: 'standalone',
+        orientation: 'portrait',
+        scope: '/',
+        start_url: '/',
+        prefer_related_applications: false,
         icons: [
           {
             src: 'icons/icon-192.png',
             sizes: '192x192',
             type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'icons/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any',
+            purpose: 'any'
           },
           {
             src: 'icons/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'maskable',
-          },
-        ],
+            purpose: 'maskable'
+          }
+        ]
       },
       workbox: {
         clientsClaim: true,
@@ -45,13 +51,13 @@ export default defineConfig({
               cacheName: 'assets-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24,
-              },
-            },
-          },
-        ],
-      },
-    }),
+                maxAgeSeconds: 60 * 60 * 24
+              }
+            }
+          }
+        ]
+      }
+    })
   ],
-  base: './',
+  base: './'
 })
