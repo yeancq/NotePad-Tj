@@ -15,7 +15,8 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
   const fetchVersion = async (showUpdate = false) => {
     try {
       setIsChecking(true)
-      const response = await fetch('/version.json?t=' + Date.now())
+      // ✅ Usa la URL DIRECTA del repositorio (no la de GitHub Pages)
+      const response = await fetch('https://raw.githubusercontent.com/yeancq/NotePad-Tj/main/public/version.json?t=' + Date.now())
       if (response.ok) {
         const data = await response.json()
         setVersion(data.version)
