@@ -43,6 +43,7 @@ export default function App() {
   const [editingFolderId, setEditingFolderId] = useState(null)
   const { themeMode, setThemeMode, accentId, setAccentId, dark } = useThemeSettings()
   const [showSplash, setShowSplash] = useState(true)
+  const [isCheckingVersion, setIsCheckingVersion] = useState(true)
 
   // ============================================================
   // 🔄 SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA (versión.json)
@@ -264,7 +265,49 @@ export default function App() {
     setEditingFolderId(null)
   }
 
-  if (showSplash) {
+  // ============================================================
+  // 💾 RESPALDO DE DATOS (Exportar / Importar)
+  // ============================================================
+  const exportAllData = () => {
+    const data = {
+      notes: notes,
+      folders: folders,
+      version: '1.0',
+      exportedAt: new Date().toISOString()
+    }
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `notepad-tj-backup-${new Date().toISOString().slice(0,10)}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const importAllData = (file) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result)
+        if (data.notes && data.folders) {
+          setNotes(data.notes)
+          setFolders(data.folders)
+          alert('✅ Respaldo importado correctamente')
+        } else {
+          alert('❌ El archivo no tiene el formato correcto')
+        }
+      } catch (error) {
+        alert('❌ Error al leer el archivo: ' + error.message)
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  // Mostrar Splash mientras se verifica la versión
+  if (isCheckingVersion || showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />
   }
 
@@ -276,6 +319,8 @@ export default function App() {
         accentId={accentId}
         setAccentId={setAccentId}
         onBack={() => setShowSettings(false)}
+        onExport={exportAllData}
+        onImport={importAllData}
       />
     )
   }
@@ -498,4 +543,4 @@ export default function App() {
       )}
     </div>
   )
-                }
+                    }
