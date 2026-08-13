@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Plus, X, FileText, FolderPlus, Calendar, File } from 'lucide-react'
 
 export default function Fab({ onNewNote, onNewFolder, onImportProgram, onImportOutline }) {
   const [open, setOpen] = useState(false)
@@ -15,10 +16,10 @@ export default function Fab({ onNewNote, onNewFolder, onImportProgram, onImportO
             transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
             className="flex flex-col gap-2"
           >
-            <FabButton onClick={onNewNote} icon="📝" label="Nueva nota" />
-            <FabButton onClick={onNewFolder} icon="📁" label="Nueva carpeta" />
-            <FabButton onClick={onImportProgram} icon="🎟️" label="Importar programa" />
-            <FabButton onClick={onImportOutline} icon="📄" label="Importar bosquejo" />
+            <FabButton onClick={onNewNote} icon={<FileText className="w-4 h-4" />} label="Nueva nota" />
+            <FabButton onClick={onNewFolder} icon={<FolderPlus className="w-4 h-4" />} label="Nueva carpeta" />
+            <FabButton onClick={onImportProgram} icon={<Calendar className="w-4 h-4" />} label="Importar programa" />
+            <FabButton onClick={onImportOutline} icon={<File className="w-4 h-4" />} label="Importar bosquejo" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -27,9 +28,9 @@ export default function Fab({ onNewNote, onNewFolder, onImportProgram, onImportO
         onClick={() => setOpen(!open)}
         className="w-14 h-14 rounded-full bg-accent text-surface shadow-lg
                    hover:bg-accent/90 hover:scale-105 transition-all duration-200
-                   flex items-center justify-center text-3xl"
+                   flex items-center justify-center"
       >
-        {open ? '✕' : '+'}
+        {open ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
       </button>
     </div>
   )
@@ -42,7 +43,7 @@ function FabButton({ onClick, icon, label }) {
       className="flex items-center gap-2 px-4 py-2 rounded-full bg-surface text-theme shadow-md
                  border border-theme hover:shadow-lg transition-shadow text-sm"
     >
-      <span className="text-base">{icon}</span>
+      {icon}
       <span>{label}</span>
     </button>
   )
