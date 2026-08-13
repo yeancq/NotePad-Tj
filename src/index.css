@@ -1,78 +1,202 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Public+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
-@custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  --font-display: "Fraunces", serif;
-  --font-body: "Public Sans", sans-serif;
+/* ============================================================
+   🌐 VARIABLES CSS GLOBALES (Temas)
+   ============================================================ */
 
-  /* Paleta "cuaderno de estudio": tapa de cuero, papel blanco, hoja de oro */
-  --color-parchment: #ffffff;
-  --color-parchment-dim: #f5f4f1;
-  --color-ink: #241f1c;
-  --color-ink-soft: #4a423a;
-  --color-leather: #6b1e23;
-  --color-leather-deep: #521418;
-  --color-gilt: #a9822e;
-  --color-gilt-soft: #c7a75a;
-  --color-sage: #5f7350;
-  --color-sage-soft: #7c9169;
+/* 🔸 TEMA POR DEFECTO (Cálido / Actual) */
+:root {
+  /* Fondos */
+  --color-bg: #f5efe9;
+  --color-bg-dim: #e8e0d8;
+  --color-surface: #ffffff;
+  --color-surface-2: #faf7f3;
 
-  /* Modo oscuro: tinta de noche */
-  --color-night: #1b1714;
-  --color-night-surface: #241f1a;
-  --color-night-surface-2: #2e2822;
-  --color-night-text: #ece3d0;
+  /* Textos */
+  --color-text: #1a1a1a;
+  --color-text-soft: #5a5a5a;
+  --color-text-muted: #8a8a8a;
+
+  /* Acentos y primarios */
+  --color-primary: #d4a373;
+  --color-primary-deep: #b8935a;
+  --color-primary-soft: #e8d5b8;
+  --color-primary-text: #d4a373;
+
+  /* Secundarios */
+  --color-accent: #d4a373;
+  --color-accent-soft: #f0e4d6;
+
+  /* Sombras y bordes */
+  --color-shadow: rgba(0, 0, 0, 0.06);
+  --color-border: rgba(0, 0, 0, 0.06);
+
+  /* Efectos */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 
-html {
-  color-scheme: light;
-  overflow-x: hidden;
+/* 🔹 TEMA "AZUL MARINO & DORADO" (claro) */
+[data-theme="marine"] {
+  --color-bg: #f8fafc;
+  --color-bg-dim: #eef2f6;
+  --color-surface: #ffffff;
+  --color-surface-2: #f1f5f9;
+
+  --color-text: #0f172a;
+  --color-text-soft: #334155;
+  --color-text-muted: #64748b;
+
+  --color-primary: #1e293b;
+  --color-primary-deep: #0f172a;
+  --color-primary-soft: #334155;
+  --color-primary-text: #1e293b;
+
+  --color-accent: #c5a059;
+  --color-accent-soft: #f0e8d6;
+
+  --color-shadow: rgba(0, 0, 0, 0.04);
+  --color-border: rgba(0, 0, 0, 0.06);
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.06);
 }
-html.dark {
+
+/* 🔸 TEMA OSCURO (Cálido) */
+[data-theme="dark"] {
+  --color-bg: #1a1a1a;
+  --color-bg-dim: #121212;
+  --color-surface: #2a2a2a;
+  --color-surface-2: #333333;
+
+  --color-text: #e8e8e8;
+  --color-text-soft: #aaaaaa;
+  --color-text-muted: #777777;
+
+  --color-primary: #d4a373;
+  --color-primary-deep: #b8935a;
+  --color-primary-soft: #5a4a3a;
+  --color-primary-text: #d4a373;
+
+  --color-accent: #d4a373;
+  --color-accent-soft: #3a332a;
+
+  --color-shadow: rgba(0, 0, 0, 0.3);
+  --color-border: rgba(255, 255, 255, 0.06);
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* 🔹 TEMA OSCURO (Azul Marino) */
+[data-theme="marine-dark"] {
+  --color-bg: #0f172a;
+  --color-bg-dim: #0a0f1e;
+  --color-surface: #1e293b;
+  --color-surface-2: #2a3a4a;
+
+  --color-text: #f1f5f9;
+  --color-text-soft: #cbd5e1;
+  --color-text-muted: #94a3b8;
+
+  --color-primary: #c5a059;
+  --color-primary-deep: #d4a373;
+  --color-primary-soft: #4a4030;
+  --color-primary-text: #c5a059;
+
+  --color-accent: #c5a059;
+  --color-accent-soft: #3a3528;
+
+  --color-shadow: rgba(0, 0, 0, 0.4);
+  --color-border: rgba(255, 255, 255, 0.06);
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================
+   🖌️ ESTILOS BASE
+   ============================================================ */
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark {
   color-scheme: dark;
 }
 
-body, #root {
-  overflow-x: hidden;
-  max-width: 100vw;
+/* ============================================================
+   🧩 UTILIDADES PARA USAR CON TAILWIND
+   ============================================================ */
+
+/* Fondos */
+.bg-theme {
+  background-color: var(--color-bg);
+}
+.bg-theme-dim {
+  background-color: var(--color-bg-dim);
+}
+.bg-surface {
+  background-color: var(--color-surface);
+}
+.bg-surface-2 {
+  background-color: var(--color-surface-2);
 }
 
-body {
-  font-family: var(--font-body);
-  -webkit-font-smoothing: antialiased;
+/* Textos */
+.text-theme {
+  color: var(--color-text);
+}
+.text-soft {
+  color: var(--color-text-soft);
+}
+.text-muted {
+  color: var(--color-text-muted);
 }
 
-::selection {
-  background: var(--color-gilt-soft);
-  color: var(--color-ink);
+/* Acentos */
+.text-accent {
+  color: var(--color-accent);
+}
+.bg-accent {
+  background-color: var(--color-accent);
+}
+.bg-accent-soft {
+  background-color: var(--color-accent-soft);
 }
 
-.paper-texture {
-  background-image:
-    radial-gradient(circle at 20% 20%, rgba(0,0,0,0.015) 0%, transparent 40%),
-    radial-gradient(circle at 80% 60%, rgba(0,0,0,0.02) 0%, transparent 45%);
+/* Primario */
+.text-primary {
+  color: var(--color-primary-text);
+}
+.bg-primary {
+  background-color: var(--color-primary);
+}
+.bg-primary-soft {
+  background-color: var(--color-primary-soft);
 }
 
-.rich-editor:empty:before {
-  content: attr(data-placeholder);
-  color: var(--color-ink-soft);
-  opacity: 0.4;
-  pointer-events: none;
-}
-html.dark .rich-editor:empty:before {
-  color: var(--color-night-text);
-  opacity: 0.3;
+/* Bordes */
+.border-theme {
+  border-color: var(--color-border);
 }
 
-.indent-1 { margin-left: 1.4em; }
-.indent-2 { margin-left: 2.8em; }
-.indent-3 { margin-left: 4.2em; }
+/* Sombras */
+.shadow-card {
+  box-shadow: var(--shadow-card);
+}
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+/* ============================================================
+   🔄 TRANSICIONES GLOBALES
+   ============================================================ */
+
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
