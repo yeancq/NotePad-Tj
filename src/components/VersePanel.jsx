@@ -56,8 +56,8 @@ export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChan
           transition={{ duration: 0.5, ease: EASE }}
           className="fixed top-20 right-4 z-50
                      w-[42%] sm:w-[38%] max-w-[380px] min-w-0 max-h-[50vh]
-                     bg-parchment/90 dark:bg-night-surface/90 backdrop-blur-md
-                     border border-ink/[0.06] dark:border-night-text/[0.06]
+                     bg-theme/90 backdrop-blur-md
+                     border border-theme
                      rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         >
           <VerseCardBody
