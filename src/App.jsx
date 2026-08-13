@@ -468,3 +468,81 @@ export default function App() {
                             Subcarpetas
                           </p>
                           <p className="text-[11px] text-ink-soft/40 dark:text-night-text/30">
+                            ⋮ para opciones
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                          {subfolders.map((folder) => {
+                            const noteCount = notes.filter((n) => n.folder === folder.id && !n.trashed).length
+                            return (
+                              <FolderCard
+                                key={folder.id}
+                                folder={folder}
+                                noteCount={noteCount}
+                                onOpen={() => setActiveFolder(folder.id)}
+                                onEdit={() => setEditingFolderId(folder.id)}
+                                onDelete={() => deleteFolderAndContents(folder.id)}
+                              />
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {filteredNotes.length > 0 && (
+                      <div>
+                        {subfolders.length > 0 && (
+                          <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40 mb-3">
+                            Notas
+                          </p>
+                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                          {filteredNotes.map((note) => (
+                            <NoteCard
+                              key={note.id}
+                              note={note}
+                              folders={folders}
+                              onOpen={() => setOpenNoteId(note.id)}
+                              onTogglePin={() => togglePin(note.id)}
+                              onMoveNote={moveNoteToFolder}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+            </main>
+          </>
+        )}
+      </div>
+
+      {activeFolder !== 'trash' && (
+        <Fab
+          onNewNote={createNote}
+          onNewFolder={() => setShowNewFolder(true)}
+          onImportProgram={() => setShowImportProgram(true)}
+          onImportOutline={() => setShowImportOutline(true)}
+        />
+      )}
+
+      {showNewFolder && (
+        <NewFolderDialog
+          parentName={!showHome ? folders.find((f) => f.id === activeFolder)?.name : null}
+          onCreate={createFolder}
+          onClose={() => setShowNewFolder(false)}
+        />
+      )}
+
+      {editingFolderId && (
+        <NewFolderDialog
+          initial={folders.find((f) => f.id === editingFolderId)}
+          onCreate={(name, icon) => updateFolder(editingFolderId, name, icon)}
+          onDelete={() => deleteFolderAndContents(editingFolderId)}
+          onClose={() => setEditingFolderId(null)}
+        />
+      )}
+    </div>
+  )
+      }
