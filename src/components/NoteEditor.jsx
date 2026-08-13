@@ -24,28 +24,23 @@ export default function NoteEditor({
   const [hasActiveVerse, setHasActiveVerse] = useState(false)
   const [showSpeaker, setShowSpeaker] = useState(false)
   const [saving, setSaving] = useState(false)
-  
-  // Referencia para el timeout de autoguardado
+
   const autoSaveTimer = useRef(null)
 
   const dirty = title !== note.title || body !== note.body || folder !== note.folder
 
-  // Función para guardar (se llama tanto manual como automáticamente)
   const handleSave = () => {
     if (!dirty) return
     setSaving(true)
     onSave({ ...note, title: title.trim() || 'Sin título', body, folder })
-    setTimeout(() => setSaving(false), 300) // Pequeño indicador visual
+    setTimeout(() => setSaving(false), 300)
   }
 
-  // Autoguardado con debounce (1 segundo de inactividad)
   useEffect(() => {
     if (dirty) {
-      // Limpiar el timeout anterior
       if (autoSaveTimer.current) {
         clearTimeout(autoSaveTimer.current)
       }
-      // Programar un nuevo guardado después de 1 segundo
       autoSaveTimer.current = setTimeout(() => {
         handleSave()
       }, 1000)
@@ -55,25 +50,23 @@ export default function NoteEditor({
         clearTimeout(autoSaveTimer.current)
       }
     }
-  }, [title, body, folder]) // Se ejecuta al cambiar estos estados
+  }, [title, body, folder])
 
   useBackHandler(showSpeaker, () => setShowSpeaker(false))
 
-  // Guardar al salir si hay cambios sin guardar
   const handleBack = () => {
     if (dirty) {
       handleSave()
     }
-    // Esperar un momento para que se guarde antes de navegar
     setTimeout(() => onBack(), 100)
   }
 
   return (
-    <div className="flex-1 min-w-0 flex flex-col h-dvh overflow-x-hidden">
-      <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-3 sm:px-4 md:px-8 py-3 flex items-center gap-2 sm:gap-3 min-w-0">
+    <div className="flex-1 min-w-0 flex flex-col h-dvh overflow-x-hidden bg-theme">
+      <header className="sticky top-0 z-20 bg-theme/90 backdrop-blur-sm border-b border-theme px-3 sm:px-4 md:px-8 py-3 flex items-center gap-2 sm:gap-3 min-w-0">
         <button
           onClick={handleBack}
-          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
+          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-theme hover:bg-ink/5 dark:hover:bg-night-text/10"
           aria-label="Volver"
         >
           ←
@@ -82,8 +75,8 @@ export default function NoteEditor({
         <select
           value={folder}
           onChange={(e) => setFolder(e.target.value)}
-          className="min-w-0 max-w-[38vw] sm:max-w-[220px] truncate text-sm bg-transparent border border-ink/15 dark:border-night-text/15 rounded-full px-3 py-1.5
-                     text-ink dark:text-night-text focus:outline-none focus:ring-2 focus:ring-gilt/60"
+          className="min-w-0 max-w-[38vw] sm:max-w-[220px] truncate text-sm bg-transparent border border-theme rounded-full px-3 py-1.5
+                     text-theme focus:outline-none focus:ring-2 focus:ring-accent/60"
         >
           {folders
             .filter((f) => !f.parentId)
@@ -97,7 +90,7 @@ export default function NoteEditor({
         {!note.trashed && (
           <button
             onClick={() => setShowSpeaker(true)}
-            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-ink-soft dark:text-night-text/60 hover:bg-ink/5 dark:hover:bg-night-text/10"
+            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-muted hover:bg-ink/5 dark:hover:bg-night-text/10"
             title="Modo orador"
             aria-label="Modo orador"
           >
@@ -106,20 +99,20 @@ export default function NoteEditor({
         )}
 
         {saving && (
-          <span className="text-xs text-ink-soft/50 dark:text-night-text/30">Guardando...</span>
+          <span className="text-xs text-muted/50">Guardando...</span>
         )}
 
         {note.trashed ? (
           <>
             <button
               onClick={() => onRestore(note.id)}
-              className="shrink-0 text-sm px-3 py-1.5 rounded-full bg-sage/15 text-sage hover:bg-sage/25 transition-colors"
+              className="shrink-0 text-sm px-3 py-1.5 rounded-full bg-primary-soft/30 text-primary-text hover:bg-primary-soft/50 transition-colors"
             >
               Restaurar
             </button>
             <button
               onClick={() => onDeleteForever(note.id)}
-              className="shrink-0 text-sm px-3 py-1.5 rounded-full text-leather hover:bg-leather/10 transition-colors"
+              className="shrink-0 text-sm px-3 py-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
             >
               Eliminar
             </button>
@@ -128,7 +121,7 @@ export default function NoteEditor({
           <>
             <button
               onClick={() => onTrash(note.id)}
-              className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-ink-soft dark:text-night-text/60 hover:bg-ink/5 dark:hover:bg-night-text/10"
+              className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-muted hover:bg-ink/5 dark:hover:bg-night-text/10"
               title="Mover a la papelera"
             >
               🗑️
@@ -136,7 +129,7 @@ export default function NoteEditor({
             <button
               onClick={handleSave}
               disabled={!dirty}
-              className="shrink-0 text-sm px-4 py-1.5 rounded-full bg-leather text-parchment disabled:opacity-40 disabled:cursor-default hover:bg-leather-deep transition-colors"
+              className="shrink-0 text-sm px-4 py-1.5 rounded-full bg-accent text-surface disabled:opacity-40 disabled:cursor-default hover:bg-accent/90 transition-colors"
             >
               Guardar
             </button>
@@ -147,7 +140,7 @@ export default function NoteEditor({
       <div className="flex-1 min-h-0 min-w-0 overflow-y-auto px-4 md:px-8 py-6 pb-24">
         <div className="max-w-3xl w-full mx-auto">
           {note.trashed && (
-            <div className="mb-4 text-sm px-3 py-2 rounded-lg bg-leather/10 text-leather dark:text-gilt-soft">
+            <div className="mb-4 text-sm px-3 py-2 rounded-lg bg-accent/15 text-accent">
               Esta nota está en la papelera. Restáurala para poder editarla.
             </div>
           )}
@@ -157,7 +150,7 @@ export default function NoteEditor({
             disabled={note.trashed}
             placeholder="Título de la nota"
             className="w-full font-display text-2xl md:text-3xl bg-transparent focus:outline-none
-                       text-ink dark:text-night-text placeholder:text-ink-soft/40 mb-4 disabled:opacity-60"
+                       text-theme placeholder:text-muted/40 mb-4 disabled:opacity-60"
           />
           <RichEditor
             html={body}
