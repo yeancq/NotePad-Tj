@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { MoreHorizontal, Edit2, Trash2 } from 'lucide-react'
 
 const LONG_PRESS_MS = 480
 
@@ -67,13 +68,11 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
                        text-muted hover:text-theme p-1 rounded-md hover:bg-ink/5 dark:hover:bg-night-text/10"
             title="Opciones"
           >
-            ⋮
+            <MoreHorizontal className="w-4 h-4" />
           </button>
         </div>
         <span className="w-full">
-          <span className="block font-display text-[15px] text-theme truncate">
-            {folder.name}
-          </span>
+          <span className="block font-display text-[15px] text-theme truncate">{folder.name}</span>
           <span className="block text-xs text-muted mt-0.5">
             {noteCount} {noteCount === 1 ? 'nota' : 'notas'}
           </span>
@@ -99,14 +98,14 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
               className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-ink/5 dark:hover:bg-night-text/10 
                          text-theme flex items-center gap-2 transition-colors"
             >
-              <span>✏️</span> Editar carpeta
+              <Edit2 className="w-4 h-4" /> Editar carpeta
             </button>
             <button
               onClick={handleDelete}
               className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 
                          text-red-600 dark:text-red-400 flex items-center gap-2 transition-colors"
             >
-              <span>🗑️</span> Eliminar carpeta
+              <Trash2 className="w-4 h-4" /> Eliminar carpeta
             </button>
           </div>
         </>
