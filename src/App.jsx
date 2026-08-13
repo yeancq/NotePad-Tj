@@ -343,7 +343,7 @@ export default function App() {
 
   if (openNote) {
     return (
-      <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex overflow-x-hidden">
+      <div className="min-h-screen bg-theme paper-texture text-theme flex overflow-x-hidden">
         <NoteEditor
           key={openNote.id}
           note={openNote}
@@ -360,7 +360,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-parchment dark:bg-night paper-texture flex text-ink dark:text-night-text">
+    <div className="min-h-screen bg-theme paper-texture flex text-theme">
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -372,34 +372,34 @@ export default function App() {
       <div className="flex-1 min-w-0 flex flex-col">
         {showHome ? (
           <>
-            <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-4">
+            <header className="sticky top-0 z-20 bg-theme/90 backdrop-blur-sm border-b border-theme px-4 md:px-8 py-4">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="min-w-0">
                   <button
                     onClick={() => setSidebarOpen(true)}
-                    className="md:hidden mb-1 w-9 h-9 -ml-1.5 flex items-center justify-center rounded-full text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
+                    className="md:hidden mb-1 w-9 h-9 -ml-1.5 flex items-center justify-center rounded-full text-theme hover:bg-ink/5 dark:hover:bg-night-text/10"
                     aria-label="Abrir menú"
                   >
                     ☰
                   </button>
-                  <p className="font-display text-2xl md:text-3xl text-ink dark:text-night-text tracking-tight">
+                  <p className="font-display text-2xl md:text-3xl text-theme tracking-tight">
                     NotePad TJ
                   </p>
-                  <p className="text-xs text-ink-soft dark:text-night-text/60 mt-0.5">
+                  <p className="text-xs text-muted mt-0.5">
                     Estudio, reuniones y predicación
                   </p>
                 </div>
                 <button
                   onClick={() => setThemeMode(dark ? 'light' : 'dark')}
                   className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full
-                             text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
+                             text-theme hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
                   aria-label="Cambiar modo oscuro"
                 >
                   {dark ? '☀️' : '🌙'}
                 </button>
               </div>
               <div className="relative max-w-md">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-soft/50 dark:text-night-text/40 text-sm">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted/50 text-sm">
                   ⌕
                 </span>
                 <input
@@ -411,10 +411,10 @@ export default function App() {
                   }}
                   type="text"
                   placeholder="Buscar en tus notas…"
-                  className="w-full bg-white/60 dark:bg-night-surface-2 border border-ink/10 dark:border-night-text/10
-                             rounded-full pl-9 pr-4 py-2.5 text-sm text-ink dark:text-night-text
-                             placeholder:text-ink-soft/50 dark:placeholder:text-night-text/30
-                             focus:outline-none focus:ring-2 focus:ring-gilt/60 transition-shadow"
+                  className="w-full bg-surface border border-theme
+                             rounded-full pl-9 pr-4 py-2.5 text-sm text-theme
+                             placeholder:text-muted/50
+                             focus:outline-none focus:ring-2 focus:ring-accent/60 transition-shadow"
                 />
               </div>
             </header>
@@ -464,10 +464,10 @@ export default function App() {
                     {subfolders.length > 0 && (
                       <div>
                         <div className="flex items-center justify-between mb-3">
-                          <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted">
                             Subcarpetas
                           </p>
-                          <p className="text-[11px] text-ink-soft/40 dark:text-night-text/30">
+                          <p className="text-[11px] text-muted/60">
                             ⋮ para opciones
                           </p>
                         </div>
@@ -492,7 +492,7 @@ export default function App() {
                     {filteredNotes.length > 0 && (
                       <div>
                         {subfolders.length > 0 && (
-                          <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40 mb-3">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
                             Notas
                           </p>
                         )}
@@ -505,6 +505,15 @@ export default function App() {
                               onOpen={() => setOpenNoteId(note.id)}
                               onTogglePin={() => togglePin(note.id)}
                               onMoveNote={moveNoteToFolder}
+                              onDelete={(id) => {
+                                if (activeFolder === 'trash') {
+                                  if (window.confirm('¿Eliminar esta nota permanentemente?')) {
+                                    deleteForever(id)
+                                  }
+                                } else {
+                                  trashNote(id)
+                                }
+                              }}
                             />
                           ))}
                         </div>
