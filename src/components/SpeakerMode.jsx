@@ -17,6 +17,16 @@ function formatTime(totalSeconds) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
+/**
+ * Convierte HTML a texto plano de forma fiable.
+ */
+function htmlToPlainText(html) {
+  if (!html) return ''
+  const div = document.createElement('div')
+  div.innerHTML = html
+  return div.textContent || ''
+}
+
 export default function SpeakerMode({ note, onClose, onNeedImport }) {
   const bibleReady = useBibleReady()
   const [activeRef, setActiveRef] = useState(null)
@@ -36,6 +46,9 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
   const linked = useMemo(() => linkifyHtml(note.body || ''), [note.body])
   const contentRef = useRef(null)
 
+  // Obtener el texto plano del cuerpo de la nota (sin HTML)
+  const plainText = useMemo(() => htmlToPlainText(note.body), [note.body])
+
   // Manejar clics en el contenido
   const handleContentClick = (e) => {
     // 1. Verificar si se hizo clic en un enlace entre notas (data-ref-id)
@@ -48,10 +61,8 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
       }
     }
 
-    // 2. Si no es un enlace, buscar la PRIMERA referencia bíblica en todo el texto
-    if (contentRef.current) {
-      // Obtener el texto plano del contenido (sin etiquetas HTML)
-      const plainText = contentRef.current.textContent || ''
+    // 2. Si no es un enlace, buscar referencias bíblicas en el texto plano
+    if (plainText.trim()) {
       const refs = detectReferences(plainText)
       if (refs.length > 0) {
         // Mostrar la primera referencia encontrada
@@ -143,7 +154,7 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
 
 /**
  * La "isla" flotante: cronómetro + zoom de texto + cerrar. Se puede arrastrar
- * libremente por la pantalla (con Framer Motion drag), como en TheoPad.
+ * libremente por la pantalla.
  */
 function SpeakerIsland({ seconds, running, onToggleRun, onReset, fontScale, onZoom, onClose }) {
   const constraintsRef = useRef(null)
