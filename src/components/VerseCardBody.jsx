@@ -1,15 +1,29 @@
 import { motion } from 'framer-motion'
 
 /**
- * Limpia el texto de caracteres que pegan palabras (espacios no rompibles, etc.)
+ * Limpia el texto de caracteres de espacio no estándar y espacios dobles.
+ * Reemplaza todos los caracteres Unicode que son espacios pero no el espacio normal.
  */
 function cleanText(text) {
   if (!text) return text
-  // Reemplazar espacios no rompibles por espacios normales
-  let cleaned = text.replace(/\u00A0/g, ' ')
-  // Reemplazar cualquier otro carácter que pegue palabras (ej. algunos símbolos)
-  // También podemos eliminar espacios dobles
-  cleaned = cleaned.replace(/\s+/g, ' ')
+
+  // Lista de caracteres de espacio problemáticos:
+  // \u00A0 = espacio no rompible
+  // \u200B = espacio de ancho cero
+  // \u202F = espacio estrecho
+  // \u2009 = espacio fino
+  // \u200A = espacio muy fino
+  // \u205F = espacio medio
+  // \u3000 = espacio ideográfico
+  const problemSpaces = /[\u00A0\u200B\u202F\u2009\u200A\u205F\u3000]/g
+
+  // Reemplazar todos por espacio normal
+  let cleaned = text.replace(problemSpaces, ' ')
+
+  // Eliminar espacios dobles o múltiples
+  cleaned = cleaned.replace(/\s{2,}/g, ' ')
+
+  // Recortar espacios al inicio y final
   return cleaned.trim()
 }
 
