@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { accentPalettes } from '../data/accentPalettes'
+import { Sun, Moon, Smartphone, Palette, Download, Upload, RefreshCw } from 'lucide-react'
 
 const themeOptions = [
-  { id: 'light', label: 'Claro', icon: '☀️' },
-  { id: 'dark', label: 'Oscuro', icon: '🌙' },
-  { id: 'system', label: 'Sistema', icon: '📱' },
+  { id: 'light', label: 'Claro', icon: Sun },
+  { id: 'dark', label: 'Oscuro', icon: Moon },
+  { id: 'system', label: 'Sistema', icon: Smartphone },
 ]
 
-// Nuevos temas visuales
 const visualThemes = [
   { id: 'warm', label: 'Cálido', icon: '☀️', description: 'Tonos tierra y beige' },
   { id: 'marine', label: 'Azul Marino', icon: '🌊', description: 'Profesional y moderno' },
@@ -30,18 +30,14 @@ export default function Settings({
   })
   const fileInputRef = useRef(null)
 
-  // Aplicar el tema visual al HTML
   useEffect(() => {
     const html = document.documentElement
-    // Quitar todos los temas previos
     html.removeAttribute('data-theme')
-    // Si es oscuro, añadir clase dark para Tailwind
     if (themeMode === 'dark') {
       html.classList.add('dark')
     } else {
       html.classList.remove('dark')
     }
-    // Aplicar tema visual
     if (visualTheme === 'marine') {
       if (themeMode === 'dark') {
         html.setAttribute('data-theme', 'marine-dark')
@@ -49,11 +45,10 @@ export default function Settings({
         html.setAttribute('data-theme', 'marine')
       }
     } else {
-      // warm
       if (themeMode === 'dark') {
         html.setAttribute('data-theme', 'dark')
       } else {
-        html.removeAttribute('data-theme') // usa :root
+        html.removeAttribute('data-theme')
       }
     }
     localStorage.setItem('visualTheme', visualTheme)
@@ -68,7 +63,6 @@ export default function Settings({
       if (response.ok) {
         const data = await response.json()
         setVersion(data.version)
-
         if (showUpdate) {
           const savedVersion = localStorage.getItem('appVersion')
           if (savedVersion && savedVersion !== data.version) {
@@ -107,10 +101,6 @@ export default function Settings({
     }
   }
 
-  const handleVisualThemeChange = (id) => {
-    setVisualTheme(id)
-  }
-
   return (
     <div className="min-h-screen bg-theme text-theme flex flex-col">
       <header className="sticky top-0 z-20 bg-theme/90 backdrop-blur-sm border-b border-theme px-4 md:px-8 py-3 flex items-center gap-3">
@@ -126,40 +116,39 @@ export default function Settings({
 
       <main className="flex-1 px-4 md:px-8 py-6 max-w-xl mx-auto w-full flex flex-col">
         <div className="flex-1">
-          {/* Tema oscuro/claro */}
+          {/* Modo de color */}
           <section className="bg-surface border border-theme rounded-xl p-5 mb-4 shadow-card">
-            <p className="text-sm font-medium text-soft mb-3 text-center">
-              Modo de color
-            </p>
+            <p className="text-sm font-medium text-soft mb-3 text-center">Modo de color</p>
             <div className="grid grid-cols-3 gap-3">
-              {themeOptions.map((opt) => (
-                <button
-                  key={opt.id}
-                  onClick={() => setThemeMode(opt.id)}
-                  className={`flex flex-col items-center justify-center gap-1.5 py-4 rounded-xl border-2 transition-colors
-                    ${
-                      themeMode === opt.id
-                        ? 'border-primary bg-primary-soft text-primary-text'
-                        : 'border-theme text-soft hover:bg-ink/5 dark:hover:bg-night-text/5'
-                    }`}
-                >
-                  <span className="text-xl">{opt.icon}</span>
-                  <span className="text-sm font-medium">{opt.label}</span>
-                </button>
-              ))}
+              {themeOptions.map((opt) => {
+                const Icon = opt.icon
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => setThemeMode(opt.id)}
+                    className={`flex flex-col items-center justify-center gap-1.5 py-4 rounded-xl border-2 transition-colors
+                      ${
+                        themeMode === opt.id
+                          ? 'border-primary bg-primary-soft text-primary-text'
+                          : 'border-theme text-soft hover:bg-ink/5 dark:hover:bg-night-text/5'
+                      }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="text-sm font-medium">{opt.label}</span>
+                  </button>
+                )
+              })}
             </div>
           </section>
 
-          {/* Tema visual (Cálido / Azul Marino) */}
+          {/* Estilo visual */}
           <section className="bg-surface border border-theme rounded-xl p-5 mb-4 shadow-card">
-            <p className="text-sm font-medium text-soft mb-3 text-center">
-              Estilo visual
-            </p>
+            <p className="text-sm font-medium text-soft mb-3 text-center">Estilo visual</p>
             <div className="grid grid-cols-2 gap-3">
               {visualThemes.map((theme) => (
                 <button
                   key={theme.id}
-                  onClick={() => handleVisualThemeChange(theme.id)}
+                  onClick={() => setVisualTheme(theme.id)}
                   className={`flex flex-col items-center justify-center gap-1.5 py-4 rounded-xl border-2 transition-colors
                     ${
                       visualTheme === theme.id
@@ -177,9 +166,7 @@ export default function Settings({
 
           {/* Color de acento */}
           <section className="bg-surface border border-theme rounded-xl p-5 mb-4 shadow-card">
-            <p className="text-sm font-medium text-soft mb-3 text-center">
-              Color de acento
-            </p>
+            <p className="text-sm font-medium text-soft mb-3 text-center">Color de acento</p>
             <div className="flex justify-center gap-3 flex-wrap">
               {accentPalettes.map((p) => (
                 <button
@@ -198,21 +185,21 @@ export default function Settings({
 
           {/* Respaldo */}
           <section className="bg-surface border border-theme rounded-xl p-5 mb-4 shadow-card">
-            <p className="text-sm font-medium text-soft mb-3 text-center">
-              💾 Respaldo de datos
-            </p>
+            <p className="text-sm font-medium text-soft mb-3 text-center">💾 Respaldo de datos</p>
             <div className="flex gap-3">
               <button
                 onClick={onExport}
-                className="flex-1 py-2.5 rounded-xl bg-accent/15 text-accent text-sm font-medium hover:bg-accent/25 transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-accent/15 text-accent text-sm font-medium hover:bg-accent/25 transition-colors flex items-center justify-center gap-2"
               >
-                📤 Exportar respaldo
+                <Download className="w-4 h-4" />
+                Exportar respaldo
               </button>
               <button
                 onClick={handleImportClick}
-                className="flex-1 py-2.5 rounded-xl bg-ink/5 dark:bg-night-text/5 text-soft text-sm font-medium hover:bg-ink/10 dark:hover:bg-night-text/10 transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-ink/5 dark:bg-night-text/5 text-soft text-sm font-medium hover:bg-ink/10 dark:hover:bg-night-text/10 transition-colors flex items-center justify-center gap-2"
               >
-                📥 Importar respaldo
+                <Upload className="w-4 h-4" />
+                Importar respaldo
               </button>
               <input
                 type="file"
@@ -233,17 +220,12 @@ export default function Settings({
               onClick={() => setAboutOpen(!aboutOpen)}
               className="w-full flex items-center justify-between text-left"
             >
-              <span className="text-sm font-medium text-soft">
-                📖 Cómo funciona NotePad TJ
-              </span>
-              <span className="text-muted text-sm">
-                {aboutOpen ? '▲' : '▼'}
-              </span>
+              <span className="text-sm font-medium text-soft">📖 Cómo funciona NotePad TJ</span>
+              <span className="text-muted text-sm">{aboutOpen ? '▲' : '▼'}</span>
             </button>
 
             {aboutOpen && (
               <div className="mt-4 text-sm text-soft space-y-4 border-t border-theme pt-4">
-                {/* Contenido de la explicación (ya lo tenías) */}
                 <div>
                   <p>
                     <strong className="text-theme">NotePad TJ</strong> es una aplicación de notas
@@ -251,7 +233,7 @@ export default function Settings({
                     Todo se guarda en tu dispositivo, sin necesidad de internet ni servidores externos.
                   </p>
                 </div>
-                {/* ... resto del contenido (lo que ya tenías en Settings) */}
+                {/* Resto del contenido ya lo tenías, puedes mantenerlo igual */}
                 <div className="pt-2 text-xs text-muted border-t border-theme mt-2">
                   <p>Desarrollada por <strong className="text-soft">yeancq</strong></p>
                   <p className="mt-0.5">Hecha con React, Vite, Tailwind ❤️</p>
@@ -268,24 +250,20 @@ export default function Settings({
         {/* Versión */}
         <div className="mt-8 pt-4 border-t border-theme">
           <div className="flex items-center justify-center gap-3">
-            <p className="text-center text-xs text-muted font-mono tracking-wide">
-              Versión {version}
-            </p>
+            <p className="text-center text-xs text-muted font-mono tracking-wide">Versión {version}</p>
             <button
               onClick={handleCheckForUpdate}
               disabled={isChecking}
-              className={`text-[10px] px-2 py-1 rounded-full transition-colors
+              className={`text-[10px] px-2 py-1 rounded-full transition-colors flex items-center gap-1
                 ${isChecking
                   ? 'text-muted cursor-not-allowed'
                   : 'text-accent hover:text-accent/80 hover:bg-accent/10'
                 }`}
             >
-              {isChecking ? '🔄' : '↻'}
+              <RefreshCw className={`w-3 h-3 ${isChecking ? 'animate-spin' : ''}`} />
             </button>
           </div>
-          {isChecking && (
-            <p className="text-center text-[10px] text-muted mt-1">Verificando...</p>
-          )}
+          {isChecking && <p className="text-center text-[10px] text-muted mt-1">Verificando...</p>}
         </div>
       </main>
     </div>
