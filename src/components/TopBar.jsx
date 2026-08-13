@@ -1,3 +1,5 @@
+import { Sun, Moon, Menu, ArrowLeft, Search } from 'lucide-react'
+
 export default function TopBar({ search, onSearch, dark, onToggleDark, onOpenSidebar, onGoHome, showBack, greeting }) {
   return (
     <header className="sticky top-0 z-20 bg-theme/90 backdrop-blur-sm border-b border-theme px-4 md:px-8 py-4">
@@ -8,7 +10,7 @@ export default function TopBar({ search, onSearch, dark, onToggleDark, onOpenSid
             className="w-9 h-9 flex items-center justify-center rounded-full text-theme hover:bg-ink/5 dark:hover:bg-night-text/10"
             aria-label="Volver al inicio"
           >
-            ←
+            <ArrowLeft className="w-5 h-5" />
           </button>
         ) : (
           <button
@@ -16,7 +18,7 @@ export default function TopBar({ search, onSearch, dark, onToggleDark, onOpenSid
             className="md:hidden w-9 h-9 flex items-center justify-center rounded-full text-theme hover:bg-ink/5 dark:hover:bg-night-text/10"
             aria-label="Abrir menú"
           >
-            ☰
+            <Menu className="w-5 h-5" />
           </button>
         )}
         <div className="flex-1 min-w-0">
@@ -33,13 +35,11 @@ export default function TopBar({ search, onSearch, dark, onToggleDark, onOpenSid
                      text-theme hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
           aria-label="Cambiar modo oscuro"
         >
-          {dark ? '☀️' : '🌙'}
+          {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
       </div>
       <div className="relative max-w-md">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted/50 text-sm">
-          ⌕
-        </span>
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted/50 w-4 h-4" />
         <input
           value={search}
           onChange={(e) => onSearch(e.target.value)}
