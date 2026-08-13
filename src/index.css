@@ -61,32 +61,21 @@
 
 /* 🔸 TEMA POR DEFECTO (Cálido / Actual) */
 :root {
-  /* Fondos */
   --color-bg: var(--color-parchment);
   --color-bg-dim: var(--color-parchment-dim);
   --color-surface: #ffffff;
   --color-surface-2: #faf7f3;
-
-  /* Textos */
   --color-text: var(--color-ink);
   --color-text-soft: var(--color-ink-soft);
   --color-text-muted: var(--color-ink-muted);
-
-  /* Acentos y primarios */
   --color-primary: var(--color-leather);
   --color-primary-deep: var(--color-leather-deep);
   --color-primary-soft: var(--color-leather-soft);
   --color-primary-text: var(--color-leather);
-
-  /* Secundarios */
   --color-accent: var(--color-leather);
   --color-accent-soft: #f0e4d6;
-
-  /* Sombras y bordes */
   --color-shadow: rgba(0, 0, 0, 0.06);
   --color-border: rgba(0, 0, 0, 0.06);
-
-  /* Efectos */
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
@@ -97,19 +86,15 @@
   --color-bg-dim: var(--color-marine-bg-dim);
   --color-surface: var(--color-marine-surface);
   --color-surface-2: var(--color-marine-surface-2);
-
   --color-text: var(--color-marine-text);
   --color-text-soft: var(--color-marine-text-soft);
   --color-text-muted: var(--color-marine-text-muted);
-
   --color-primary: var(--color-marine-primary);
   --color-primary-deep: var(--color-marine-primary-deep);
   --color-primary-soft: var(--color-marine-primary-soft);
   --color-primary-text: var(--color-marine-primary);
-
   --color-accent: var(--color-marine-accent);
   --color-accent-soft: var(--color-marine-accent-soft);
-
   --color-shadow: rgba(0, 0, 0, 0.04);
   --color-border: rgba(0, 0, 0, 0.06);
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -122,19 +107,15 @@
   --color-bg-dim: var(--color-night-dim);
   --color-surface: var(--color-night-surface);
   --color-surface-2: var(--color-night-surface-2);
-
   --color-text: var(--color-night-text);
   --color-text-soft: var(--color-night-text-soft);
   --color-text-muted: var(--color-night-text-muted);
-
   --color-primary: var(--color-night-gilt);
   --color-primary-deep: var(--color-leather-deep);
   --color-primary-soft: var(--color-night-gilt-soft);
   --color-primary-text: var(--color-night-gilt);
-
   --color-accent: var(--color-night-gilt);
   --color-accent-soft: #3a332a;
-
   --color-shadow: rgba(0, 0, 0, 0.3);
   --color-border: rgba(255, 255, 255, 0.06);
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -147,19 +128,15 @@
   --color-bg-dim: var(--color-marine-dark-bg-dim);
   --color-surface: var(--color-marine-dark-surface);
   --color-surface-2: var(--color-marine-dark-surface-2);
-
   --color-text: var(--color-marine-dark-text);
   --color-text-soft: var(--color-marine-dark-text-soft);
   --color-text-muted: var(--color-marine-dark-text-muted);
-
   --color-primary: var(--color-marine-dark-primary);
   --color-primary-deep: var(--color-marine-dark-primary-deep);
   --color-primary-soft: var(--color-marine-dark-primary-soft);
   --color-primary-text: var(--color-marine-dark-primary);
-
   --color-accent: var(--color-marine-dark-accent);
   --color-accent-soft: var(--color-marine-dark-accent-soft);
-
   --color-shadow: rgba(0, 0, 0, 0.4);
   --color-border: rgba(255, 255, 255, 0.06);
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -185,72 +162,28 @@ body {
    🧩 UTILIDADES PARA USAR CON TAILWIND
    ============================================================ */
 
-/* Fondos */
-.bg-theme {
-  background-color: var(--color-bg);
-}
-.bg-theme-dim {
-  background-color: var(--color-bg-dim);
-}
-.bg-surface {
-  background-color: var(--color-surface);
-}
-.bg-surface-2 {
-  background-color: var(--color-surface-2);
-}
+.bg-theme { background-color: var(--color-bg); }
+.bg-theme-dim { background-color: var(--color-bg-dim); }
+.bg-surface { background-color: var(--color-surface); }
+.bg-surface-2 { background-color: var(--color-surface-2); }
 
-/* Textos */
-.text-theme {
-  color: var(--color-text);
-}
-.text-soft {
-  color: var(--color-text-soft);
-}
-.text-muted {
-  color: var(--color-text-muted);
-}
+.text-theme { color: var(--color-text); }
+.text-soft { color: var(--color-text-soft); }
+.text-muted { color: var(--color-text-muted); }
 
-/* Acentos */
-.text-accent {
-  color: var(--color-accent);
-}
-.bg-accent {
-  background-color: var(--color-accent);
-}
-.bg-accent-soft {
-  background-color: var(--color-accent-soft);
-}
+.text-accent { color: var(--color-accent); }
+.bg-accent { background-color: var(--color-accent); }
+.bg-accent-soft { background-color: var(--color-accent-soft); }
 
-/* Primario */
-.text-primary {
-  color: var(--color-primary-text);
-}
-.bg-primary {
-  background-color: var(--color-primary);
-}
-.bg-primary-soft {
-  background-color: var(--color-primary-soft);
-}
-.border-primary {
-  border-color: var(--color-primary);
-}
+.text-primary { color: var(--color-primary-text); }
+.bg-primary { background-color: var(--color-primary); }
+.bg-primary-soft { background-color: var(--color-primary-soft); }
+.border-primary { border-color: var(--color-primary); }
 
-/* Bordes */
-.border-theme {
-  border-color: var(--color-border);
-}
+.border-theme { border-color: var(--color-border); }
 
-/* Sombras */
-.shadow-card {
-  box-shadow: var(--shadow-card);
-}
-.shadow-lg {
-  box-shadow: var(--shadow-lg);
-}
-
-/* ============================================================
-   🔄 TRANSICIONES GLOBALES
-   ============================================================ */
+.shadow-card { box-shadow: var(--shadow-card); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
 
 * {
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
