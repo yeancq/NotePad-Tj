@@ -1,29 +1,29 @@
 import { motion } from 'framer-motion'
 
 /**
- * Limpia el texto de caracteres de espacio no estándar y espacios dobles.
- * Reemplaza todos los caracteres Unicode que son espacios pero no el espacio normal.
+ * Limpia el texto de caracteres problemáticos:
+ * - Reemplaza todos los caracteres de espacio no estándar por espacio normal.
+ * - Elimina caracteres de control invisibles.
+ * - Normaliza espacios múltiples.
  */
 function cleanText(text) {
   if (!text) return text
 
-  // Lista de caracteres de espacio problemáticos:
-  // \u00A0 = espacio no rompible
-  // \u200B = espacio de ancho cero
-  // \u202F = espacio estrecho
-  // \u2009 = espacio fino
-  // \u200A = espacio muy fino
-  // \u205F = espacio medio
-  // \u3000 = espacio ideográfico
-  const problemSpaces = /[\u00A0\u200B\u202F\u2009\u200A\u205F\u3000]/g
+  // 1. Reemplazar cualquier carácter de espacio Unicode que no sea espacio normal
+  // Esto incluye: \u00A0, \u200B, \u202F, \u2009, \u200A, \u205F, \u3000, etc.
+  let cleaned = text.replace(/[\u00A0\u200B\u202F\u2009\u200A\u205F\u3000\uFEFF]/g, ' ')
 
-  // Reemplazar todos por espacio normal
-  let cleaned = text.replace(problemSpaces, ' ')
+  // 2. Eliminar caracteres de control (excepto espacio normal y saltos de línea)
+  cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
 
-  // Eliminar espacios dobles o múltiples
+  // 3. Reemplazar cualquier carácter que no sea letra, número, espacio, punto, coma, etc.
+  // (Mantener solo caracteres imprimibles comunes)
+  cleaned = cleaned.replace(/[^\p{L}\p{N}\s.,;:!?()'"]/gu, ' ')
+
+  // 4. Normalizar espacios múltiples a uno solo
   cleaned = cleaned.replace(/\s{2,}/g, ' ')
 
-  // Recortar espacios al inicio y final
+  // 5. Recortar espacios al inicio y final
   return cleaned.trim()
 }
 
