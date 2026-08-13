@@ -1,5 +1,18 @@
 import { motion } from 'framer-motion'
 
+/**
+ * Limpia el texto de caracteres que pegan palabras (espacios no rompibles, etc.)
+ */
+function cleanText(text) {
+  if (!text) return text
+  // Reemplazar espacios no rompibles por espacios normales
+  let cleaned = text.replace(/\u00A0/g, ' ')
+  // Reemplazar cualquier otro carácter que pegue palabras (ej. algunos símbolos)
+  // También podemos eliminar espacios dobles
+  cleaned = cleaned.replace(/\s+/g, ' ')
+  return cleaned.trim()
+}
+
 export default function VerseCardBody({ activeRef, segmentTexts, bibleReady, onNeedImport, onCopy, onClose }) {
   return (
     <>
@@ -39,7 +52,9 @@ export default function VerseCardBody({ activeRef, segmentTexts, bibleReady, onN
                 <span className="text-[11px] md:text-[12px] font-medium text-ink-soft/60 dark:text-night-text/40 align-super mr-0.5">
                   {s.verseLabel}
                 </span>
-                {s.text || (
+                {s.text ? (
+                  <span>{cleanText(s.text)}</span>
+                ) : (
                   <em className="text-ink-soft/50 dark:text-night-text/30 not-italic">no encontrado</em>
                 )}
                 {i < segmentTexts.length - 1 ? '  ' : ''}
