@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBibleReady, useVerseSegments } from '../hooks/useVerseSegments'
 import { linkifyHtml } from '../lib/linkifyHtml'
+import { detectReferences } from '../lib/verseDetector'
 import VerseCardBody from './VerseCardBody'
 
 const EASE = [0.2, 0, 0, 1]
@@ -31,16 +32,49 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
     return () => clearInterval(id)
   }, [running])
 
+  // Procesar el contenido: enlaces entre notas
   const linked = useMemo(() => linkifyHtml(note.body || ''), [note.body])
   const contentRef = useRef(null)
 
+  // Manejar clics en el contenido
   const handleContentClick = (e) => {
+    // 1. Verificar si se hizo clic en un enlace entre notas (data-ref-id)
     const btn = e.target.closest('[data-ref-id]')
-    if (!btn) return
-    const ref = linked.refsById[btn.getAttribute('data-ref-id')]
-    if (!ref) return
-    setActiveRef((cur) => (refKey(cur) === refKey(ref) ? null : ref))
+    if (btn) {
+      const ref = linked.refsById[btn.getAttribute('data-ref-id')]
+      if (ref) {
+        setActiveRef((cur) => (refKey(cur) === refKey(ref) ? null : ref))
+        return
+      }
+    }
+
+    // 2. Si no es un enlace, buscar la PRIMERA referencia bíblica en todo el texto
+    if (contentRef.current) {
+      // Obtener el texto plano del contenido (sin etiquetas HTML)
+      const plainText = contentRef.current.textContent || ''
+      const refs = detectReferences(plainText)
+      if (refs.length > 0) {
+        // Mostrar la primera referencia encontrada
+        const found = refs[0]
+        setActiveRef((cur) => (refKey(cur) === refKey(found) ? null : found))
+        return
+      }
+    }
+
+    // Si no se encontró nada, cerrar el panel (si estaba abierto)
+    if (activeRef) setActiveRef(null)
   }
+
+  // Cerrar el panel al hacer clic fuera del contenido
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (contentRef.current && !contentRef.current.contains(e.target)) {
+        setActiveRef(null)
+      }
+    }
+    document.addEventListener('click', handleOutsideClick)
+    return () => document.removeEventListener('click', handleOutsideClick)
+  }, [])
 
   return (
     <div className="fixed inset-0 z-50 bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex flex-col">
@@ -52,7 +86,7 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
           <div
             ref={contentRef}
             onClick={handleContentClick}
-            className="speaker-content leading-relaxed
+            className="speaker-content leading-relaxed cursor-pointer
                        [&_button]:text-leather [&_button]:dark:text-gilt-soft
                        [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:mb-2
                        [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2
