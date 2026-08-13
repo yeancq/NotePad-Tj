@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBibleReady, useVerseSegments } from '../hooks/useVerseSegments'
 import { linkifyHtml } from '../lib/linkifyHtml'
-import { detectReferences } from '../lib/verseDetector'
 import VerseCardBody from './VerseCardBody'
 
 const EASE = [0.2, 0, 0, 1]
@@ -15,52 +14,6 @@ function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60)
   const s = totalSeconds % 60
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
-
-/**
- * Obtiene el texto plano y la posición del cursor/clic dentro del contenedor.
- * Similar a getTextAndOffset en RichEditor.
- */
-function getTextAndOffsetFromContainer(container, node, offset) {
-  if (!container) return { text: '', offset: 0 }
-
-  // Si no se proporcionan nodo/offset, usar la selección actual
-  if (!node) {
-    const sel = window.getSelection()
-    if (sel && container.contains(sel.focusNode)) {
-      node = sel.focusNode
-      offset = sel.focusOffset
-    } else {
-      return { text: container.textContent || '', offset: 0 }
-    }
-  }
-
-  // Recorrer nodos hijos (bloques) y construir el texto plano con saltos de línea
-  const blocks = container.childNodes.length ? Array.from(container.childNodes) : []
-  let text = ''
-  let targetOffset = null
-
-  blocks.forEach((block, i) => {
-    if (i > 0) text += '\n'
-    const blockRange = document.createRange()
-    blockRange.selectNodeContents(block)
-    const blockText = blockRange.toString()
-
-    if (targetOffset === null && node && (block === node || block.contains?.(node))) {
-      try {
-        const preRange = document.createRange()
-        preRange.selectNodeContents(block)
-        preRange.setEnd(node, offset)
-        targetOffset = text.length + preRange.toString().length
-      } catch {
-        targetOffset = text.length
-      }
-    }
-    text += blockText
-  })
-
-  if (targetOffset === null) targetOffset = text.length
-  return { text, offset: targetOffset }
 }
 
 export default function SpeakerMode({ note, onClose, onNeedImport }) {
@@ -80,63 +33,14 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
 
   const linked = useMemo(() => linkifyHtml(note.body || ''), [note.body])
   const contentRef = useRef(null)
-  const [lastClickPos, setLastClickPos] = useState(null)
 
-  // Manejar clics en el contenido (para enlaces entre notas y citas bíblicas)
   const handleContentClick = (e) => {
-    // 1. Verificar si se hizo clic en un enlace entre notas (data-ref-id)
     const btn = e.target.closest('[data-ref-id]')
-    if (btn) {
-      const ref = linked.refsById[btn.getAttribute('data-ref-id')]
-      if (ref) {
-        setActiveRef((cur) => (refKey(cur) === refKey(ref) ? null : ref))
-        return
-      }
-    }
-
-    // 2. Si no es un enlace entre notas, verificar si hay una cita bíblica en la posición del clic
-    const { node, offset } = (() => {
-      const sel = window.getSelection()
-      if (sel && sel.rangeCount > 0) {
-        const range = sel.getRangeAt(0)
-        // Si el clic fue en el contenedor o dentro, obtener nodo y offset
-        if (contentRef.current && contentRef.current.contains(range.commonAncestorContainer)) {
-          return { node: range.startContainer, offset: range.startOffset }
-        }
-      }
-      return { node: null, offset: 0 }
-    })()
-
-    if (node && contentRef.current) {
-      const { text, offset: clickOffset } = getTextAndOffsetFromContainer(
-        contentRef.current,
-        node,
-        offset
-      )
-      // Detectar referencias en todo el texto
-      const refs = detectReferences(text)
-      // Buscar la referencia que contiene la posición del clic
-      const found = refs.find((r) => clickOffset >= r.start && clickOffset <= r.end)
-      if (found) {
-        setActiveRef((cur) => (refKey(cur) === refKey(found) ? null : found))
-        return
-      }
-    }
-
-    // Si no se encontró nada, cerrar el panel (si estaba abierto)
-    if (activeRef) setActiveRef(null)
+    if (!btn) return
+    const ref = linked.refsById[btn.getAttribute('data-ref-id')]
+    if (!ref) return
+    setActiveRef((cur) => (refKey(cur) === refKey(ref) ? null : ref))
   }
-
-  // Cerrar el panel al hacer clic fuera del contenido
-  useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (contentRef.current && !contentRef.current.contains(e.target)) {
-        setActiveRef(null)
-      }
-    }
-    document.addEventListener('click', handleOutsideClick)
-    return () => document.removeEventListener('click', handleOutsideClick)
-  }, [])
 
   return (
     <div className="fixed inset-0 z-50 bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex flex-col">
@@ -148,7 +52,7 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
           <div
             ref={contentRef}
             onClick={handleContentClick}
-            className="speaker-content leading-relaxed cursor-pointer
+            className="speaker-content leading-relaxed
                        [&_button]:text-leather [&_button]:dark:text-gilt-soft
                        [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:mb-2
                        [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2
