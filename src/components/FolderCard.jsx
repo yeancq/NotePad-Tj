@@ -52,8 +52,8 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
         onPointerCancel={cancelPress}
         onContextMenu={(e) => e.preventDefault()}
         className="w-full flex flex-col items-start gap-3 p-4 rounded-xl text-left select-none
-                   bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10
-                   hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] transition-all duration-150"
+                   bg-surface border border-theme shadow-card
+                   hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.97] transition-all duration-150"
         style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
       >
         <div className="w-full flex items-start justify-between">
@@ -64,27 +64,24 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
               setShowMenu(!showMenu)
             }}
             className="text-sm opacity-0 group-hover:opacity-100 transition-opacity
-                       text-ink-soft/40 dark:text-night-text/30 hover:text-ink dark:hover:text-night-text
-                       p-1 rounded-md hover:bg-ink/5 dark:hover:bg-night-text/10"
+                       text-muted hover:text-theme p-1 rounded-md hover:bg-ink/5 dark:hover:bg-night-text/10"
             title="Opciones"
           >
             ⋮
           </button>
         </div>
         <span className="w-full">
-          <span className="block font-display text-[15px] text-ink dark:text-night-text truncate">
+          <span className="block font-display text-[15px] text-theme truncate">
             {folder.name}
           </span>
-          <span className="block text-xs text-ink-soft/60 dark:text-night-text/40 mt-0.5">
+          <span className="block text-xs text-muted mt-0.5">
             {noteCount} {noteCount === 1 ? 'nota' : 'notas'}
           </span>
         </span>
       </button>
 
-      {/* Menú contextual */}
       {showMenu && (
         <>
-          {/* Fondo para cerrar al hacer clic fuera */}
           <div
             className="fixed inset-0 z-10"
             onClick={(e) => {
@@ -93,14 +90,14 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
             }}
           />
           <div
-            className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-night-surface-2 
-                       rounded-lg shadow-xl border border-ink/10 dark:border-night-text/10 p-1.5 z-20"
+            className="absolute right-0 top-full mt-1 w-48 bg-surface
+                       rounded-lg shadow-lg border border-theme p-1.5 z-20"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={handleEdit}
               className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-ink/5 dark:hover:bg-night-text/10 
-                         text-ink dark:text-night-text flex items-center gap-2 transition-colors"
+                         text-theme flex items-center gap-2 transition-colors"
             >
               <span>✏️</span> Editar carpeta
             </button>
