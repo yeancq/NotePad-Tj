@@ -1,3 +1,4 @@
+import { Folder, Pin, Trash2 } from 'lucide-react'
 import FolderCard from './FolderCard'
 
 export default function FolderGrid({ folders, counts, onSelect, onEditFolder, onDeleteFolder }) {
@@ -22,7 +23,7 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder, on
           className="flex flex-col items-start gap-3 p-5 rounded-2xl text-left bg-primary text-surface
                      hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
         >
-          <span className="text-2xl">📚</span>
+          <Folder className="w-6 h-6" />
           <span>
             <span className="block font-display text-base">Todas las notas</span>
             <span className="block text-xs text-surface/70 mt-0.5">
@@ -37,7 +38,7 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder, on
                      bg-surface border border-theme shadow-card
                      hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
         >
-          <span className="text-2xl">📌</span>
+          <Pin className="w-6 h-6 text-accent" />
           <span>
             <span className="block font-display text-base text-theme">Fijadas</span>
             <span className="block text-xs text-muted mt-0.5">
@@ -70,9 +71,10 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder, on
 
       <button
         onClick={() => onSelect('trash')}
-        className="text-xs text-muted hover:text-accent transition-colors"
+        className="text-xs text-muted hover:text-accent transition-colors flex items-center gap-1.5"
       >
-        🗑️ Papelera {counts.trash > 0 ? `(${counts.trash})` : ''}
+        <Trash2 className="w-3.5 h-3.5" />
+        Papelera {counts.trash > 0 ? `(${counts.trash})` : ''}
       </button>
     </div>
   )
