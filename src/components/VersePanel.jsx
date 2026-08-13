@@ -4,17 +4,12 @@ import { detectReferences } from '../lib/verseDetector'
 import { useBibleReady, useVerseSegments } from '../hooks/useVerseSegments'
 import VerseCardBody from './VerseCardBody'
 
-// Curva "emphasized" de Material Design 3: entra rápido, se asienta despacio.
 const EASE = [0.2, 0, 0, 1]
 
 function refKey(ref) {
   return ref ? `${ref.start}:${ref.end}:${ref.raw}` : null
 }
 
-/**
- * Panel flotante superpuesto al editor. Aparece a la derecha como un modal
- * flotante con fondo semitransparente, sin desplazar el contenido principal.
- */
 export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChange }) {
   const bibleReady = useBibleReady()
   const [activeRef, setActiveRef] = useState(null)
@@ -36,7 +31,6 @@ export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChan
     const next = key === closedKey ? null : found
     setActiveRef(next)
     onActiveChange?.(Boolean(next))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, cursorPos])
 
   const handleClose = () => {
@@ -54,42 +48,27 @@ export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChan
   return (
     <AnimatePresence>
       {activeRef && (
-        <>
-          {/* Fondo semitransparente para oscurecer el contenido detrás */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: EASE }}
-            className="fixed inset-0 z-40 bg-black/10 dark:bg-black/30"
-            onClick={handleClose}
+        <motion.aside
+          key={refKey(activeRef)}
+          initial={{ x: '100%', opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: '100%', opacity: 0 }}
+          transition={{ duration: 0.5, ease: EASE }}
+          className="fixed top-4 right-4 z-50
+                     w-[42%] sm:w-[38%] max-w-[380px] min-w-0
+                     bg-parchment/90 dark:bg-night-surface/90 backdrop-blur-md
+                     border border-ink/[0.06] dark:border-night-text/[0.06]
+                     rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        >
+          <VerseCardBody
+            activeRef={activeRef}
+            segmentTexts={segmentTexts}
+            bibleReady={bibleReady}
+            onNeedImport={onNeedImport}
+            onCopy={handleCopy}
+            onClose={handleClose}
           />
-          
-          {/* Panel flotante */}
-          <motion.aside
-            key={refKey(activeRef)}
-            initial={{ x: '100%', opacity: 0, scale: 0.95 }}
-            animate={{ x: 0, opacity: 1, scale: 1 }}
-            exit={{ x: '100%', opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.4, ease: EASE }}
-            className="fixed top-1/2 -translate-y-1/2 right-4 z-50
-                       w-[85vw] sm:w-[420px] max-w-[460px] max-h-[85vh]
-                       bg-parchment/92 dark:bg-night-surface/92 backdrop-blur-xl
-                       rounded-2xl shadow-2xl
-                       border border-ink/10 dark:border-night-text/10
-                       overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <VerseCardBody
-              activeRef={activeRef}
-              segmentTexts={segmentTexts}
-              bibleReady={bibleReady}
-              onNeedImport={onNeedImport}
-              onCopy={handleCopy}
-              onClose={handleClose}
-            />
-          </motion.aside>
-        </>
+        </motion.aside>
       )}
     </AnimatePresence>
   )
