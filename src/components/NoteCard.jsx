@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Pin, Folder as FolderIcon, Trash2, Check } from 'lucide-react'
 import { stripHtml } from '../lib/htmlUtils'
 
 const folderMeta = {
@@ -76,7 +77,7 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
             }`}
             title={note.pinned ? 'Quitar de fijadas' : 'Fijar nota'}
           >
-            {note.pinned ? '🔖' : '📌'}
+            <Pin className="w-4 h-4" />
           </button>
           <button
             onClick={(e) => {
@@ -86,7 +87,7 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
             className="text-sm opacity-0 group-hover:opacity-100 transition-opacity"
             title="Mover a otra carpeta"
           >
-            📂
+            <FolderIcon className="w-4 h-4" />
           </button>
           <button
             onClick={(e) => {
@@ -96,7 +97,7 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
             className="text-sm opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
             title="Eliminar nota"
           >
-            🗑️
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -143,7 +144,7 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
                 >
                   <span>{folder.icon || '📁'}</span>
                   <span className="flex-1 truncate">{folder.name}</span>
-                  {note.folder === folder.id && <span className="text-xs">✓</span>}
+                  {note.folder === folder.id && <Check className="w-3.5 h-3.5" />}
                 </button>
                 {folder.children.length > 0 && (
                   <div className="ml-6">
@@ -160,7 +161,7 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
                       >
                         <span>{child.icon || '📁'}</span>
                         <span className="flex-1 truncate">↳ {child.name}</span>
-                        {note.folder === child.id && <span className="text-xs">✓</span>}
+                        {note.folder === child.id && <Check className="w-3.5 h-3.5" />}
                       </button>
                     ))}
                   </div>
