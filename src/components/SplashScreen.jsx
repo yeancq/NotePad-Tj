@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const PHRASES = ['Mateo 24:14', 'Hebreos 4:12', 'Juan 3:16']
-
-// ⏱️ Duración reducida a la mitad
-const TYPE_MS = 33    // antes 65
-const HOLD_MS = 275   // antes 550
-const FADE_MS = 110   // antes 220
+const PHRASES = ['Mateo 24:14', 'Lucas 2:21', 'Juan 3:16']
+const TYPE_MS = 65
+const HOLD_MS = 550
+const FADE_MS = 220
 
 export default function SplashScreen({ onFinish }) {
   const [phraseIndex, setPhraseIndex] = useState(0)
@@ -47,7 +45,7 @@ export default function SplashScreen({ onFinish }) {
   // Terminar el splash una vez que el logo ya tuvo tiempo de mostrarse.
   useEffect(() => {
     if (!showLogo) return
-    const t = setTimeout(onFinish, 550) // antes 1100
+    const t = setTimeout(onFinish, 1100)
     return () => clearTimeout(t)
   }, [showLogo, onFinish])
 
@@ -74,7 +72,7 @@ export default function SplashScreen({ onFinish }) {
             key="logo"
             initial={{ opacity: 0, scale: 0.85, filter: 'blur(6px)' }}
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-            transition={{ duration: 0.35, ease: [0.2, 0, 0, 1] }} // antes 0.7
+            transition={{ duration: 0.7, ease: [0.2, 0, 0, 1] }}
             className="flex flex-col items-center gap-4"
           >
             <img src="./icons/icon-512.png" alt="" className="w-24 h-24 rounded-[22%] shadow-2xl" />

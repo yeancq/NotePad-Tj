@@ -32,28 +32,20 @@ export default function RichEditor({ html, onChange, onCursorChange, placeholder
   const [heading, setHeading] = useState('P')
   const initialized = useRef(false)
 
-  // ============================================================
-  // Cargar el contenido inicial UNA SOLA VEZ
-  // ============================================================
+  // Cargar el contenido inicial una sola vez (no en cada re-render, para no
+  // pelear con el cursor del usuario mientras escribe).
   useEffect(() => {
     if (ref.current && !initialized.current) {
       ref.current.innerHTML = html || ''
       initialized.current = true
-      
-      // 🔥 Forzar la detección de citas después de cargar el contenido
-      // (con un pequeño retraso para asegurar que el DOM esté listo)
-      setTimeout(() => {
-        if (ref.current) {
-          reportCursor()
-        }
-      }, 50)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [html]) // Solo se ejecuta cuando cambia el html (al abrir la nota)
+  }, [html])
 
-  // ============================================================
-  // Cálculo del texto plano y posición del cursor
-  // ============================================================
+  /**
+   * Calcula el texto plano y la posición del cursor con el MISMO método
+   * (recorriendo los bloques de nivel superior y uniéndolos con "\n"), para
+   * que ambos valores queden alineados sin importar cuántos párrafos haya.
+   */
   const getTextAndOffset = () => {
     const el = ref.current
     if (!el) return { text: '', offset: 0 }
@@ -94,9 +86,11 @@ export default function RichEditor({ html, onChange, onCursorChange, placeholder
     onCursorChange?.(text, offset)
   }
 
-  // ============================================================
-  // Detectar cambios de cursor (selectionchange)
-  // ============================================================
+  // selectionchange es la única señal 100% confiable de "el cursor ya se
+  // movió de verdad" — a diferencia de click/keyup, que a veces se disparan
+  // justo ANTES de que el navegador termine de reubicar el cursor (sobre
+  // todo al tocar la pantalla en celular), dejando la lectura desfasada un
+  // párrafo.
   useEffect(() => {
     const handler = () => {
       if (ref.current && ref.current.contains(document.activeElement)) {
@@ -105,11 +99,8 @@ export default function RichEditor({ html, onChange, onCursorChange, placeholder
     }
     document.addEventListener('selectionchange', handler)
     return () => document.removeEventListener('selectionchange', handler)
-  }, [])
+  })
 
-  // ============================================================
-  // Manejar cambios de contenido
-  // ============================================================
   const handleInput = () => {
     onChange?.(ref.current.innerHTML)
     reportCursor()
@@ -121,9 +112,6 @@ export default function RichEditor({ html, onChange, onCursorChange, placeholder
     handleInput()
   }
 
-  // ============================================================
-  // Renderizado
-  // ============================================================
   return (
     <div className={disabled ? 'opacity-60 pointer-events-none' : ''}>
       <div className="flex items-center gap-1 flex-wrap mb-3 pb-3 border-b border-ink/10 dark:border-night-text/10">

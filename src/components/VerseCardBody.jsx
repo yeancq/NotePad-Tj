@@ -1,32 +1,5 @@
 import { motion } from 'framer-motion'
 
-/**
- * Limpia el texto de caracteres problemáticos:
- * - Reemplaza todos los caracteres de espacio no estándar por espacio normal.
- * - Elimina caracteres de control invisibles.
- * - Normaliza espacios múltiples.
- */
-function cleanText(text) {
-  if (!text) return text
-
-  // 1. Reemplazar cualquier carácter de espacio Unicode que no sea espacio normal
-  // Esto incluye: \u00A0, \u200B, \u202F, \u2009, \u200A, \u205F, \u3000, etc.
-  let cleaned = text.replace(/[\u00A0\u200B\u202F\u2009\u200A\u205F\u3000\uFEFF]/g, ' ')
-
-  // 2. Eliminar caracteres de control (excepto espacio normal y saltos de línea)
-  cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-
-  // 3. Reemplazar cualquier carácter que no sea letra, número, espacio, punto, coma, etc.
-  // (Mantener solo caracteres imprimibles comunes)
-  cleaned = cleaned.replace(/[^\p{L}\p{N}\s.,;:!?()'"]/gu, ' ')
-
-  // 4. Normalizar espacios múltiples a uno solo
-  cleaned = cleaned.replace(/\s{2,}/g, ' ')
-
-  // 5. Recortar espacios al inicio y final
-  return cleaned.trim()
-}
-
 export default function VerseCardBody({ activeRef, segmentTexts, bibleReady, onNeedImport, onCopy, onClose }) {
   return (
     <>
@@ -66,9 +39,7 @@ export default function VerseCardBody({ activeRef, segmentTexts, bibleReady, onN
                 <span className="text-[11px] md:text-[12px] font-medium text-ink-soft/60 dark:text-night-text/40 align-super mr-0.5">
                   {s.verseLabel}
                 </span>
-                {s.text ? (
-                  <span>{cleanText(s.text)}</span>
-                ) : (
+                {s.text || (
                   <em className="text-ink-soft/50 dark:text-night-text/30 not-italic">no encontrado</em>
                 )}
                 {i < segmentTexts.length - 1 ? '  ' : ''}

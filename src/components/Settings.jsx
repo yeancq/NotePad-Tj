@@ -1,109 +1,49 @@
-import { useState, useEffect, useRef } from 'react'
+import { useRef, useState } from 'react'
 import { accentPalettes } from '../data/accentPalettes'
-import { Sun, Moon, Smartphone, Palette, Download, Upload, RefreshCw } from 'lucide-react'
+import { exportBackup, readBackupFile, applyBackup } from '../lib/backup'
 
 const themeOptions = [
-  { id: 'light', label: 'Claro', icon: Sun },
-  { id: 'dark', label: 'Oscuro', icon: Moon },
-  { id: 'system', label: 'Sistema', icon: Smartphone },
+  { id: 'light', label: 'Claro', icon: '☀️' },
+  { id: 'dark', label: 'Oscuro', icon: '🌙' },
+  { id: 'system', label: 'Sistema', icon: '📱' },
 ]
 
-const visualThemes = [
-  { id: 'warm', label: 'Cálido', icon: '☀️', description: 'Tonos tierra y beige' },
-  { id: 'marine', label: 'Azul Marino', icon: '🌊', description: 'Profesional y moderno' },
-]
+export default function Settings({ themeMode, setThemeMode, accentId, setAccentId, onBack }) {
+  const [status, setStatus] = useState(null)
+  const [pendingImport, setPendingImport] = useState(null)
+  const fileRef = useRef(null)
 
-export default function Settings({
-  themeMode,
-  setThemeMode,
-  accentId,
-  setAccentId,
-  onBack,
-  onExport,
-  onImport,
-}) {
-  const [version, setVersion] = useState('Cargando...')
-  const [isChecking, setIsChecking] = useState(false)
-  const [aboutOpen, setAboutOpen] = useState(false)
-  const [visualTheme, setVisualTheme] = useState(() => {
-    return localStorage.getItem('visualTheme') || 'warm'
-  })
-  const fileInputRef = useRef(null)
+  const handleExport = () => {
+    const { notesCount, foldersCount } = exportBackup()
+    setStatus({
+      type: 'ok',
+      text: `Respaldo descargado: ${notesCount} notas, ${foldersCount} carpetas.`,
+    })
+  }
 
-  useEffect(() => {
-    const html = document.documentElement
-    html.removeAttribute('data-theme')
-    if (themeMode === 'dark') {
-      html.classList.add('dark')
-    } else {
-      html.classList.remove('dark')
-    }
-    if (visualTheme === 'marine') {
-      if (themeMode === 'dark') {
-        html.setAttribute('data-theme', 'marine-dark')
-      } else {
-        html.setAttribute('data-theme', 'marine')
-      }
-    } else {
-      if (themeMode === 'dark') {
-        html.setAttribute('data-theme', 'dark')
-      } else {
-        html.removeAttribute('data-theme')
-      }
-    }
-    localStorage.setItem('visualTheme', visualTheme)
-  }, [visualTheme, themeMode])
-
-  const fetchVersion = async (showUpdate = false) => {
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setStatus(null)
     try {
-      setIsChecking(true)
-      const response = await fetch(
-        'https://raw.githubusercontent.com/yeancq/NotePad-Tj/main/public/version.json?t=' + Date.now()
-      )
-      if (response.ok) {
-        const data = await response.json()
-        setVersion(data.version)
-        if (showUpdate) {
-          const savedVersion = localStorage.getItem('appVersion')
-          if (savedVersion && savedVersion !== data.version) {
-            localStorage.setItem('appVersion', data.version)
-            setTimeout(() => window.location.reload(), 500)
-          }
-        }
-      } else {
-        setVersion('1.0.0')
-      }
-    } catch (error) {
-      console.warn('Error obteniendo versión:', error)
-      setVersion('1.0.0')
-    } finally {
-      setIsChecking(false)
+      const data = await readBackupFile(file)
+      setPendingImport(data)
+    } catch (err) {
+      setStatus({ type: 'error', text: err.message })
     }
   }
 
-  useEffect(() => {
-    fetchVersion()
-  }, [])
-
-  const handleCheckForUpdate = () => {
-    fetchVersion(true)
-  }
-
-  const handleImportClick = () => {
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      onImport?.(file)
-      e.target.value = ''
-    }
+  const confirmImport = (mode) => {
+    applyBackup(pendingImport, mode)
+    setPendingImport(null)
+    setStatus({ type: 'ok', text: 'Respaldo importado. Recargando…' })
+    setTimeout(() => window.location.reload(), 800)
   }
 
   return (
-    <div className="min-h-screen bg-theme text-theme flex flex-col">
-      <header className="sticky top-0 z-20 bg-theme/90 backdrop-blur-sm border-b border-theme px-4 md:px-8 py-3 flex items-center gap-3">
+    <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex flex-col">
+      <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-3 flex items-center gap-3">
         <button
           onClick={onBack}
           className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-ink/5 dark:hover:bg-night-text/10"
@@ -114,158 +54,129 @@ export default function Settings({
         <h1 className="font-display text-lg">Configuración</h1>
       </header>
 
-      <main className="flex-1 px-4 md:px-8 py-6 max-w-xl mx-auto w-full flex flex-col">
-        <div className="flex-1">
-          {/* Modo de color */}
-          <section className="bg-surface border border-theme rounded-xl p-5 mb-4 shadow-card">
-            <p className="text-sm font-medium text-soft mb-3 text-center">Modo de color</p>
-            <div className="grid grid-cols-3 gap-3">
-              {themeOptions.map((opt) => {
-                const Icon = opt.icon
-                return (
-                  <button
-                    key={opt.id}
-                    onClick={() => setThemeMode(opt.id)}
-                    className={`flex flex-col items-center justify-center gap-1.5 py-4 rounded-xl border-2 transition-colors
-                      ${
-                        themeMode === opt.id
-                          ? 'border-primary bg-primary-soft text-primary-text'
-                          : 'border-theme text-soft hover:bg-ink/5 dark:hover:bg-night-text/5'
-                      }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-sm font-medium">{opt.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </section>
-
-          {/* Estilo visual */}
-          <section className="bg-surface border border-theme rounded-xl p-5 mb-4 shadow-card">
-            <p className="text-sm font-medium text-soft mb-3 text-center">Estilo visual</p>
-            <div className="grid grid-cols-2 gap-3">
-              {visualThemes.map((theme) => (
-                <button
-                  key={theme.id}
-                  onClick={() => setVisualTheme(theme.id)}
-                  className={`flex flex-col items-center justify-center gap-1.5 py-4 rounded-xl border-2 transition-colors
-                    ${
-                      visualTheme === theme.id
-                        ? 'border-primary bg-primary-soft text-primary-text'
-                        : 'border-theme text-soft hover:bg-ink/5 dark:hover:bg-night-text/5'
-                    }`}
-                >
-                  <span className="text-xl">{theme.icon}</span>
-                  <span className="text-sm font-medium">{theme.label}</span>
-                  <span className="text-xs text-muted">{theme.description}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Color de acento */}
-          <section className="bg-surface border border-theme rounded-xl p-5 mb-4 shadow-card">
-            <p className="text-sm font-medium text-soft mb-3 text-center">Color de acento</p>
-            <div className="flex justify-center gap-3 flex-wrap">
-              {accentPalettes.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setAccentId(p.id)}
-                  title={p.name}
-                  aria-label={p.name}
-                  className="w-11 h-11 rounded-full flex items-center justify-center transition-transform hover:scale-105"
-                  style={{ backgroundColor: p.base }}
-                >
-                  {accentId === p.id && <span className="text-white text-lg">✓</span>}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Respaldo */}
-          <section className="bg-surface border border-theme rounded-xl p-5 mb-4 shadow-card">
-            <p className="text-sm font-medium text-soft mb-3 text-center">💾 Respaldo de datos</p>
-            <div className="flex gap-3">
+      <main className="flex-1 px-4 md:px-8 py-6 max-w-xl mx-auto w-full">
+        <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-5">
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            {themeOptions.map((opt) => (
               <button
-                onClick={onExport}
-                className="flex-1 py-2.5 rounded-xl bg-accent/15 text-accent text-sm font-medium hover:bg-accent/25 transition-colors flex items-center justify-center gap-2"
+                key={opt.id}
+                onClick={() => setThemeMode(opt.id)}
+                className={`flex flex-col items-center justify-center gap-1.5 py-4 rounded-xl border-2 transition-colors
+                  ${
+                    themeMode === opt.id
+                      ? 'border-leather bg-leather/10 text-leather dark:border-gilt-soft dark:bg-gilt-soft/10 dark:text-gilt-soft'
+                      : 'border-ink/10 dark:border-night-text/10 text-ink-soft dark:text-night-text/50 hover:bg-ink/5 dark:hover:bg-night-text/5'
+                  }`}
               >
-                <Download className="w-4 h-4" />
-                Exportar respaldo
+                <span className="text-xl">{opt.icon}</span>
+                <span className="text-sm font-medium">{opt.label}</span>
               </button>
-              <button
-                onClick={handleImportClick}
-                className="flex-1 py-2.5 rounded-xl bg-ink/5 dark:bg-night-text/5 text-soft text-sm font-medium hover:bg-ink/10 dark:hover:bg-night-text/10 transition-colors flex items-center justify-center gap-2"
-              >
-                <Upload className="w-4 h-4" />
-                Importar respaldo
-              </button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept=".json"
-                className="hidden"
-              />
-            </div>
-            <p className="text-xs text-muted mt-2 text-center">
-              Guarda una copia de seguridad de todas tus notas y carpetas.
-            </p>
-          </section>
+            ))}
+          </div>
 
-          {/* Cómo funciona NotePad TJ */}
-          <section className="bg-surface border border-theme rounded-xl p-5 mb-4 shadow-card">
-            <button
-              onClick={() => setAboutOpen(!aboutOpen)}
-              className="w-full flex items-center justify-between text-left"
-            >
-              <span className="text-sm font-medium text-soft">📖 Cómo funciona NotePad TJ</span>
-              <span className="text-muted text-sm">{aboutOpen ? '▲' : '▼'}</span>
-            </button>
-
-            {aboutOpen && (
-              <div className="mt-4 text-sm text-soft space-y-4 border-t border-theme pt-4">
-                <div>
-                  <p>
-                    <strong className="text-theme">NotePad TJ</strong> es una aplicación de notas
-                    diseñada especialmente para el estudio bíblico, reuniones de congregación y predicación.
-                    Todo se guarda en tu dispositivo, sin necesidad de internet ni servidores externos.
-                  </p>
-                </div>
-                {/* Resto del contenido ya lo tenías, puedes mantenerlo igual */}
-                <div className="pt-2 text-xs text-muted border-t border-theme mt-2">
-                  <p>Desarrollada por <strong className="text-soft">yeancq</strong></p>
-                  <p className="mt-0.5">Hecha con React, Vite, Tailwind ❤️</p>
-                </div>
-              </div>
-            )}
-          </section>
-
-          <p className="text-xs text-muted px-1">
-            Estas preferencias se guardan en este dispositivo.
+          <p className="text-center text-sm font-medium text-ink-soft dark:text-night-text/50 mb-3">
+            Color de acento
           </p>
-        </div>
+          <div className="flex justify-center gap-3 flex-wrap">
+            {accentPalettes.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setAccentId(p.id)}
+                title={p.name}
+                aria-label={p.name}
+                className="w-11 h-11 rounded-full flex items-center justify-center transition-transform hover:scale-105"
+                style={{ backgroundColor: p.base }}
+              >
+                {accentId === p.id && <span className="text-white text-lg">✓</span>}
+              </button>
+            ))}
+          </div>
+        </section>
 
-        {/* Versión */}
-        <div className="mt-8 pt-4 border-t border-theme">
-          <div className="flex items-center justify-center gap-3">
-            <p className="text-center text-xs text-muted font-mono tracking-wide">Versión {version}</p>
+        <p className="text-xs text-ink-soft/60 dark:text-night-text/40 px-1 mb-5">
+          Estas preferencias se guardan en este dispositivo.
+        </p>
+
+        <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5">
+          <h2 className="font-display text-base mb-1">Respaldo de notas</h2>
+          <p className="text-xs text-ink-soft/70 dark:text-night-text/40 mb-4">
+            Tus notas solo existen en este dispositivo. Descarga un respaldo de vez en cuando, o
+            antes de cambiar de celular.
+          </p>
+
+          <div className="flex flex-wrap gap-2.5 mb-3">
             <button
-              onClick={handleCheckForUpdate}
-              disabled={isChecking}
-              className={`text-[10px] px-2 py-1 rounded-full transition-colors flex items-center gap-1
-                ${isChecking
-                  ? 'text-muted cursor-not-allowed'
-                  : 'text-accent hover:text-accent/80 hover:bg-accent/10'
-                }`}
+              onClick={handleExport}
+              className="px-4 py-2 rounded-full bg-leather text-parchment text-sm font-medium hover:bg-leather-deep transition-colors"
             >
-              <RefreshCw className={`w-3 h-3 ${isChecking ? 'animate-spin' : ''}`} />
+              Exportar respaldo
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json,application/json"
+              onChange={handleFile}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="px-4 py-2 rounded-full border border-ink/15 dark:border-night-text/15 text-sm text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
+            >
+              Importar respaldo
             </button>
           </div>
-          {isChecking && <p className="text-center text-[10px] text-muted mt-1">Verificando...</p>}
-        </div>
+
+          {status && (
+            <p className={`text-sm ${status.type === 'error' ? 'text-leather' : 'text-sage'}`}>
+              {status.text}
+            </p>
+          )}
+        </section>
       </main>
+
+      {pendingImport && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-ink/30 dark:bg-black/50 px-4"
+          onClick={() => setPendingImport(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm bg-parchment dark:bg-night-surface rounded-2xl shadow-xl p-5"
+          >
+            <h2 className="font-display text-lg mb-2">Importar respaldo</h2>
+            <p className="text-sm text-ink-soft dark:text-night-text/60 mb-5">
+              Este archivo tiene {pendingImport.notes.length} notas y {pendingImport.folders.length}{' '}
+              carpetas. ¿Cómo quieres importarlo?
+            </p>
+            <div className="space-y-2">
+              <button
+                onClick={() => confirmImport('merge')}
+                className="w-full px-4 py-2.5 rounded-xl bg-leather text-parchment text-sm font-medium hover:bg-leather-deep transition-colors text-left"
+              >
+                Agregar a lo que ya tengo
+                <span className="block text-xs text-parchment/70 font-normal mt-0.5">
+                  Mantiene tus notas actuales y suma las del respaldo
+                </span>
+              </button>
+              <button
+                onClick={() => confirmImport('replace')}
+                className="w-full px-4 py-2.5 rounded-xl border border-leather/30 text-leather dark:text-gilt-soft text-sm font-medium hover:bg-leather/5 transition-colors text-left"
+              >
+                Reemplazar todo
+                <span className="block text-xs opacity-70 font-normal mt-0.5">
+                  Borra tus notas actuales y deja solo las del respaldo
+                </span>
+              </button>
+              <button
+                onClick={() => setPendingImport(null)}
+                className="w-full px-4 py-2 rounded-xl text-sm text-ink-soft dark:text-night-text/60 hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
