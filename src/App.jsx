@@ -1,5 +1,4 @@
-import { useMemo, useState, lazy } from 'react'
-import { LazyWrapper } from './components/LazyWrapper'
+import { useMemo, useState, lazy, Suspense } from 'react'
 
 // Componentes que se cargan siempre (críticos para la carga inicial)
 import Sidebar from './components/Sidebar'
@@ -17,7 +16,8 @@ const ImportBible = lazy(() => import('./components/ImportBible'))
 const ImportProgram = lazy(() => import('./components/ImportProgram'))
 const ImportOutline = lazy(() => import('./components/ImportOutline'))
 const Settings = lazy(() => import('./components/Settings'))
-const SplashScreen = lazy(() => import('./components/SplashScreen'))
+// SplashScreen NO va con lazy porque se muestra al inicio
+import SplashScreen from './components/SplashScreen'
 
 import { folders as defaultFolders, notes as initialNotes } from './data/mockNotes'
 import { useLocalStorageNotes } from './hooks/useLocalStorageNotes'
@@ -32,6 +32,17 @@ function getGreeting() {
   if (h < 19) return 'Buenas tardes'
   return 'Buenas noches'
 }
+
+// Componente wrapper para lazy loading
+const LazyWrapper = ({ children }) => (
+  <Suspense fallback={
+    <div className="flex items-center justify-center min-h-[200px]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#b8860b]"></div>
+    </div>
+  }>
+    {children}
+  </Suspense>
+)
 
 export default function App() {
   const [notes, setNotes] = useLocalStorageNotes(initialNotes)
@@ -71,8 +82,6 @@ export default function App() {
     if (activeFolder === 'pinned') {
       list = list.filter((n) => n.pinned)
     } else if (activeFolder && activeFolder !== 'trash') {
-      // SOLO notas que pertenecen directamente a la carpeta activa
-      // (las notas de subcarpetas NO se muestran aquí)
       list = list.filter((n) => n.folder === activeFolder)
     }
 
@@ -224,12 +233,9 @@ export default function App() {
     setEditingFolderId(null)
   }
 
+  // SplashScreen se muestra primero (sin lazy loading)
   if (showSplash) {
-    return (
-      <LazyWrapper>
-        <SplashScreen onFinish={() => setShowSplash(false)} />
-      </LazyWrapper>
-    )
+    return <SplashScreen onFinish={() => setShowSplash(false)} />
   }
 
   if (showSettings) {
@@ -478,4 +484,4 @@ export default function App() {
       )}
     </div>
   )
-}
+      }
