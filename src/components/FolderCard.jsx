@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { MoreHorizontal, Edit2, Trash2 } from 'lucide-react'
+import { FolderIcon } from '../lib/iconMap' // ← Importar
 
 const LONG_PRESS_MS = 480
 
@@ -58,7 +59,8 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
         style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
       >
         <div className="w-full flex items-start justify-between">
-          <span className="text-2xl">{folder.icon || '📁'}</span>
+          {/* ✅ Reemplazar emoji por FolderIcon */}
+          <FolderIcon emoji={folder.icon || '📁'} className="w-6 h-6 text-theme" />
           <button
             onClick={(e) => {
               e.stopPropagation()
