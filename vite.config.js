@@ -48,9 +48,19 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'bible-vendor': ['jszip']
+        manualChunks(id) {
+          // Separar React y ReactDOM
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'react-vendor'
+          }
+          // Separar JSZip
+          if (id.includes('node_modules/jszip/')) {
+            return 'bible-vendor'
+          }
+          // Todo lo demás va a vendors común
+          if (id.includes('node_modules/')) {
+            return 'vendor'
+          }
         }
       }
     },
