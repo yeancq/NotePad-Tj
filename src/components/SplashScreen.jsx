@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const PHRASES = ['Mateo 24:14', 'Lucas 2:21', 'Juan 3:16']
-const TYPE_MS = 65
-const HOLD_MS = 550
-const FADE_MS = 220
+const PHRASES = ['Mateo 24:14', 'Hebreos 4:12', 'Juan 3:16']
+const TYPE_MS = 32
+const HOLD_MS = 275
+const FADE_MS = 110
 
 export default function SplashScreen({ onFinish }) {
   const [phraseIndex, setPhraseIndex] = useState(0)
