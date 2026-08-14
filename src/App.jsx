@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import NoteCard from './components/NoteCard'
@@ -43,57 +43,6 @@ export default function App() {
   const [editingFolderId, setEditingFolderId] = useState(null)
   const { themeMode, setThemeMode, accentId, setAccentId, dark } = useThemeSettings()
   const [showSplash, setShowSplash] = useState(true)
-  const [isCheckingVersion, setIsCheckingVersion] = useState(true)
-
-  // ============================================================
-  // 🔄 SISTEMA DE ACTUALIZACIÓN AUTOMÁTICA (versión.json)
-  // ============================================================
-  useEffect(() => {
-    const checkVersion = async () => {
-      try {
-        const response = await fetch('/version.json?t=' + Date.now())
-        if (!response.ok) throw new Error('No se pudo obtener version.json')
-
-        const data = await response.json()
-        const serverVersion = data.version
-        const savedVersion = localStorage.getItem('appVersion')
-
-        if (savedVersion && savedVersion !== serverVersion) {
-          console.log(`🔄 Nueva versión: ${savedVersion} → ${serverVersion}`)
-          localStorage.setItem('appVersion', serverVersion)
-
-          if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations()
-            for (const registration of registrations) {
-              await registration.unregister()
-            }
-          }
-
-          if ('caches' in window) {
-            const cacheKeys = await caches.keys()
-            for (const key of cacheKeys) {
-              if (key.includes('assets') || key.includes('workbox')) {
-                await caches.delete(key)
-              }
-            }
-          }
-
-          setTimeout(() => {
-            window.location.href = window.location.href.split('?')[0] + '?t=' + Date.now()
-          }, 500)
-          return
-        } else if (!savedVersion) {
-          localStorage.setItem('appVersion', serverVersion)
-        }
-      } catch (error) {
-        console.warn('⚠️ Error verificando versión:', error)
-      } finally {
-        setIsCheckingVersion(false)
-      }
-    }
-
-    checkVersion()
-  }, [])
 
   const counts = useMemo(() => {
     const c = { all: 0, pinned: 0, trash: 0 }
@@ -116,6 +65,8 @@ export default function App() {
     if (activeFolder === 'pinned') {
       list = list.filter((n) => n.pinned)
     } else if (activeFolder && activeFolder !== 'trash') {
+      // SOLO notas que pertenecen directamente a la carpeta activa
+      // (las notas de subcarpetas NO se muestran aquí)
       list = list.filter((n) => n.folder === activeFolder)
     }
 
@@ -150,7 +101,9 @@ export default function App() {
 
   const moveNoteToFolder = (noteId, folderId) => {
     setNotes((prev) =>
-      prev.map((n) => (n.id === noteId ? { ...n, folder: folderId } : n))
+      prev.map((n) =>
+        n.id === noteId ? { ...n, folder: folderId } : n
+      )
     )
   }
 
@@ -265,51 +218,7 @@ export default function App() {
     setEditingFolderId(null)
   }
 
-  // ============================================================
-  // 💾 RESPALDO DE DATOS (Exportar / Importar)
-  // ============================================================
-  const exportAllData = () => {
-    const data = {
-      notes: notes,
-      folders: folders,
-      version: '1.0',
-      exportedAt: new Date().toISOString(),
-    }
-
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `notepad-tj-backup-${new Date().toISOString().slice(0, 10)}.json`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  }
-
-  const importAllData = (file) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target.result)
-        if (data.notes && data.folders) {
-          setNotes(data.notes)
-          setFolders(data.folders)
-          alert('✅ Respaldo importado correctamente')
-        } else {
-          alert('❌ El archivo no tiene el formato correcto')
-        }
-      } catch (error) {
-        alert('❌ Error al leer el archivo: ' + error.message)
-      }
-    }
-    reader.readAsText(file)
-  }
-
-  // ============================================================
-  // ⏳ Gestión de pantalla de carga
-  // ============================================================
-  if (isCheckingVersion || showSplash) {
+  if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />
   }
 
@@ -321,8 +230,6 @@ export default function App() {
         accentId={accentId}
         setAccentId={setAccentId}
         onBack={() => setShowSettings(false)}
-        onExport={exportAllData}
-        onImport={importAllData}
       />
     )
   }
@@ -343,7 +250,7 @@ export default function App() {
 
   if (openNote) {
     return (
-      <div className="min-h-screen bg-theme paper-texture text-theme flex overflow-x-hidden">
+      <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex overflow-x-hidden">
         <NoteEditor
           key={openNote.id}
           note={openNote}
@@ -360,7 +267,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-theme paper-texture flex text-theme">
+    <div className="min-h-screen bg-parchment dark:bg-night paper-texture flex text-ink dark:text-night-text">
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -372,34 +279,34 @@ export default function App() {
       <div className="flex-1 min-w-0 flex flex-col">
         {showHome ? (
           <>
-            <header className="sticky top-0 z-20 bg-theme/90 backdrop-blur-sm border-b border-theme px-4 md:px-8 py-4">
+            <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-4">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div className="min-w-0">
                   <button
                     onClick={() => setSidebarOpen(true)}
-                    className="md:hidden mb-1 w-9 h-9 -ml-1.5 flex items-center justify-center rounded-full text-theme hover:bg-ink/5 dark:hover:bg-night-text/10"
+                    className="md:hidden mb-1 w-9 h-9 -ml-1.5 flex items-center justify-center rounded-full text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
                     aria-label="Abrir menú"
                   >
                     ☰
                   </button>
-                  <p className="font-display text-2xl md:text-3xl text-theme tracking-tight">
+                  <p className="font-display text-2xl md:text-3xl text-ink dark:text-night-text tracking-tight">
                     NotePad TJ
                   </p>
-                  <p className="text-xs text-muted mt-0.5">
+                  <p className="text-xs text-ink-soft dark:text-night-text/60 mt-0.5">
                     Estudio, reuniones y predicación
                   </p>
                 </div>
                 <button
                   onClick={() => setThemeMode(dark ? 'light' : 'dark')}
                   className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full
-                             text-theme hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
+                             text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
                   aria-label="Cambiar modo oscuro"
                 >
                   {dark ? '☀️' : '🌙'}
                 </button>
               </div>
               <div className="relative max-w-md">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted/50 text-sm">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-soft/50 dark:text-night-text/40 text-sm">
                   ⌕
                 </span>
                 <input
@@ -411,10 +318,10 @@ export default function App() {
                   }}
                   type="text"
                   placeholder="Buscar en tus notas…"
-                  className="w-full bg-surface border border-theme
-                             rounded-full pl-9 pr-4 py-2.5 text-sm text-theme
-                             placeholder:text-muted/50
-                             focus:outline-none focus:ring-2 focus:ring-accent/60 transition-shadow"
+                  className="w-full bg-white/60 dark:bg-night-surface-2 border border-ink/10 dark:border-night-text/10
+                             rounded-full pl-9 pr-4 py-2.5 text-sm text-ink dark:text-night-text
+                             placeholder:text-ink-soft/50 dark:placeholder:text-night-text/30
+                             focus:outline-none focus:ring-2 focus:ring-gilt/60 transition-shadow"
                 />
               </div>
             </header>
@@ -452,7 +359,7 @@ export default function App() {
 
             <main className="flex-1 px-4 md:px-8 py-6 pb-28">
               {(() => {
-                const subfolders = folders.filter((f) => f.parentId === activeFolder)
+                const subfolders = folders.filter(f => f.parentId === activeFolder)
                 const hasContent = filteredNotes.length > 0 || subfolders.length > 0
 
                 if (!hasContent) {
@@ -461,19 +368,20 @@ export default function App() {
 
                 return (
                   <div className="space-y-6 max-w-6xl">
+                    {/* Subcarpetas */}
                     {subfolders.length > 0 && (
                       <div>
                         <div className="flex items-center justify-between mb-3">
-                          <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40">
                             Subcarpetas
                           </p>
-                          <p className="text-[11px] text-muted/60">
+                          <p className="text-[11px] text-ink-soft/40 dark:text-night-text/30">
                             ⋮ para opciones
                           </p>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
                           {subfolders.map((folder) => {
-                            const noteCount = notes.filter((n) => n.folder === folder.id && !n.trashed).length
+                            const noteCount = notes.filter(n => n.folder === folder.id && !n.trashed).length
                             return (
                               <FolderCard
                                 key={folder.id}
@@ -489,10 +397,11 @@ export default function App() {
                       </div>
                     )}
 
+                    {/* Notas sueltas de la carpeta actual (sin las de subcarpetas) */}
                     {filteredNotes.length > 0 && (
                       <div>
                         {subfolders.length > 0 && (
-                          <p className="text-xs font-semibold uppercase tracking-wider text-muted mb-3">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40 mb-3">
                             Notas
                           </p>
                         )}
@@ -505,15 +414,6 @@ export default function App() {
                               onOpen={() => setOpenNoteId(note.id)}
                               onTogglePin={() => togglePin(note.id)}
                               onMoveNote={moveNoteToFolder}
-                              onDelete={(id) => {
-                                if (activeFolder === 'trash') {
-                                  if (window.confirm('¿Eliminar esta nota permanentemente?')) {
-                                    deleteForever(id)
-                                  }
-                                } else {
-                                  trashNote(id)
-                                }
-                              }}
                             />
                           ))}
                         </div>
@@ -554,4 +454,4 @@ export default function App() {
       )}
     </div>
   )
-      }
+                                }

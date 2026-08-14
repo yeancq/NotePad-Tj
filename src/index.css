@@ -1,190 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Public+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
-
-/* ============================================================
-   🎨 EXTENDER COLORES DE TAILWIND CON @theme
-   ============================================================ */
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* 🔸 Tema cálido (actual) */
-  --color-parchment: #f5efe9;
-  --color-parchment-dim: #e8e0d8;
-  --color-ink: #1a1a1a;
-  --color-ink-soft: #5a5a5a;
-  --color-ink-muted: #8a8a8a;
-  --color-leather: #d4a373;
-  --color-leather-deep: #b8935a;
-  --color-leather-soft: #e8d5b8;
+  --font-display: "Fraunces", serif;
+  --font-body: "Public Sans", sans-serif;
 
-  /* 🔹 Tema Azul Marino */
-  --color-marine-bg: #f8fafc;
-  --color-marine-bg-dim: #eef2f6;
-  --color-marine-surface: #ffffff;
-  --color-marine-surface-2: #f1f5f9;
-  --color-marine-text: #0f172a;
-  --color-marine-text-soft: #334155;
-  --color-marine-text-muted: #64748b;
-  --color-marine-primary: #1e293b;
-  --color-marine-primary-deep: #0f172a;
-  --color-marine-primary-soft: #334155;
-  --color-marine-accent: #c5a059;
-  --color-marine-accent-soft: #f0e8d6;
+  /* Paleta "cuaderno de estudio": tapa de cuero, papel blanco, hoja de oro */
+  --color-parchment: #ffffff;
+  --color-parchment-dim: #f5f4f1;
+  --color-ink: #241f1c;
+  --color-ink-soft: #4a423a;
+  --color-leather: #6b1e23;
+  --color-leather-deep: #521418;
+  --color-gilt: #a9822e;
+  --color-gilt-soft: #c7a75a;
+  --color-sage: #5f7350;
+  --color-sage-soft: #7c9169;
 
-  /* 🔸 Tema oscuro */
-  --color-night: #1a1a1a;
-  --color-night-dim: #121212;
-  --color-night-surface: #2a2a2a;
-  --color-night-surface-2: #333333;
-  --color-night-text: #e8e8e8;
-  --color-night-text-soft: #aaaaaa;
-  --color-night-text-muted: #777777;
-  --color-night-gilt: #d4a373;
-  --color-night-gilt-soft: #5a4a3a;
-
-  /* 🔹 Tema oscuro marino */
-  --color-marine-dark-bg: #0f172a;
-  --color-marine-dark-bg-dim: #0a0f1e;
-  --color-marine-dark-surface: #1e293b;
-  --color-marine-dark-surface-2: #2a3a4a;
-  --color-marine-dark-text: #f1f5f9;
-  --color-marine-dark-text-soft: #cbd5e1;
-  --color-marine-dark-text-muted: #94a3b8;
-  --color-marine-dark-primary: #c5a059;
-  --color-marine-dark-primary-deep: #d4a373;
-  --color-marine-dark-primary-soft: #4a4030;
-  --color-marine-dark-accent: #c5a059;
-  --color-marine-dark-accent-soft: #3a3528;
+  /* Modo oscuro: tinta de noche */
+  --color-night: #1b1714;
+  --color-night-surface: #241f1a;
+  --color-night-surface-2: #2e2822;
+  --color-night-text: #ece3d0;
 }
 
-/* ============================================================
-   🌐 VARIABLES CSS GLOBALES (Temas)
-   ============================================================ */
-
-/* 🔸 TEMA POR DEFECTO (Cálido / Actual) */
-:root {
-  --color-bg: var(--color-parchment);
-  --color-bg-dim: var(--color-parchment-dim);
-  --color-surface: #ffffff;
-  --color-surface-2: #faf7f3;
-  --color-text: var(--color-ink);
-  --color-text-soft: var(--color-ink-soft);
-  --color-text-muted: var(--color-ink-muted);
-  --color-primary: var(--color-leather);
-  --color-primary-deep: var(--color-leather-deep);
-  --color-primary-soft: var(--color-leather-soft);
-  --color-primary-text: var(--color-leather);
-  --color-accent: var(--color-leather);
-  --color-accent-soft: #f0e4d6;
-  --color-shadow: rgba(0, 0, 0, 0.06);
-  --color-border: rgba(0, 0, 0, 0.06);
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
+html {
+  color-scheme: light;
+  overflow-x: hidden;
 }
-
-/* 🔹 TEMA "AZUL MARINO & DORADO" (claro) */
-[data-theme="marine"] {
-  --color-bg: var(--color-marine-bg);
-  --color-bg-dim: var(--color-marine-bg-dim);
-  --color-surface: var(--color-marine-surface);
-  --color-surface-2: var(--color-marine-surface-2);
-  --color-text: var(--color-marine-text);
-  --color-text-soft: var(--color-marine-text-soft);
-  --color-text-muted: var(--color-marine-text-muted);
-  --color-primary: var(--color-marine-primary);
-  --color-primary-deep: var(--color-marine-primary-deep);
-  --color-primary-soft: var(--color-marine-primary-soft);
-  --color-primary-text: var(--color-marine-primary);
-  --color-accent: var(--color-marine-accent);
-  --color-accent-soft: var(--color-marine-accent-soft);
-  --color-shadow: rgba(0, 0, 0, 0.04);
-  --color-border: rgba(0, 0, 0, 0.06);
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.06);
-}
-
-/* 🔸 TEMA OSCURO (Cálido) */
-[data-theme="dark"] {
-  --color-bg: var(--color-night);
-  --color-bg-dim: var(--color-night-dim);
-  --color-surface: var(--color-night-surface);
-  --color-surface-2: var(--color-night-surface-2);
-  --color-text: var(--color-night-text);
-  --color-text-soft: var(--color-night-text-soft);
-  --color-text-muted: var(--color-night-text-muted);
-  --color-primary: var(--color-night-gilt);
-  --color-primary-deep: var(--color-leather-deep);
-  --color-primary-soft: var(--color-night-gilt-soft);
-  --color-primary-text: var(--color-night-gilt);
-  --color-accent: var(--color-night-gilt);
-  --color-accent-soft: #3a332a;
-  --color-shadow: rgba(0, 0, 0, 0.3);
-  --color-border: rgba(255, 255, 255, 0.06);
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-/* 🔹 TEMA OSCURO (Azul Marino) */
-[data-theme="marine-dark"] {
-  --color-bg: var(--color-marine-dark-bg);
-  --color-bg-dim: var(--color-marine-dark-bg-dim);
-  --color-surface: var(--color-marine-dark-surface);
-  --color-surface-2: var(--color-marine-dark-surface-2);
-  --color-text: var(--color-marine-dark-text);
-  --color-text-soft: var(--color-marine-dark-text-soft);
-  --color-text-muted: var(--color-marine-dark-text-muted);
-  --color-primary: var(--color-marine-dark-primary);
-  --color-primary-deep: var(--color-marine-dark-primary-deep);
-  --color-primary-soft: var(--color-marine-dark-primary-soft);
-  --color-primary-text: var(--color-marine-dark-primary);
-  --color-accent: var(--color-marine-dark-accent);
-  --color-accent-soft: var(--color-marine-dark-accent-soft);
-  --color-shadow: rgba(0, 0, 0, 0.4);
-  --color-border: rgba(255, 255, 255, 0.06);
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
-
-/* ============================================================
-   🖌️ ESTILOS BASE
-   ============================================================ */
-
-body {
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.dark {
+html.dark {
   color-scheme: dark;
 }
 
-/* ============================================================
-   🧩 UTILIDADES PARA USAR CON TAILWIND
-   ============================================================ */
+body, #root {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
 
-.bg-theme { background-color: var(--color-bg); }
-.bg-theme-dim { background-color: var(--color-bg-dim); }
-.bg-surface { background-color: var(--color-surface); }
-.bg-surface-2 { background-color: var(--color-surface-2); }
+body {
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
 
-.text-theme { color: var(--color-text); }
-.text-soft { color: var(--color-text-soft); }
-.text-muted { color: var(--color-text-muted); }
+::selection {
+  background: var(--color-gilt-soft);
+  color: var(--color-ink);
+}
 
-.text-accent { color: var(--color-accent); }
-.bg-accent { background-color: var(--color-accent); }
-.bg-accent-soft { background-color: var(--color-accent-soft); }
+.paper-texture {
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(0,0,0,0.015) 0%, transparent 40%),
+    radial-gradient(circle at 80% 60%, rgba(0,0,0,0.02) 0%, transparent 45%);
+}
 
-.text-primary { color: var(--color-primary-text); }
-.bg-primary { background-color: var(--color-primary); }
-.bg-primary-soft { background-color: var(--color-primary-soft); }
-.border-primary { border-color: var(--color-primary); }
+.rich-editor:empty:before {
+  content: attr(data-placeholder);
+  color: var(--color-ink-soft);
+  opacity: 0.4;
+  pointer-events: none;
+}
+html.dark .rich-editor:empty:before {
+  color: var(--color-night-text);
+  opacity: 0.3;
+}
 
-.border-theme { border-color: var(--color-border); }
+.indent-1 { margin-left: 1.4em; }
+.indent-2 { margin-left: 2.8em; }
+.indent-3 { margin-left: 4.2em; }
 
-.shadow-card { box-shadow: var(--shadow-card); }
-.shadow-lg { box-shadow: var(--shadow-lg); }
-
-* {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
