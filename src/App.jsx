@@ -1,6 +1,4 @@
-import { useMemo, useState, lazy, Suspense } from 'react'
-
-// Componentes que se cargan siempre (críticos para la carga inicial)
+import { useMemo, useState } from 'react'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import NoteCard from './components/NoteCard'
@@ -9,16 +7,12 @@ import Fab from './components/Fab'
 import FolderGrid from './components/FolderGrid'
 import FolderCard from './components/FolderCard'
 import NewFolderDialog from './components/NewFolderDialog'
-
-// Componentes con lazy loading (solo se cargan cuando se necesitan)
-const NoteEditor = lazy(() => import('./components/NoteEditor'))
-const ImportBible = lazy(() => import('./components/ImportBible'))
-const ImportProgram = lazy(() => import('./components/ImportProgram'))
-const ImportOutline = lazy(() => import('./components/ImportOutline'))
-const Settings = lazy(() => import('./components/Settings'))
-// SplashScreen NO va con lazy porque se muestra al inicio
+import NoteEditor from './components/NoteEditor'
+import ImportBible from './components/ImportBible'
+import ImportProgram from './components/ImportProgram'
+import ImportOutline from './components/ImportOutline'
+import Settings from './components/Settings'
 import SplashScreen from './components/SplashScreen'
-
 import { folders as defaultFolders, notes as initialNotes } from './data/mockNotes'
 import { useLocalStorageNotes } from './hooks/useLocalStorageNotes'
 import { useLocalStorageFolders } from './hooks/useLocalStorageFolders'
@@ -32,17 +26,6 @@ function getGreeting() {
   if (h < 19) return 'Buenas tardes'
   return 'Buenas noches'
 }
-
-// Componente wrapper para lazy loading
-const LazyWrapper = ({ children }) => (
-  <Suspense fallback={
-    <div className="flex items-center justify-center min-h-[200px]">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#b8860b]"></div>
-    </div>
-  }>
-    {children}
-  </Suspense>
-)
 
 export default function App() {
   const [notes, setNotes] = useLocalStorageNotes(initialNotes)
@@ -82,6 +65,8 @@ export default function App() {
     if (activeFolder === 'pinned') {
       list = list.filter((n) => n.pinned)
     } else if (activeFolder && activeFolder !== 'trash') {
+      // SOLO notas que pertenecen directamente a la carpeta activa
+      // (las notas de subcarpetas NO se muestran aquí)
       list = list.filter((n) => n.folder === activeFolder)
     }
 
@@ -233,65 +218,50 @@ export default function App() {
     setEditingFolderId(null)
   }
 
-  // SplashScreen se muestra primero (sin lazy loading)
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />
   }
 
   if (showSettings) {
     return (
-      <LazyWrapper>
-        <Settings
-          themeMode={themeMode}
-          setThemeMode={setThemeMode}
-          accentId={accentId}
-          setAccentId={setAccentId}
-          onBack={() => setShowSettings(false)}
-        />
-      </LazyWrapper>
+      <Settings
+        themeMode={themeMode}
+        setThemeMode={setThemeMode}
+        accentId={accentId}
+        setAccentId={setAccentId}
+        onBack={() => setShowSettings(false)}
+      />
     )
   }
 
   if (showImportOutline) {
-    return (
-      <LazyWrapper>
-        <ImportOutline onBack={() => setShowImportOutline(false)} onCreateNote={createNoteFromOutline} />
-      </LazyWrapper>
-    )
+    return <ImportOutline onBack={() => setShowImportOutline(false)} onCreateNote={createNoteFromOutline} />
   }
 
   if (showImportProgram) {
     return (
-      <LazyWrapper>
-        <ImportProgram onBack={() => setShowImportProgram(false)} onCreateNotes={createNotesFromProgram} />
-      </LazyWrapper>
+      <ImportProgram onBack={() => setShowImportProgram(false)} onCreateNotes={createNotesFromProgram} />
     )
   }
 
   if (showImport) {
-    return (
-      <LazyWrapper>
-        <ImportBible onBack={() => setShowImport(false)} onImported={() => setShowImport(false)} />
-      </LazyWrapper>
-    )
+    return <ImportBible onBack={() => setShowImport(false)} onImported={() => setShowImport(false)} />
   }
 
   if (openNote) {
     return (
       <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex overflow-x-hidden">
-        <LazyWrapper>
-          <NoteEditor
-            key={openNote.id}
-            note={openNote}
-            folders={folders}
-            onBack={() => setOpenNoteId(null)}
-            onSave={saveNote}
-            onTrash={trashNote}
-            onRestore={restoreNote}
-            onDeleteForever={deleteForever}
-            onNeedImport={() => setShowImport(true)}
-          />
-        </LazyWrapper>
+        <NoteEditor
+          key={openNote.id}
+          note={openNote}
+          folders={folders}
+          onBack={() => setOpenNoteId(null)}
+          onSave={saveNote}
+          onTrash={trashNote}
+          onRestore={restoreNote}
+          onDeleteForever={deleteForever}
+          onNeedImport={() => setShowImport(true)}
+        />
       </div>
     )
   }
@@ -484,4 +454,4 @@ export default function App() {
       )}
     </div>
   )
-      }
+                                }
