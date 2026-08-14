@@ -1,4 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, lazy } from 'react'
+import { LazyWrapper } from './components/LazyWrapper'
+
+// Componentes que se cargan siempre (críticos para la carga inicial)
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import NoteCard from './components/NoteCard'
@@ -7,12 +10,15 @@ import Fab from './components/Fab'
 import FolderGrid from './components/FolderGrid'
 import FolderCard from './components/FolderCard'
 import NewFolderDialog from './components/NewFolderDialog'
-import NoteEditor from './components/NoteEditor'
-import ImportBible from './components/ImportBible'
-import ImportProgram from './components/ImportProgram'
-import ImportOutline from './components/ImportOutline'
-import Settings from './components/Settings'
-import SplashScreen from './components/SplashScreen'
+
+// Componentes con lazy loading (solo se cargan cuando se necesitan)
+const NoteEditor = lazy(() => import('./components/NoteEditor'))
+const ImportBible = lazy(() => import('./components/ImportBible'))
+const ImportProgram = lazy(() => import('./components/ImportProgram'))
+const ImportOutline = lazy(() => import('./components/ImportOutline'))
+const Settings = lazy(() => import('./components/Settings'))
+const SplashScreen = lazy(() => import('./components/SplashScreen'))
+
 import { folders as defaultFolders, notes as initialNotes } from './data/mockNotes'
 import { useLocalStorageNotes } from './hooks/useLocalStorageNotes'
 import { useLocalStorageFolders } from './hooks/useLocalStorageFolders'
@@ -219,49 +225,67 @@ export default function App() {
   }
 
   if (showSplash) {
-    return <SplashScreen onFinish={() => setShowSplash(false)} />
+    return (
+      <LazyWrapper>
+        <SplashScreen onFinish={() => setShowSplash(false)} />
+      </LazyWrapper>
+    )
   }
 
   if (showSettings) {
     return (
-      <Settings
-        themeMode={themeMode}
-        setThemeMode={setThemeMode}
-        accentId={accentId}
-        setAccentId={setAccentId}
-        onBack={() => setShowSettings(false)}
-      />
+      <LazyWrapper>
+        <Settings
+          themeMode={themeMode}
+          setThemeMode={setThemeMode}
+          accentId={accentId}
+          setAccentId={setAccentId}
+          onBack={() => setShowSettings(false)}
+        />
+      </LazyWrapper>
     )
   }
 
   if (showImportOutline) {
-    return <ImportOutline onBack={() => setShowImportOutline(false)} onCreateNote={createNoteFromOutline} />
+    return (
+      <LazyWrapper>
+        <ImportOutline onBack={() => setShowImportOutline(false)} onCreateNote={createNoteFromOutline} />
+      </LazyWrapper>
+    )
   }
 
   if (showImportProgram) {
     return (
-      <ImportProgram onBack={() => setShowImportProgram(false)} onCreateNotes={createNotesFromProgram} />
+      <LazyWrapper>
+        <ImportProgram onBack={() => setShowImportProgram(false)} onCreateNotes={createNotesFromProgram} />
+      </LazyWrapper>
     )
   }
 
   if (showImport) {
-    return <ImportBible onBack={() => setShowImport(false)} onImported={() => setShowImport(false)} />
+    return (
+      <LazyWrapper>
+        <ImportBible onBack={() => setShowImport(false)} onImported={() => setShowImport(false)} />
+      </LazyWrapper>
+    )
   }
 
   if (openNote) {
     return (
       <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex overflow-x-hidden">
-        <NoteEditor
-          key={openNote.id}
-          note={openNote}
-          folders={folders}
-          onBack={() => setOpenNoteId(null)}
-          onSave={saveNote}
-          onTrash={trashNote}
-          onRestore={restoreNote}
-          onDeleteForever={deleteForever}
-          onNeedImport={() => setShowImport(true)}
-        />
+        <LazyWrapper>
+          <NoteEditor
+            key={openNote.id}
+            note={openNote}
+            folders={folders}
+            onBack={() => setOpenNoteId(null)}
+            onSave={saveNote}
+            onTrash={trashNote}
+            onRestore={restoreNote}
+            onDeleteForever={deleteForever}
+            onNeedImport={() => setShowImport(true)}
+          />
+        </LazyWrapper>
       </div>
     )
   }
@@ -454,4 +478,4 @@ export default function App() {
       )}
     </div>
   )
-                                }
+}
