@@ -7,52 +7,37 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icons/*.png'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'NotePad TJ',
-        short_name: 'NotePad TJ',
-        description: 'Notas para estudio y predicación',
-        lang: 'es',
-        theme_color: '#ffffff',
+        name: 'NotePad-Tj',
+        short_name: 'NotePad-Tj',
+        description: 'Toma notas de estudio bíblico',
+        theme_color: '#1a1a1a',
         background_color: '#ffffff',
-        display: 'standalone',
-        orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
-        prefer_related_applications: false,
         icons: [
           {
-            src: 'icons/icon-192.png',
+            src: 'icon-192.png',
             sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any'
+            type: 'image/png'
           },
           {
-            src: 'icons/icon-512.png',
+            src: 'icon-512.png',
             sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: 'icons/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
+            type: 'image/png'
           }
         ]
       },
       workbox: {
-        clientsClaim: true,
-        skipWaiting: true,
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /\.(js|css|html)$/,
-            handler: 'StaleWhileRevalidate',
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
             options: {
-              cacheName: 'assets-cache',
+              cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24
+                maxAgeSeconds: 60 * 60 * 24 * 365
               }
             }
           }
@@ -60,5 +45,23 @@ export default defineConfig({
       }
     })
   ],
-  base: './'
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'bible-vendor': ['jszip']
+        }
+      }
+    },
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    },
+    chunkSizeWarningLimit: 1000,
+    sourcemap: false
+  }
 })
