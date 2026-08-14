@@ -1,47 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import {
-  Folder,
-  BookOpen,
-  School,
-  Archive,
-  Pin,
-  Target,
-  Leaf,
-  Church,
-  Heart,
-  Book,
-  Compass,
-  Ticket,
-  Scroll,
-  Calendar,
-  Star,
-  Trash2,
-} from 'lucide-react'
+import { Trash2 } from 'lucide-react'
+import { ICON_MAP, ICON_CHOICES, FolderIcon } from '../lib/iconMap'
 
-// Mapeo de emoji a icono de Lucide (para visualización)
-const ICON_MAP = {
-  '📁': Folder,
-  '📚': BookOpen,
-  '🏫': School,
-  '🗂️': Archive,
-  '📌': Pin,
-  '🎯': Target,
-  '🌱': Leaf,
-  '✝️': Church,
-  '🙏': Heart,
-  '📖': Book,
-  '🧭': Compass,
-  '🎟️': Ticket,
-  '📜': Scroll,
-  '🗓️': Calendar,
-  '⭐': Star,
-}
-
-// Lista de emojis (se mantienen como valor interno)
-const ICON_CHOICES = Object.keys(ICON_MAP)
-
-// Sugiere un emoji según el nombre (igual que antes)
 function suggestIcon(name) {
   const n = name.toLowerCase()
   if (/escuela/.test(n)) return '🏫'
@@ -69,9 +30,6 @@ export default function NewFolderDialog({ initial, parentName, onCreate, onClose
     onCreate(trimmed, icon)
   }
 
-  // Obtener el componente de Lucide para un emoji
-  const IconComponent = ICON_MAP[icon] || Folder
-
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 dark:bg-black/50 px-4"
@@ -94,8 +52,8 @@ export default function NewFolderDialog({ initial, parentName, onCreate, onClose
         )}
 
         <div className="flex gap-2 mb-3">
-          <div className="w-11 h-11 shrink-0 rounded-full bg-surface-2 border border-theme flex items-center justify-center text-xl text-accent">
-            <IconComponent className="w-6 h-6" strokeWidth={1.8} />
+          <div className="w-11 h-11 shrink-0 rounded-full bg-surface-2 border border-theme flex items-center justify-center text-accent">
+            <FolderIcon emoji={icon} className="w-6 h-6" />
           </div>
           <input
             autoFocus
@@ -112,7 +70,6 @@ export default function NewFolderDialog({ initial, parentName, onCreate, onClose
         <p className="text-xs text-muted mb-1.5">Ícono</p>
         <div className="flex flex-wrap gap-1.5 mb-5">
           {ICON_CHOICES.map((ic) => {
-            const LucideIcon = ICON_MAP[ic]
             const isSelected = icon === ic
             return (
               <button
@@ -121,14 +78,14 @@ export default function NewFolderDialog({ initial, parentName, onCreate, onClose
                   setIcon(ic)
                   setIconTouched(true)
                 }}
-                className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-colors
+                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
                   ${
                     isSelected
                       ? 'bg-accent/15 ring-2 ring-accent text-accent'
                       : 'hover:bg-ink/5 dark:hover:bg-night-text/10 text-muted'
                   }`}
               >
-                <LucideIcon className="w-5 h-5" strokeWidth={1.8} />
+                <FolderIcon emoji={ic} className="w-5 h-5" />
               </button>
             )
           })}
