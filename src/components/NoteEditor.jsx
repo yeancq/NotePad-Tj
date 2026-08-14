@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import VersePanel from './VersePanel'
 import SpeakerMode from './SpeakerMode'
 import SpeakerIcon from './SpeakerIcon'
@@ -23,22 +23,56 @@ export default function NoteEditor({
   const [cursorPos, setCursorPos] = useState(0)
   const [hasActiveVerse, setHasActiveVerse] = useState(false)
   const [showSpeaker, setShowSpeaker] = useState(false)
-  useBackHandler(showSpeaker, () => setShowSpeaker(false))
+  const [saving, setSaving] = useState(false)
+  
+  // Referencia para el timeout de autoguardado
+  const autoSaveTimer = useRef(null)
 
   const dirty = title !== note.title || body !== note.body || folder !== note.folder
 
+  // Función para guardar (se llama tanto manual como automáticamente)
   const handleSave = () => {
+    if (!dirty) return
+    setSaving(true)
     onSave({ ...note, title: title.trim() || 'Sin título', body, folder })
+    setTimeout(() => setSaving(false), 300) // Pequeño indicador visual
+  }
+
+  // Autoguardado con debounce (1 segundo de inactividad)
+  useEffect(() => {
+    if (dirty) {
+      // Limpiar el timeout anterior
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current)
+      }
+      // Programar un nuevo guardado después de 1 segundo
+      autoSaveTimer.current = setTimeout(() => {
+        handleSave()
+      }, 1000)
+    }
+    return () => {
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current)
+      }
+    }
+  }, [title, body, folder]) // Se ejecuta al cambiar estos estados
+
+  useBackHandler(showSpeaker, () => setShowSpeaker(false))
+
+  // Guardar al salir si hay cambios sin guardar
+  const handleBack = () => {
+    if (dirty) {
+      handleSave()
+    }
+    // Esperar un momento para que se guarde antes de navegar
+    setTimeout(() => onBack(), 100)
   }
 
   return (
     <div className="flex-1 min-w-0 flex flex-col h-dvh overflow-x-hidden">
       <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-3 sm:px-4 md:px-8 py-3 flex items-center gap-2 sm:gap-3 min-w-0">
         <button
-          onClick={() => {
-            if (dirty) handleSave()
-            onBack()
-          }}
+          onClick={handleBack}
           className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
           aria-label="Volver"
         >
@@ -69,6 +103,10 @@ export default function NoteEditor({
           >
             <SpeakerIcon className="w-[18px] h-[18px]" />
           </button>
+        )}
+
+        {saving && (
+          <span className="text-xs text-ink-soft/50 dark:text-night-text/30">Guardando...</span>
         )}
 
         {note.trashed ? (
@@ -106,7 +144,6 @@ export default function NoteEditor({
         )}
       </header>
 
-      {/* El editor ahora ocupa todo el ancho, el panel es flotante */}
       <div className="flex-1 min-h-0 min-w-0 overflow-y-auto px-4 md:px-8 py-6 pb-24">
         <div className="max-w-3xl w-full mx-auto">
           {note.trashed && (
@@ -135,7 +172,6 @@ export default function NoteEditor({
         </div>
       </div>
 
-      {/* Panel flotante - se renderiza al final para estar por encima */}
       {!note.trashed && (
         <VersePanel
           text={plainText}
