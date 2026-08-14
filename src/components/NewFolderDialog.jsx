@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Trash2 } from 'lucide-react'
-import { ICON_MAP, ICON_CHOICES, FolderIcon } from '../lib/iconMap'
 
+const ICON_CHOICES = ['📁', '📚', '🏫', '🗂️', '📌', '🎯', '🌱', '✝️', '🙏', '📖', '🧭', '🎟️', '📜', '🗓️', '⭐']
+
+// Sugiere un ícono más apropiado según el nombre, si el usuario no elige uno.
 function suggestIcon(name) {
   const n = name.toLowerCase()
   if (/escuela/.test(n)) return '🏫'
@@ -32,7 +33,7 @@ export default function NewFolderDialog({ initial, parentName, onCreate, onClose
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 dark:bg-black/50 px-4"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-ink/30 dark:bg-black/50 px-4"
       onClick={onClose}
     >
       <motion.div
@@ -40,20 +41,20 @@ export default function NewFolderDialog({ initial, parentName, onCreate, onClose
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm bg-surface rounded-2xl shadow-xl p-5 border border-theme"
+        className="w-full max-w-sm bg-parchment dark:bg-night-surface rounded-2xl shadow-xl p-5"
       >
-        <h2 className={`font-display text-lg text-theme ${!isEdit && parentName ? 'mb-1' : 'mb-3'}`}>
+        <h2 className={`font-display text-lg text-ink dark:text-night-text ${!isEdit && parentName ? 'mb-1' : 'mb-3'}`}>
           {isEdit ? 'Editar carpeta' : 'Nueva carpeta'}
         </h2>
         {!isEdit && parentName && (
-          <p className="text-xs text-muted/60 mb-3">
+          <p className="text-xs text-ink-soft/60 dark:text-night-text/40 mb-3">
             Se creará dentro de <strong>{parentName}</strong>
           </p>
         )}
 
         <div className="flex gap-2 mb-3">
-          <div className="w-11 h-11 shrink-0 rounded-full bg-surface-2 border border-theme flex items-center justify-center text-accent">
-            <FolderIcon emoji={icon} className="w-6 h-6" />
+          <div className="w-11 h-11 shrink-0 rounded-full bg-white/60 dark:bg-night-surface-2 border border-ink/10 dark:border-night-text/10 flex items-center justify-center text-xl">
+            {icon}
           </div>
           <input
             autoFocus
@@ -61,43 +62,40 @@ export default function NewFolderDialog({ initial, parentName, onCreate, onClose
             onChange={(e) => handleNameChange(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             placeholder="Nombre de la carpeta"
-            className="flex-1 min-w-0 bg-surface-2 border border-theme
-                       rounded-lg px-3 py-2 text-sm text-theme
-                       placeholder:text-muted/50 focus:outline-none focus:ring-2 focus:ring-accent/60"
+            className="flex-1 min-w-0 bg-white/60 dark:bg-night-surface-2 border border-ink/10 dark:border-night-text/10
+                       rounded-lg px-3 py-2 text-sm text-ink dark:text-night-text
+                       placeholder:text-ink-soft/50 focus:outline-none focus:ring-2 focus:ring-gilt/60"
           />
         </div>
 
-        <p className="text-xs text-muted mb-1.5">Ícono</p>
+        <p className="text-xs text-ink-soft/60 dark:text-night-text/40 mb-1.5">Ícono</p>
         <div className="flex flex-wrap gap-1.5 mb-5">
-          {ICON_CHOICES.map((ic) => {
-            const isSelected = icon === ic
-            return (
-              <button
-                key={ic}
-                onClick={() => {
-                  setIcon(ic)
-                  setIconTouched(true)
-                }}
-                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
-                  ${
-                    isSelected
-                      ? 'bg-accent/15 ring-2 ring-accent text-accent'
-                      : 'hover:bg-ink/5 dark:hover:bg-night-text/10 text-muted'
-                  }`}
-              >
-                <FolderIcon emoji={ic} className="w-5 h-5" />
-              </button>
-            )
-          })}
+          {ICON_CHOICES.map((ic) => (
+            <button
+              key={ic}
+              onClick={() => {
+                setIcon(ic)
+                setIconTouched(true)
+              }}
+              className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-colors
+                ${
+                  icon === ic
+                    ? 'bg-leather/15 ring-2 ring-leather dark:ring-gilt-soft'
+                    : 'hover:bg-ink/5 dark:hover:bg-night-text/10'
+                }`}
+            >
+              {ic}
+            </button>
+          ))}
         </div>
 
         <div className="flex justify-between items-center gap-2">
           {isEdit && onDelete ? (
             <button
               onClick={onDelete}
-              className="px-3 py-2 rounded-full text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-1.5"
+              className="px-3 py-2 rounded-full text-sm text-leather hover:bg-leather/10 transition-colors"
             >
-              <Trash2 className="w-4 h-4" /> Eliminar
+              Eliminar
             </button>
           ) : (
             <span />
@@ -105,14 +103,14 @@ export default function NewFolderDialog({ initial, parentName, onCreate, onClose
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-full text-sm text-muted hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
+              className="px-4 py-2 rounded-full text-sm text-ink-soft dark:text-night-text/60 hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={handleCreate}
               disabled={!name.trim()}
-              className="px-4 py-2 rounded-full text-sm bg-accent text-surface disabled:opacity-40 hover:bg-accent/90 transition-colors"
+              className="px-4 py-2 rounded-full text-sm bg-leather text-parchment disabled:opacity-40 hover:bg-leather-deep transition-colors"
             >
               {isEdit ? 'Guardar' : 'Crear'}
             </button>

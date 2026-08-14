@@ -1,4 +1,3 @@
-import { Folder, Pin, Trash2 } from 'lucide-react'
 import FolderCard from './FolderCard'
 
 export default function FolderGrid({ folders, counts, onSelect, onEditFolder, onDeleteFolder }) {
@@ -20,13 +19,13 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder, on
       <div className="grid grid-cols-2 gap-3.5 mb-7">
         <button
           onClick={() => onSelect(null)}
-          className="flex flex-col items-start gap-3 p-5 rounded-2xl text-left bg-primary text-surface
+          className="flex flex-col items-start gap-3 p-5 rounded-2xl text-left bg-leather text-parchment
                      hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
         >
-          <Folder className="w-6 h-6" />
+          <span className="text-2xl">📚</span>
           <span>
             <span className="block font-display text-base">Todas las notas</span>
-            <span className="block text-xs text-surface/70 mt-0.5">
+            <span className="block text-xs text-parchment/70 mt-0.5">
               {counts.all} {counts.all === 1 ? 'nota' : 'notas'}
             </span>
           </span>
@@ -35,13 +34,13 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder, on
         <button
           onClick={() => onSelect('pinned')}
           className="flex flex-col items-start gap-3 p-5 rounded-2xl text-left
-                     bg-surface border border-theme shadow-card
-                     hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
+                     bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10
+                     hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
         >
-          <Pin className="w-6 h-6 text-accent" />
+          <span className="text-2xl">📌</span>
           <span>
-            <span className="block font-display text-base text-theme">Fijadas</span>
-            <span className="block text-xs text-muted mt-0.5">
+            <span className="block font-display text-base text-ink dark:text-night-text">Fijadas</span>
+            <span className="block text-xs text-ink-soft/60 dark:text-night-text/40 mt-0.5">
               {counts.pinned} {counts.pinned === 1 ? 'nota' : 'notas'}
             </span>
           </span>
@@ -49,10 +48,10 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder, on
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+        <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40">
           Carpetas
         </p>
-        <p className="text-[11px] text-muted/60">
+        <p className="text-[11px] text-ink-soft/40 dark:text-night-text/30">
           ⋮ para opciones
         </p>
       </div>
@@ -71,10 +70,9 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder, on
 
       <button
         onClick={() => onSelect('trash')}
-        className="text-xs text-muted hover:text-accent transition-colors flex items-center gap-1.5"
+        className="text-xs text-ink-soft/60 dark:text-night-text/40 hover:text-leather dark:hover:text-gilt-soft transition-colors"
       >
-        <Trash2 className="w-3.5 h-3.5" />
-        Papelera {counts.trash > 0 ? `(${counts.trash})` : ''}
+        🗑️ Papelera {counts.trash > 0 ? `(${counts.trash})` : ''}
       </button>
     </div>
   )
