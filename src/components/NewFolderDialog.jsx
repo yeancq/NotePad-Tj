@@ -16,6 +16,7 @@ import {
   Scroll,
   Calendar,
   Star,
+  Trash2,
 } from 'lucide-react'
 
 // Mapeo de emoji a icono de Lucide (para visualización)
