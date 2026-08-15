@@ -43,7 +43,7 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
   const [openGuideIndex, setOpenGuideIndex] = useState(null)
   const fileRef = useRef(null)
 
-  const appVersion = '1.0.0'
+  const appVersion = '1.0.1'
 
   const handleExport = () => {
     const { notesCount, foldersCount } = exportBackup()
