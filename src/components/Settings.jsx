@@ -13,6 +13,9 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
   const [pendingImport, setPendingImport] = useState(null)
   const fileRef = useRef(null)
 
+  // Leemos la versión inyectada por Vite en el paso 1 (si no existiera, usa '1.0.0')
+  const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'
+
   const handleExport = () => {
     const { notesCount, foldersCount } = exportBackup()
     setStatus({
@@ -97,7 +100,7 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
           Estas preferencias se guardan en este dispositivo.
         </p>
 
-        <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5">
+        <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-8">
           <h2 className="font-display text-base mb-1">Respaldo de notas</h2>
           <p className="text-xs text-ink-soft/70 dark:text-night-text/40 mb-4">
             Tus notas solo existen en este dispositivo. Descarga un respaldo de vez en cuando, o
@@ -132,6 +135,13 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
             </p>
           )}
         </section>
+
+        {/* Muestra la versión de la app en la parte inferior */}
+        <div className="text-center pb-6">
+          <p className="text-xs font-medium text-ink-soft/50 dark:text-night-text/40">
+            NotePad TJ — v{appVersion}
+          </p>
+        </div>
       </main>
 
       {pendingImport && (
