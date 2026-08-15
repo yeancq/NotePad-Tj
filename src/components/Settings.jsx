@@ -13,8 +13,8 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
   const [pendingImport, setPendingImport] = useState(null)
   const fileRef = useRef(null)
 
-  // Leemos la versión inyectada por Vite en el paso 1 (si no existiera, usa '1.0.0')
-  const appVersion = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'
+  // Cambia este número manualmente cuando saques una nueva versión
+  const appVersion = '1.0.0'
 
   const handleExport = () => {
     const { notesCount, foldersCount } = exportBackup()
@@ -136,8 +136,8 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
           )}
         </section>
 
-        {/* Muestra la versión de la app en la parte inferior */}
-        <div className="text-center pb-6">
+        {/* Versión de la app */}
+        <div className="text-center pb-8">
           <p className="text-xs font-medium text-ink-soft/50 dark:text-night-text/40">
             NotePad TJ — v{appVersion}
           </p>
