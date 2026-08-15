@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { accentPalettes } from '../data/accentPalettes'
 import { exportBackup, readBackupFile, applyBackup } from '../lib/backup'
 
@@ -43,7 +43,19 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
   const [openGuideIndex, setOpenGuideIndex] = useState(null)
   const fileRef = useRef(null)
 
-  const appVersion = '1.0.1'
+  const [appVersion, setAppVersion] = useState(null)
+  const [appVersionDate, setAppVersionDate] = useState(null)
+
+  useEffect(() => {
+    fetch(`${import.meta.env.BASE_URL}version.json?t=${Date.now()}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return
+        setAppVersion(data.version)
+        if (data.updated) setAppVersionDate(new Date(data.updated))
+      })
+      .catch(() => {})
+  }, [])
 
   const handleExport = () => {
     const { notesCount, foldersCount } = exportBackup()
@@ -207,8 +219,14 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
         {/* Versión de la app */}
         <div className="text-center pb-8">
           <p className="text-xs font-medium text-ink-soft/50 dark:text-night-text/40">
-            NotePad TJ — v{appVersion}
+            NotePad TJ{appVersion ? ` — v${appVersion}` : ''}
           </p>
+          {appVersionDate && (
+            <p className="text-[11px] text-ink-soft/40 dark:text-night-text/30 mt-0.5">
+              Actualizado el{' '}
+              {appVersionDate.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+          )}
         </div>
       </main>
 
