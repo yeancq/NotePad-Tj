@@ -8,12 +8,41 @@ const themeOptions = [
   { id: 'system', label: 'Sistema', icon: '📱' },
 ]
 
+// Guía con las explicaciones de la app
+const guideSections = [
+  {
+    title: '📝 Notas y Notas Rápidas',
+    content:
+      'Crea notas estructuradas para tus estudios o utiliza las notas rápidas para capturar ideas, textos o recordatorios al instante sin necesidad de asignarles una carpeta.',
+  },
+  {
+    title: '📁 Carpetas y Organización',
+    content:
+      'Organiza tu contenido por temas (reuniones, predicación, estudio personal). Puedes mover notas entre carpetas o mantenerlas en la vista principal.',
+  },
+  {
+    title: '📖 Formato y Biblia',
+    content:
+      'Añade formato a tu texto (negrita, listas, resaltados) e integra citas o lecturas bíblicas directamente en tus apuntes para revisarlas durante tus sesiones de estudio.',
+  },
+  {
+    title: '💾 Respaldos y Privacidad',
+    content:
+      'Tus datos se guardan exclusivamente en tu dispositivo. Usa los botones de "Exportar e Importar respaldo" para guardar una copia de seguridad en tu almacenamiento local o mover tus notas a otro teléfono.',
+  },
+  {
+    title: '📲 Instalación como PWA',
+    content:
+      'Al ser una aplicación web progresiva, puedes añadirla a la pantalla de inicio de tu móvil desde el menú del navegador para usarla como una app nativa, incluso sin conexión a internet.',
+  },
+]
+
 export default function Settings({ themeMode, setThemeMode, accentId, setAccentId, onBack }) {
   const [status, setStatus] = useState(null)
   const [pendingImport, setPendingImport] = useState(null)
+  const [openGuideIndex, setOpenGuideIndex] = useState(null)
   const fileRef = useRef(null)
 
-  // Cambia este número manualmente cuando saques una nueva versión
   const appVersion = '1.0.0'
 
   const handleExport = () => {
@@ -44,6 +73,10 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
     setTimeout(() => window.location.reload(), 800)
   }
 
+  const toggleGuide = (index) => {
+    setOpenGuideIndex(openGuideIndex === index ? null : index)
+  }
+
   return (
     <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex flex-col">
       <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-3 flex items-center gap-3">
@@ -58,6 +91,7 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
       </header>
 
       <main className="flex-1 px-4 md:px-8 py-6 max-w-xl mx-auto w-full">
+        {/* Apariencia */}
         <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-5">
           <div className="grid grid-cols-3 gap-3 mb-6">
             {themeOptions.map((opt) => (
@@ -100,7 +134,8 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
           Estas preferencias se guardan en este dispositivo.
         </p>
 
-        <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-8">
+        {/* Respaldo de notas */}
+        <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-5">
           <h2 className="font-display text-base mb-1">Respaldo de notas</h2>
           <p className="text-xs text-ink-soft/70 dark:text-night-text/40 mb-4">
             Tus notas solo existen en este dispositivo. Descarga un respaldo de vez en cuando, o
@@ -136,6 +171,39 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
           )}
         </section>
 
+        {/* Nueva Sección: Cómo funciona NotePad TJ */}
+        <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-8">
+          <h2 className="font-display text-base mb-1">Cómo funciona NotePad TJ</h2>
+          <p className="text-xs text-ink-soft/70 dark:text-night-text/40 mb-4">
+            Guía rápida sobre las funciones principales de la aplicación.
+          </p>
+
+          <div className="space-y-2">
+            {guideSections.map((item, index) => (
+              <div
+                key={index}
+                className="border border-ink/10 dark:border-night-text/10 rounded-lg overflow-hidden"
+              >
+                <button
+                  onClick={() => toggleGuide(index)}
+                  className="w-full flex items-center justify-between p-3 text-left text-sm font-medium text-ink dark:text-night-text bg-ink/5 dark:bg-night-text/5 hover:bg-ink/10 dark:hover:bg-night-text/10 transition-colors"
+                >
+                  <span>{item.title}</span>
+                  <span className="text-xs opacity-60 ml-2">
+                    {openGuideIndex === index ? '▲' : '▼'}
+                  </span>
+                </button>
+
+                {openGuideIndex === index && (
+                  <div className="p-3 text-xs text-ink-soft dark:text-night-text/70 bg-white/50 dark:bg-night-surface/50 leading-relaxed border-t border-ink/5 dark:border-night-text/5">
+                    {item.content}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* Versión de la app */}
         <div className="text-center pb-8">
           <p className="text-xs font-medium text-ink-soft/50 dark:text-night-text/40">
@@ -144,6 +212,7 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
         </div>
       </main>
 
+      {/* Modal de confirmación de importación */}
       {pendingImport && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-ink/30 dark:bg-black/50 px-4"
