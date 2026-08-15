@@ -23,6 +23,10 @@ jobs:
           node-version: 22
       - run: rm -rf node_modules package-lock.json
       - run: npm install
+      - name: Generar número de versión
+        run: |
+          echo "{\"version\": \"$(date -u +%Y.%m.%d).${GITHUB_RUN_NUMBER}\", \"commit\": \"${GITHUB_SHA::7}\", \"updated\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > public/version.json
+          cat public/version.json
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
