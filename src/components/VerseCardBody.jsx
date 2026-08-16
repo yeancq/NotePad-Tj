@@ -105,11 +105,7 @@ export default function VerseCardBody({ activeRef, segmentTexts, bibleReady, onN
                       {s.verseLabel}
                     </span>
                     {mainText ? (
-                      <span dangerouslySetInnerHTML={{ 
-                        __html: mainText
-                          // Resaltar marcadores (*1, *2, etc.) en azul
-                          .replace(/\*(\d+)/g, '<sup class="text-[10px] md:text-[11px] text-accent font-medium cursor-help">*$1</sup>')
-                      }} />
+                      <span>{mainText}</span>
                     ) : (
                       <em className="text-ink-soft/50 dark:text-night-text/30 not-italic">no encontrado</em>
                     )}
