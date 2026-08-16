@@ -33,39 +33,25 @@ export default function VerseCardBody({ activeRef, segmentTexts, bibleReady, onN
             Buscando…
           </motion.p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {segmentTexts.map((s, i) => {
-              // Tomar el texto tal cual viene de la base de datos
-              const rawText = s.text || ''
-              
-              // Dividir el texto en partes: texto principal y notas al pie
-              // Las notas al pie suelen estar al final, precedidas por "—" o "●"
-              const parts = rawText.split(/\s*[—●]\s*/)
-              const mainText = parts[0] || rawText
-              const footnotes = parts.slice(1)
-
+              // 🔥 Mostrar el texto COMPLETO tal cual viene, sin procesar
+              const fullText = s.text || ''
               return (
                 <div key={i}>
                   <p className="text-[14px] md:text-[15px] leading-[1.75] text-ink/90 dark:text-night-text/90">
                     <span className="text-[11px] md:text-[12px] font-medium text-ink-soft/60 dark:text-night-text/40 align-super mr-0.5">
                       {s.verseLabel}
                     </span>
-                    {mainText || (
-                      <em className="text-ink-soft/50 dark:text-night-text/30 not-italic">no encontrado</em>
-                    )}
+                    <span dangerouslySetInnerHTML={{ 
+                      __html: fullText
+                        // Opcional: resaltar las notas al pie (*, †, etc.)
+                        .replace(
+                          /(\*|†|‡|§|‖|¶)(?=\s)/g,
+                          '<sup class="text-[10px] md:text-[11px] text-accent font-medium">$1</sup>'
+                        )
+                    }} />
                   </p>
-                  
-                  {/* Mostrar notas al pie si existen */}
-                  {footnotes.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-ink/[0.06] dark:border-night-text/[0.06] space-y-0.5">
-                      {footnotes.map((note, idx) => (
-                        <p key={idx} className="text-[11px] md:text-[12px] text-ink-soft/70 dark:text-night-text/50">
-                          <span className="italic">{note.trim()}</span>
-                        </p>
-                      ))}
-                    </div>
-                  )}
-                  
                   {i < segmentTexts.length - 1 && <div className="h-2" />}
                 </div>
               )
