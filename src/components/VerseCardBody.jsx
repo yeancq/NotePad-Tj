@@ -7,24 +7,15 @@ import { motion } from 'framer-motion'
 function processVerseText(text) {
   if (!text) return { mainText: '', footnotes: [] }
 
-  // Buscar patrones de notas al pie: * [texto] o * texto
-  // Ejemplo: "... justicia,* ames la lealtad* ..."
-  // Las notas al pie suelen aparecer como * [número] o * [texto]
-  
-  const footnotes = []
-  let mainText = text
-
-  // Buscar notas al pie con formato: * [texto] o *texto
-  // Primero, buscar notas con corchetes: * [texto]
+  // Buscar notas al pie con formato: * [texto] (jw.org)
   const bracketRegex = /\*\s*\[([^\]]+)\]/g
   let match
   let footnoteIndex = 1
-
-  // Recolectar notas con corchetes
   const bracketMatches = []
+
   while ((match = bracketRegex.exec(text)) !== null) {
     bracketMatches.push({
-      marker: `*${footnoteIndex}`, // *1, *2, etc.
+      marker: `*${footnoteIndex}`,
       text: match[1].trim(),
       index: match.index,
       length: match[0].length
@@ -32,14 +23,17 @@ function processVerseText(text) {
     footnoteIndex++
   }
 
-  // Si no hay notas con corchetes, buscar notas con asterisco simple seguido de texto
+  // Si no hay notas con corchetes, buscar notas con asterisco + palabra
   if (bracketMatches.length === 0) {
-    // Buscar patrones como: "* palabra" al final de la oración
     const simpleRegex = /\*\s*([a-zA-ZáéíóúñÑÁÉÍÓÚ\s]+)/g
     while ((match = simpleRegex.exec(text)) !== null) {
-      // Solo si el texto después del asterisco no es un número o carácter especial
       const afterStar = match[1].trim()
       if (afterStar.length > 1 && !/^\d+$/.test(afterStar)) {
+        // Verificar que no sea parte de una palabra
+        const before = text.substring(0, match.index)
+        if (before.length > 0 && /[a-zA-ZáéíóúñÑÁÉÍÓÚ]/.test(before[before.length - 1])) {
+          continue
+        }
         bracketMatches.push({
           marker: `*${footnoteIndex}`,
           text: afterStar,
@@ -51,24 +45,19 @@ function processVerseText(text) {
     }
   }
 
-  // Si encontramos notas, construir el texto principal reemplazando las notas por marcadores
+  // Construir el texto principal con marcadores
+  let mainText = text
   if (bracketMatches.length > 0) {
-    // Reemplazar las notas en el texto por marcadores (*1, *2, etc.)
-    let processedText = text
-    // Ordenar de atrás hacia adelante para no afectar índices
     const sortedMatches = [...bracketMatches].sort((a, b) => b.index - a.index)
     for (const note of sortedMatches) {
-      // Reemplazar la nota por el marcador
-      const before = processedText.substring(0, note.index)
-      const after = processedText.substring(note.index + note.length)
-      processedText = before + note.marker + after
+      const before = mainText.substring(0, note.index)
+      const after = mainText.substring(note.index + note.length)
+      mainText = before + note.marker + after
     }
-    mainText = processedText
-    footnotes.push(...bracketMatches.map(n => ({ marker: n.marker, text: n.text })))
+    mainText = mainText.replace(/\s{2,}/g, ' ').trim()
   }
 
-  // Limpiar espacios extra
-  mainText = mainText.replace(/\s{2,}/g, ' ').trim()
+  const footnotes = bracketMatches.map(n => ({ marker: n.marker, text: n.text }))
 
   return { mainText, footnotes }
 }
@@ -118,14 +107,13 @@ export default function VerseCardBody({ activeRef, segmentTexts, bibleReady, onN
                     {mainText ? (
                       <span dangerouslySetInnerHTML={{ 
                         __html: mainText
-                          // Resaltar marcadores de nota (*1, *2, etc.) en azul y superíndice
+                          // Resaltar marcadores (*1, *2, etc.) en azul
                           .replace(/\*(\d+)/g, '<sup class="text-[10px] md:text-[11px] text-accent font-medium cursor-help">*$1</sup>')
                       }} />
                     ) : (
                       <em className="text-ink-soft/50 dark:text-night-text/30 not-italic">no encontrado</em>
                     )}
                   </p>
-                  {/* Mostrar notas al pie si existen */}
                   {footnotes.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-ink/[0.06] dark:border-night-text/[0.06] space-y-0.5">
                       {footnotes.map((note, idx) => (
