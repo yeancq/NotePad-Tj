@@ -1,7 +1,7 @@
 /**
  * Extrae el texto de cada versículo de un archivo de capítulo XHTML del EPUB.
- * Usa DOMParser + TreeWalker para caminar los nodos de texto en orden,
- * ignorando números de versículo, marcadores de nota al pie y navegación.
+ * Usa DOMParser + TreeWalker para caminar los nodos de texto en orden.
+ * CONSERVA TODOS LOS TEXTOS, incluyendo números de versículo y notas al pie.
  * Devuelve un array donde el índice = número de versículo (índice 0 sin usar).
  */
 export function parseChapterXhtml(xhtmlText) {
@@ -16,19 +16,19 @@ export function parseChapterXhtml(xhtmlText) {
 
   const shouldSkip = (el) => {
     while (el) {
-      if (el.tagName === 'SUP' || el.tagName === 'ASIDE') return true
-      if (el.getAttribute?.('epub:type') === 'noteref') return true
-      if (el.getAttribute?.('epub:type') === 'footnote') return true
+      // Solo omitir elementos de navegación y notas al pie COMPLETAS
+      // (pero conservamos el texto de los números de versículo y las notas)
+      if (el.tagName === 'ASIDE') return true
+      
       const cls = el.className || ''
       if (
-        typeof cls === 'string' &&
-        (cls.includes('w_ch') ||
-          cls.includes('w_navigation') ||
-          cls.includes('pageNum') ||
-          cls.includes('groupFootnote'))
+        cls.includes('w_navigation') ||
+        cls.includes('pageNum') ||
+        cls.includes('groupFootnote')
       ) {
         return true
       }
+      
       el = el.parentElement
     }
     return false
