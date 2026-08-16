@@ -72,7 +72,7 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
           </button>
         </div>
         <span className="w-full">
-          <span className="block font-display text-[15px] text-ink dark:text-night-text truncate">
+          <span className="block font-display text-[15px] text-ink dark:text-night-text break-words">
             {folder.name}
           </span>
           <span className="block text-xs text-ink-soft/60 dark:text-night-text/40 mt-0.5">

@@ -87,7 +87,7 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
         </div>
       </div>
 
-      <h3 className="font-display text-lg leading-snug text-ink dark:text-night-text mb-1.5 line-clamp-2">
+      <h3 className="font-display text-lg leading-snug text-ink dark:text-night-text mb-1.5">
         {note.title}
       </h3>
 
