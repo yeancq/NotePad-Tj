@@ -24,6 +24,7 @@ function processVerseText(text) {
   }
 
   // Si no hay notas con corchetes, buscar notas con asterisco + palabra
+  // (pero solo si no son parte de una palabra)
   if (bracketMatches.length === 0) {
     const simpleRegex = /\*\s*([a-zA-ZáéíóúñÑÁÉÍÓÚ\s]+)/g
     while ((match = simpleRegex.exec(text)) !== null) {
@@ -48,12 +49,14 @@ function processVerseText(text) {
   // Construir el texto principal con marcadores
   let mainText = text
   if (bracketMatches.length > 0) {
+    // Ordenar de atrás hacia adelante para no afectar índices
     const sortedMatches = [...bracketMatches].sort((a, b) => b.index - a.index)
     for (const note of sortedMatches) {
       const before = mainText.substring(0, note.index)
       const after = mainText.substring(note.index + note.length)
       mainText = before + note.marker + after
     }
+    // Limpiar espacios dobles
     mainText = mainText.replace(/\s{2,}/g, ' ').trim()
   }
 
@@ -97,7 +100,12 @@ export default function VerseCardBody({ activeRef, segmentTexts, bibleReady, onN
         ) : (
           <div className="space-y-3">
             {segmentTexts.map((s, i) => {
-              const { mainText, footnotes } = processVerseText(s.text || '')
+              // Limpiar el texto: eliminar posibles corchetes numéricos sobrantes
+              let rawText = s.text || ''
+              // Si el texto comienza con [número], lo eliminamos (ya tenemos verseLabel)
+              rawText = rawText.replace(/^\[\s*\d+\s*\]\s*/, '')
+              
+              const { mainText, footnotes } = processVerseText(rawText)
               return (
                 <div key={i}>
                   <p className="text-[14px] md:text-[15px] leading-[1.75] text-ink/90 dark:text-night-text/90">
@@ -105,7 +113,11 @@ export default function VerseCardBody({ activeRef, segmentTexts, bibleReady, onN
                       {s.verseLabel}
                     </span>
                     {mainText ? (
-                      <span>{mainText}</span>
+                      <span dangerouslySetInnerHTML={{ 
+                        __html: mainText
+                          // Resaltar marcadores (*1, *2, etc.) en azul y superíndice
+                          .replace(/\*(\d+)/g, '<sup class="text-[10px] md:text-[11px] text-accent font-medium cursor-help">*$1</sup>')
+                      }} />
                     ) : (
                       <em className="text-ink-soft/50 dark:text-night-text/30 not-italic">no encontrado</em>
                     )}
