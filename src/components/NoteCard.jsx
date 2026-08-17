@@ -71,9 +71,9 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
             setShowMenu(!showMenu)
           }}
           className={`w-6 h-6 flex items-center justify-center rounded-md text-sm leading-none
-                      text-ink-soft/50 dark:text-night-text/40 hover:bg-ink/5 dark:hover:bg-night-text/10
-                      hover:text-ink dark:hover:text-night-text transition-opacity
-                      opacity-0 group-hover:opacity-100 ${showMenu ? 'opacity-100 bg-ink/5 dark:bg-night-text/10' : ''}`}
+                      text-ink-soft/60 dark:text-night-text/50 hover:bg-ink/5 dark:hover:bg-night-text/10
+                      hover:text-ink dark:hover:text-night-text transition-colors
+                      ${showMenu ? 'bg-ink/5 dark:bg-night-text/10 text-ink dark:text-night-text' : ''}`}
           title="Opciones"
           aria-label="Opciones de la nota"
         >
@@ -174,9 +174,7 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
               e.stopPropagation()
               onTogglePin()
             }}
-            className={`text-sm opacity-0 group-hover:opacity-100 transition-opacity ${
-              note.pinned ? 'opacity-100' : ''
-            }`}
+            className="text-sm"
             title={note.pinned ? 'Quitar de fijadas' : 'Fijar nota'}
           >
             {note.pinned ? '🔖' : '📌'}
