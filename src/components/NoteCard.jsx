@@ -22,7 +22,6 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
   const [showMenu, setShowMenu] = useState(false)
   const meta = folderMeta[note.folder] ?? { icon: '📄', color: 'ink' }
 
-  // Obtener carpetas principales y subcarpetas de forma ordenada
   const availableFolders = folders.filter(f => !f.parentId).map(f => ({
     ...f,
     children: folders.filter(c => c.parentId === f.id)
@@ -49,12 +48,10 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
   return (
     <article
       onClick={onOpen}
-      className="group relative bg-white/70 dark:bg-night-surface hover:bg-white dark:hover:bg-night-surface-2
-                 border border-ink/10 dark:border-night-text/10
-                 hover:border-leather/30 dark:hover:border-leather/40
-                 rounded-xl p-4
-                 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md
-                 hover:shadow-leather/15"
+      className="group relative card-accent-hover
+                 bg-white/70 dark:bg-night-surface hover:bg-white dark:hover:bg-night-surface-2
+                 border border-ink/10 dark:border-night-text/10 rounded-xl p-4
+                 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
     >
       {note.pinned && (
         <span
@@ -84,7 +81,6 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
 
         {showMenu && (
           <>
-            {/* Fondo para cerrar al tocar fuera del menú */}
             <div
               className="fixed inset-0 z-10"
               onClick={(e) => {
@@ -136,7 +132,6 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
                       <span className="flex-1 truncate">{folder.name}</span>
                       {note.folder === folder.id && <span className="text-xs">✓</span>}
                     </button>
-                    {/* Subcarpetas */}
                     {folder.children.length > 0 && (
                       <div className="ml-6">
                         {folder.children.map((child) => (
