@@ -414,6 +414,7 @@ export default function App() {
                               onOpen={() => setOpenNoteId(note.id)}
                               onTogglePin={() => togglePin(note.id)}
                               onMoveNote={moveNoteToFolder}
+                              onTrash={trashNote}
                             />
                           ))}
                         </div>
@@ -454,4 +455,4 @@ export default function App() {
       )}
     </div>
   )
-                                }
+}
