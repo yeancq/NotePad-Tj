@@ -18,7 +18,7 @@ function formatDate(iso) {
   return d.toLocaleDateString('es', { day: 'numeric', month: 'short' })
 }
 
-export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMoveNote }) {
+export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMoveNote, onTrash }) {
   const [showMenu, setShowMenu] = useState(false)
   const meta = folderMeta[note.folder] ?? { icon: '📄', color: 'ink' }
 
@@ -38,6 +38,14 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
     setShowMenu(false)
   }
 
+  const handleDelete = (e) => {
+    e.stopPropagation()
+    setShowMenu(false)
+    if (window.confirm(`¿Eliminar la nota "${note.title || 'Sin título'}"? Podrás restaurarla desde la papelera.`)) {
+      onTrash?.(note.id)
+    }
+  }
+
   return (
     <article
       onClick={onOpen}
@@ -55,7 +63,107 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
         />
       )}
 
-      <div className="flex items-start justify-between gap-2 mb-1.5">
+      {/* Menú de opciones (⋮) - esquina superior izquierda */}
+      <div className="absolute top-2 left-2 z-10">
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowMenu(!showMenu)
+          }}
+          className={`w-6 h-6 flex items-center justify-center rounded-md text-sm leading-none
+                      text-ink-soft/50 dark:text-night-text/40 hover:bg-ink/5 dark:hover:bg-night-text/10
+                      hover:text-ink dark:hover:text-night-text transition-opacity
+                      opacity-0 group-hover:opacity-100 ${showMenu ? 'opacity-100 bg-ink/5 dark:bg-night-text/10' : ''}`}
+          title="Opciones"
+          aria-label="Opciones de la nota"
+        >
+          ⋮
+        </button>
+
+        {showMenu && (
+          <>
+            {/* Fondo para cerrar al tocar fuera del menú */}
+            <div
+              className="fixed inset-0 z-10"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowMenu(false)
+              }}
+            />
+            <div
+              className="absolute left-0 top-full mt-1 w-60 bg-white dark:bg-night-surface-2
+                         rounded-lg shadow-xl border border-ink/10 dark:border-night-text/10 p-1.5 z-20"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={handleDelete}
+                className="w-full text-left px-2.5 py-2 text-sm rounded-md transition-colors flex items-center gap-2
+                           text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+              >
+                <span>🗑️</span> Eliminar nota
+              </button>
+
+              <button
+                disabled
+                title="Próximamente"
+                className="w-full text-left px-2.5 py-2 text-sm rounded-md flex items-center gap-2
+                           text-ink-soft/40 dark:text-night-text/30 cursor-not-allowed"
+              >
+                <span>🔗</span> Enlazar con otra nota
+                <span className="ml-auto text-[10px] italic">Próximamente</span>
+              </button>
+
+              <div className="my-1 border-t border-ink/10 dark:border-night-text/10" />
+
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-soft/40 dark:text-night-text/30 px-2.5 py-1.5">
+                Mover a carpeta
+              </p>
+              <div className="max-h-48 overflow-y-auto">
+                {availableFolders.map((folder) => (
+                  <div key={folder.id}>
+                    <button
+                      onClick={(e) => handleMove(folder.id, e)}
+                      className={`w-full text-left px-2.5 py-1.5 text-sm rounded-md transition-colors flex items-center gap-2
+                        ${note.folder === folder.id
+                          ? 'bg-ink/5 dark:bg-night-text/10 text-ink-soft/50 dark:text-night-text/40 cursor-default'
+                          : 'hover:bg-ink/5 dark:hover:bg-night-text/10 text-ink dark:text-night-text'
+                        }`}
+                      disabled={note.folder === folder.id}
+                    >
+                      <span>{folder.icon || '📁'}</span>
+                      <span className="flex-1 truncate">{folder.name}</span>
+                      {note.folder === folder.id && <span className="text-xs">✓</span>}
+                    </button>
+                    {/* Subcarpetas */}
+                    {folder.children.length > 0 && (
+                      <div className="ml-6">
+                        {folder.children.map((child) => (
+                          <button
+                            key={child.id}
+                            onClick={(e) => handleMove(child.id, e)}
+                            className={`w-full text-left px-2.5 py-1 text-sm rounded-md transition-colors flex items-center gap-2
+                              ${note.folder === child.id
+                                ? 'bg-ink/5 dark:bg-night-text/10 text-ink-soft/50 dark:text-night-text/40 cursor-default'
+                                : 'hover:bg-ink/5 dark:hover:bg-night-text/10 text-ink dark:text-night-text'
+                              }`}
+                            disabled={note.folder === child.id}
+                          >
+                            <span>{child.icon || '📁'}</span>
+                            <span className="flex-1 truncate">↳ {child.name}</span>
+                            {note.folder === child.id && <span className="text-xs">✓</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="flex items-start justify-between gap-2 mb-1.5 pl-6">
         <span className="text-xs text-ink-soft/70 dark:text-night-text/40 flex items-center gap-1">
           <span>{meta.icon}</span>
           {formatDate(note.updatedAt)}
@@ -72,17 +180,6 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
             title={note.pinned ? 'Quitar de fijadas' : 'Fijar nota'}
           >
             {note.pinned ? '🔖' : '📌'}
-          </button>
-          {/* Botón para mover nota */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowMenu(!showMenu)
-            }}
-            className="text-sm opacity-0 group-hover:opacity-100 transition-opacity"
-            title="Mover a otra carpeta"
-          >
-            📂
           </button>
         </div>
       </div>
@@ -105,59 +202,6 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
           </span>
         ))}
       </div>
-
-      {/* Menú para mover nota */}
-      {showMenu && (
-        <div
-          className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-night-surface-2 
-                     rounded-lg shadow-xl border border-ink/10 dark:border-night-text/10 p-1.5 z-20"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-ink-soft/40 dark:text-night-text/30 px-2 py-1.5">
-            Mover a carpeta
-          </p>
-          <div className="max-h-48 overflow-y-auto">
-            {availableFolders.map((folder) => (
-              <div key={folder.id}>
-                <button
-                  onClick={(e) => handleMove(folder.id, e)}
-                  className={`w-full text-left px-2 py-1.5 text-sm rounded-md transition-colors flex items-center gap-2
-                    ${note.folder === folder.id 
-                      ? 'bg-ink/5 dark:bg-night-text/10 text-ink-soft/50 dark:text-night-text/40 cursor-default' 
-                      : 'hover:bg-ink/5 dark:hover:bg-night-text/10 text-ink dark:text-night-text'
-                    }`}
-                  disabled={note.folder === folder.id}
-                >
-                  <span>{folder.icon || '📁'}</span>
-                  <span className="flex-1 truncate">{folder.name}</span>
-                  {note.folder === folder.id && <span className="text-xs">✓</span>}
-                </button>
-                {/* Subcarpetas */}
-                {folder.children.length > 0 && (
-                  <div className="ml-6">
-                    {folder.children.map((child) => (
-                      <button
-                        key={child.id}
-                        onClick={(e) => handleMove(child.id, e)}
-                        className={`w-full text-left px-2 py-1 text-sm rounded-md transition-colors flex items-center gap-2
-                          ${note.folder === child.id 
-                            ? 'bg-ink/5 dark:bg-night-text/10 text-ink-soft/50 dark:text-night-text/40 cursor-default' 
-                            : 'hover:bg-ink/5 dark:hover:bg-night-text/10 text-ink dark:text-night-text'
-                          }`}
-                        disabled={note.folder === child.id}
-                      >
-                        <span>{child.icon || '📁'}</span>
-                        <span className="flex-1 truncate">↳ {child.name}</span>
-                        {note.folder === child.id && <span className="text-xs">✓</span>}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </article>
   )
 }
