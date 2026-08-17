@@ -50,9 +50,11 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
     <article
       onClick={onOpen}
       className="group relative bg-white/70 dark:bg-night-surface hover:bg-white dark:hover:bg-night-surface-2
-                 border border-ink/10 dark:border-night-text/10 rounded-xl p-4
+                 border border-ink/10 dark:border-night-text/10
+                 hover:border-leather/30 dark:hover:border-leather/40
+                 rounded-xl p-4
                  cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md
-                 hover:shadow-ink/5"
+                 hover:shadow-leather/15"
     >
       {note.pinned && (
         <span
