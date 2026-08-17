@@ -53,7 +53,9 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
         onContextMenu={(e) => e.preventDefault()}
         className="w-full flex flex-col items-start gap-3 p-4 rounded-xl text-left select-none
                    bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10
-                   hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] transition-all duration-150"
+                   hover:border-leather/30 dark:hover:border-leather/40
+                   hover:-translate-y-0.5 hover:shadow-md hover:shadow-leather/15
+                   active:scale-[0.97] transition-all duration-150"
         style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
       >
         <div className="w-full flex items-start justify-between">
