@@ -6,7 +6,6 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
   const timerRef = useRef(null)
   const longPressedRef = useRef(false)
   const [showMenu, setShowMenu] = useState(false)
-  const [hovered, setHovered] = useState(false)
 
   const startPress = () => {
     longPressedRef.current = false
@@ -49,18 +48,18 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
         onClick={handleClick}
         onPointerDown={startPress}
         onPointerUp={cancelPress}
-        onPointerLeave={() => { cancelPress(); setHovered(false) }}
-        onPointerCancel={() => { cancelPress(); setHovered(false) }}
-        onPointerEnter={() => setHovered(true)}
+        onPointerLeave={cancelPress}
+        onPointerCancel={cancelPress}
         onContextMenu={(e) => e.preventDefault()}
-        style={hovered ? {
+        style={{
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none',
           borderColor: 'var(--color-accent-border)',
-          boxShadow: '0 4px 12px -2px var(--color-accent-glow), 0 2px 6px -2px var(--color-accent-glow)',
-        } : {}}
+          boxShadow: '0 2px 8px var(--color-accent-shadow)',
+        }}
         className="w-full flex flex-col items-start gap-3 p-4 rounded-xl text-left select-none
-                   bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10
-                   hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97] transition-all duration-150"
-        style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
+                   bg-white/70 dark:bg-night-surface border
+                   hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-150"
       >
         <div className="w-full flex items-start justify-between">
           <span className="text-2xl">{folder.icon || '📁'}</span>
