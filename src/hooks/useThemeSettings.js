@@ -42,10 +42,10 @@ export function useThemeSettings() {
     root.setProperty('--color-leather-deep', deepen(palette.base))
     root.setProperty('--color-gilt', deepen(lighten(palette.base, 26), 4))
     root.setProperty('--color-gilt-soft', lighten(palette.base, 30))
-    // Color de acento con opacidad para bordes y sombras de tarjetas
-    // 4d = 30% opacidad, 28 = 16% opacidad (hex de 0-255)
+    // Variables para borde y sombra de tarjetas
+    // 4d = 30% opacidad en hex,  20 = 12% opacidad en hex
     root.setProperty('--color-accent-border', palette.base + '4d')
-    root.setProperty('--color-accent-glow', palette.base + '28')
+    root.setProperty('--color-accent-shadow', palette.base + '20')
   }, [accentId])
 
   return { themeMode, setThemeMode, accentId, setAccentId, dark }
