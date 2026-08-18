@@ -20,6 +20,7 @@ function formatDate(iso) {
 
 export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMoveNote, onTrash }) {
   const [showMenu, setShowMenu] = useState(false)
+  const [hovered, setHovered] = useState(false)
   const meta = folderMeta[note.folder] ?? { icon: '📄', color: 'ink' }
 
   const availableFolders = folders.filter(f => !f.parentId).map(f => ({
@@ -48,10 +49,16 @@ export default function NoteCard({ note, folders = [], onOpen, onTogglePin, onMo
   return (
     <article
       onClick={onOpen}
-      className="group relative card-accent-hover
-                 bg-white/70 dark:bg-night-surface hover:bg-white dark:hover:bg-night-surface-2
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={hovered ? {
+        borderColor: 'var(--color-accent-border)',
+        boxShadow: '0 4px 12px -2px var(--color-accent-glow), 0 2px 6px -2px var(--color-accent-glow)',
+      } : {}}
+      className="group relative bg-white/70 dark:bg-night-surface hover:bg-white dark:hover:bg-night-surface-2
                  border border-ink/10 dark:border-night-text/10 rounded-xl p-4
-                 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md
+                 hover:shadow-ink/5"
     >
       {note.pinned && (
         <span
