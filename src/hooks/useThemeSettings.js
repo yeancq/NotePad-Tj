@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { accentPalettes, deepen, lighten } from '../data/accentPalettes'
 
-const THEME_KEY = 'cuaderno:themeMode' // 'light' | 'dark' | 'system'
+const THEME_KEY = 'cuaderno:themeMode'
 const ACCENT_KEY = 'cuaderno:accent'
 
 function getSystemDark() {
@@ -17,7 +17,6 @@ export function useThemeSettings() {
   )
   const [systemDark, setSystemDark] = useState(getSystemDark)
 
-  // Escuchar cambios del tema del sistema en vivo (solo importa si themeMode === 'system').
   useEffect(() => {
     const mql = window.matchMedia('(prefers-color-scheme: dark)')
     const handler = (e) => setSystemDark(e.matches)
@@ -43,6 +42,10 @@ export function useThemeSettings() {
     root.setProperty('--color-leather-deep', deepen(palette.base))
     root.setProperty('--color-gilt', deepen(lighten(palette.base, 26), 4))
     root.setProperty('--color-gilt-soft', lighten(palette.base, 30))
+    // Color de acento con opacidad para bordes y sombras de tarjetas
+    // 4d = 30% opacidad, 28 = 16% opacidad (hex de 0-255)
+    root.setProperty('--color-accent-border', palette.base + '4d')
+    root.setProperty('--color-accent-glow', palette.base + '28')
   }, [accentId])
 
   return { themeMode, setThemeMode, accentId, setAccentId, dark }
