@@ -67,13 +67,11 @@ export default function NoteEditor({
     setTimeout(() => onBack(), 100)
   }
 
-  // Guarda si hay cambios pendientes y luego navega a la nota enlazada
   const handleOpenLinked = (id) => {
     if (dirty) handleSave()
     setTimeout(() => onOpenNote?.(id), 100)
   }
 
-  // Resuelve los ids a objetos de nota, excluyendo las que están en la papelera
   const linkedNotes = (note.linkedNoteIds || [])
     .map((id) => allNotes.find((n) => n.id === id))
     .filter((n) => n && !n.trashed)
@@ -92,8 +90,7 @@ export default function NoteEditor({
         <select
           value={folder}
           onChange={(e) => setFolder(e.target.value)}
-          className="min-w-0 max-w-[38vw] sm:max-w-[220px] truncate text-sm bg-transparent border border-ink/15 dark:border-night-text/15 rounded-full px-3 py-1.5
-                     text-ink dark:text-night-text focus:outline-none focus:ring-2 focus:ring-gilt/60"
+          className="min-w-0 max-w-[38vw] sm:max-w-[220px] truncate text-sm bg-transparent border border-ink/15 dark:border-night-text/15 rounded-full px-3 py-1.5 text-ink dark:text-night-text focus:outline-none focus:ring-2 focus:ring-gilt/60"
         >
           {folders
             .filter((f) => !f.parentId)
@@ -166,8 +163,7 @@ export default function NoteEditor({
             onChange={(e) => setTitle(e.target.value)}
             disabled={note.trashed}
             placeholder="Título de la nota"
-            className="w-full font-display text-2xl md:text-3xl bg-transparent focus:outline-none
-                       text-ink dark:text-night-text placeholder:text-ink-soft/40 mb-4 disabled:opacity-60"
+            className="w-full font-display text-2xl md:text-3xl bg-transparent focus:outline-none text-ink dark:text-night-text placeholder:text-ink-soft/40 mb-4 disabled:opacity-60"
           />
           <RichEditor
             html={body}
@@ -180,7 +176,6 @@ export default function NoteEditor({
             placeholder="Escribe aquí… (ej. Filipenses 4:6, 7)"
           />
 
-          {/* ── Sección de notas enlazadas ── */}
           {!note.trashed && (
             <div className="mt-10 pt-6 border-t border-ink/10 dark:border-night-text/10">
               <div className="flex items-center justify-between mb-3">
@@ -189,10 +184,7 @@ export default function NoteEditor({
                 </h4>
                 <button
                   onClick={() => setShowLinkDialog(true)}
-                  className="text-xs px-3 py-1 rounded-full flex items-center gap-1
-                             bg-ink/5 dark:bg-night-text/10
-                             text-ink-soft dark:text-night-text/60
-                             hover:bg-ink/10 dark:hover:bg-night-text/20 transition-colors"
+                  className="text-xs px-3 py-1 rounded-full flex items-center gap-1 bg-ink/5 dark:bg-night-text/10 text-ink-soft dark:text-night-text/60 hover:bg-ink/10 dark:hover:bg-night-text/20 transition-colors"
                 >
                   🔗 Enlazar
                 </button>
@@ -209,9 +201,7 @@ export default function NoteEditor({
                     return (
                       <div
                         key={linked.id}
-                        className="flex items-center gap-2 px-3 py-2.5 rounded-xl
-                                   bg-ink/[0.04] dark:bg-night-text/[0.06]
-                                   border border-ink/[0.07] dark:border-night-text/[0.08]"
+                        className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-ink/[0.04] dark:bg-night-text/[0.06] border border-ink/[0.07] dark:border-night-text/[0.08]"
                       >
                         <span className="text-base shrink-0">
                           {linkedFolder?.icon || '📄'}
@@ -226,10 +216,7 @@ export default function NoteEditor({
                         </button>
                         <button
                           onClick={() => onUnlink?.(linked.id)}
-                          className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full
-                                     text-ink-soft/40 dark:text-night-text/30 text-xs
-                                     hover:bg-red-100 dark:hover:bg-red-900/20
-                                     hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                          className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-ink-soft/40 dark:text-night-text/30 text-xs hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                           title="Quitar enlace"
                           aria-label="Quitar enlace"
                         >
