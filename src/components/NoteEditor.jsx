@@ -3,18 +3,23 @@ import VersePanel from './VersePanel'
 import SpeakerMode from './SpeakerMode'
 import SpeakerIcon from './SpeakerIcon'
 import RichEditor from './RichEditor'
+import NoteLinkDialog from './NoteLinkDialog'
 import { ensureHtml } from '../lib/htmlUtils'
 import { useBackHandler } from '../hooks/useBackHandler'
 
 export default function NoteEditor({
   note,
   folders,
+  allNotes = [],
   onBack,
   onSave,
   onTrash,
   onRestore,
   onDeleteForever,
   onNeedImport,
+  onLink,
+  onUnlink,
+  onOpenNote,
 }) {
   const [title, setTitle] = useState(note.title)
   const [body, setBody] = useState(() => ensureHtml(note.body))
@@ -24,28 +29,24 @@ export default function NoteEditor({
   const [hasActiveVerse, setHasActiveVerse] = useState(false)
   const [showSpeaker, setShowSpeaker] = useState(false)
   const [saving, setSaving] = useState(false)
-  
-  // Referencia para el timeout de autoguardado
+  const [showLinkDialog, setShowLinkDialog] = useState(false)
+
   const autoSaveTimer = useRef(null)
 
   const dirty = title !== note.title || body !== note.body || folder !== note.folder
 
-  // Función para guardar (se llama tanto manual como automáticamente)
   const handleSave = () => {
     if (!dirty) return
     setSaving(true)
     onSave({ ...note, title: title.trim() || 'Sin título', body, folder })
-    setTimeout(() => setSaving(false), 300) // Pequeño indicador visual
+    setTimeout(() => setSaving(false), 300)
   }
 
-  // Autoguardado con debounce (1 segundo de inactividad)
   useEffect(() => {
     if (dirty) {
-      // Limpiar el timeout anterior
       if (autoSaveTimer.current) {
         clearTimeout(autoSaveTimer.current)
       }
-      // Programar un nuevo guardado después de 1 segundo
       autoSaveTimer.current = setTimeout(() => {
         handleSave()
       }, 1000)
@@ -55,18 +56,27 @@ export default function NoteEditor({
         clearTimeout(autoSaveTimer.current)
       }
     }
-  }, [title, body, folder]) // Se ejecuta al cambiar estos estados
+  }, [title, body, folder])
 
   useBackHandler(showSpeaker, () => setShowSpeaker(false))
 
-  // Guardar al salir si hay cambios sin guardar
   const handleBack = () => {
     if (dirty) {
       handleSave()
     }
-    // Esperar un momento para que se guarde antes de navegar
     setTimeout(() => onBack(), 100)
   }
+
+  // Guarda si hay cambios pendientes y luego navega a la nota enlazada
+  const handleOpenLinked = (id) => {
+    if (dirty) handleSave()
+    setTimeout(() => onOpenNote?.(id), 100)
+  }
+
+  // Resuelve los ids a objetos de nota, excluyendo las que están en la papelera
+  const linkedNotes = (note.linkedNoteIds || [])
+    .map((id) => allNotes.find((n) => n.id === id))
+    .filter((n) => n && !n.trashed)
 
   return (
     <div className="flex-1 min-w-0 flex flex-col h-dvh overflow-x-hidden">
@@ -169,6 +179,69 @@ export default function NoteEditor({
             disabled={note.trashed}
             placeholder="Escribe aquí… (ej. Filipenses 4:6, 7)"
           />
+
+          {/* ── Sección de notas enlazadas ── */}
+          {!note.trashed && (
+            <div className="mt-10 pt-6 border-t border-ink/10 dark:border-night-text/10">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40">
+                  Notas enlazadas
+                </h4>
+                <button
+                  onClick={() => setShowLinkDialog(true)}
+                  className="text-xs px-3 py-1 rounded-full flex items-center gap-1
+                             bg-ink/5 dark:bg-night-text/10
+                             text-ink-soft dark:text-night-text/60
+                             hover:bg-ink/10 dark:hover:bg-night-text/20 transition-colors"
+                >
+                  🔗 Enlazar
+                </button>
+              </div>
+
+              {linkedNotes.length === 0 ? (
+                <p className="text-xs text-ink-soft/40 dark:text-night-text/30 italic">
+                  Sin notas enlazadas todavía
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {linkedNotes.map((linked) => {
+                    const linkedFolder = folders.find((f) => f.id === linked.folder)
+                    return (
+                      <div
+                        key={linked.id}
+                        className="flex items-center gap-2 px-3 py-2.5 rounded-xl
+                                   bg-ink/[0.04] dark:bg-night-text/[0.06]
+                                   border border-ink/[0.07] dark:border-night-text/[0.08]"
+                      >
+                        <span className="text-base shrink-0">
+                          {linkedFolder?.icon || '📄'}
+                        </span>
+                        <button
+                          onClick={() => handleOpenLinked(linked.id)}
+                          className="flex-1 min-w-0 text-left"
+                        >
+                          <p className="font-display text-sm text-ink dark:text-night-text truncate leading-snug">
+                            {linked.title || 'Sin título'}
+                          </p>
+                        </button>
+                        <button
+                          onClick={() => onUnlink?.(linked.id)}
+                          className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full
+                                     text-ink-soft/40 dark:text-night-text/30 text-xs
+                                     hover:bg-red-100 dark:hover:bg-red-900/20
+                                     hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                          title="Quitar enlace"
+                          aria-label="Quitar enlace"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -186,6 +259,16 @@ export default function NoteEditor({
           note={{ ...note, title, body }}
           onClose={() => setShowSpeaker(false)}
           onNeedImport={onNeedImport}
+        />
+      )}
+
+      {showLinkDialog && (
+        <NoteLinkDialog
+          currentNoteId={note.id}
+          notes={allNotes}
+          linkedNoteIds={note.linkedNoteIds || []}
+          onLink={(targetId) => onLink?.(targetId)}
+          onClose={() => setShowLinkDialog(false)}
         />
       )}
     </div>
