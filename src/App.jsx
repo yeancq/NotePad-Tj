@@ -65,8 +65,6 @@ export default function App() {
     if (activeFolder === 'pinned') {
       list = list.filter((n) => n.pinned)
     } else if (activeFolder && activeFolder !== 'trash') {
-      // SOLO notas que pertenecen directamente a la carpeta activa
-      // (las notas de subcarpetas NO se muestran aquí)
       list = list.filter((n) => n.folder === activeFolder)
     }
 
@@ -101,11 +99,43 @@ export default function App() {
 
   const moveNoteToFolder = (noteId, folderId) => {
     setNotes((prev) =>
-      prev.map((n) =>
-        n.id === noteId ? { ...n, folder: folderId } : n
-      )
+      prev.map((n) => (n.id === noteId ? { ...n, folder: folderId } : n))
     )
   }
+
+  // ── Enlace entre notas (bidireccional) ──────────────────────────────────
+  const linkNotes = (noteId, targetId) => {
+    setNotes((prev) =>
+      prev.map((n) => {
+        if (n.id === noteId) {
+          const ids = n.linkedNoteIds || []
+          if (ids.includes(targetId)) return n
+          return { ...n, linkedNoteIds: [...ids, targetId] }
+        }
+        if (n.id === targetId) {
+          const ids = n.linkedNoteIds || []
+          if (ids.includes(noteId)) return n
+          return { ...n, linkedNoteIds: [...ids, noteId] }
+        }
+        return n
+      })
+    )
+  }
+
+  const unlinkNotes = (noteId, targetId) => {
+    setNotes((prev) =>
+      prev.map((n) => {
+        if (n.id === noteId) {
+          return { ...n, linkedNoteIds: (n.linkedNoteIds || []).filter((id) => id !== targetId) }
+        }
+        if (n.id === targetId) {
+          return { ...n, linkedNoteIds: (n.linkedNoteIds || []).filter((id) => id !== noteId) }
+        }
+        return n
+      })
+    )
+  }
+  // ────────────────────────────────────────────────────────────────────────
 
   const createNote = () => {
     const id = Date.now()
@@ -117,6 +147,7 @@ export default function App() {
       tags: [],
       pinned: false,
       trashed: false,
+      linkedNoteIds: [],
       updatedAt: new Date().toISOString(),
     }
     setNotes((prev) => [newNote, ...prev])
@@ -126,7 +157,15 @@ export default function App() {
   const saveNote = (updated) => {
     setNotes((prev) =>
       prev.map((n) =>
-        n.id === updated.id ? { ...updated, updatedAt: new Date().toISOString() } : n
+        n.id === updated.id
+          ? {
+              ...n,
+              ...updated,
+              // Garantiza que linkedNoteIds nunca se pierda en el guardado
+              linkedNoteIds: updated.linkedNoteIds ?? n.linkedNoteIds ?? [],
+              updatedAt: new Date().toISOString(),
+            }
+          : n
       )
     )
   }
@@ -170,6 +209,7 @@ export default function App() {
       tags: [],
       pinned: false,
       trashed: false,
+      linkedNoteIds: [],
       updatedAt: now,
     }))
     setNotes((prev) => [...newNotes, ...prev])
@@ -187,6 +227,7 @@ export default function App() {
       tags: [],
       pinned: false,
       trashed: false,
+      linkedNoteIds: [],
       updatedAt: new Date().toISOString(),
     }
     setNotes((prev) => [newNote, ...prev])
@@ -255,12 +296,16 @@ export default function App() {
           key={openNote.id}
           note={openNote}
           folders={folders}
+          allNotes={notes}
           onBack={() => setOpenNoteId(null)}
           onSave={saveNote}
           onTrash={trashNote}
           onRestore={restoreNote}
           onDeleteForever={deleteForever}
           onNeedImport={() => setShowImport(true)}
+          onLink={(targetId) => linkNotes(openNote.id, targetId)}
+          onUnlink={(targetId) => unlinkNotes(openNote.id, targetId)}
+          onOpenNote={(id) => setOpenNoteId(id)}
         />
       </div>
     )
@@ -397,7 +442,7 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* Notas sueltas de la carpeta actual (sin las de subcarpetas) */}
+                    {/* Notas */}
                     {filteredNotes.length > 0 && (
                       <div>
                         {subfolders.length > 0 && (
@@ -411,10 +456,12 @@ export default function App() {
                               key={note.id}
                               note={note}
                               folders={folders}
+                              allNotes={notes}
                               onOpen={() => setOpenNoteId(note.id)}
                               onTogglePin={() => togglePin(note.id)}
                               onMoveNote={moveNoteToFolder}
                               onTrash={trashNote}
+                              onLink={(targetId) => linkNotes(note.id, targetId)}
                             />
                           ))}
                         </div>
