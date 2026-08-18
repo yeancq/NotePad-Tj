@@ -63,8 +63,6 @@ export default function NoteCard({
   }
 
   return (
-    // El div externo NO tiene onClick para que el backdrop del dialog
-    // no propague hasta abrir la nota accidentalmente.
     <div>
       <article
         onClick={onOpen}
@@ -81,7 +79,6 @@ export default function NoteCard({
           />
         )}
 
-        {/* Menú de opciones (⋮) */}
         <div className="absolute top-2 left-2 z-10">
           <button
             onClick={(e) => {
@@ -108,22 +105,19 @@ export default function NoteCard({
                 }}
               />
               <div
-                className="absolute left-0 top-full mt-1 w-60 bg-white dark:bg-night-surface-2
-                           rounded-lg shadow-xl border border-ink/10 dark:border-night-text/10 p-1.5 z-20"
+                className="absolute left-0 top-full mt-1 w-60 bg-white dark:bg-night-surface-2 rounded-lg shadow-xl border border-ink/10 dark:border-night-text/10 p-1.5 z-20"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
                   onClick={handleDelete}
-                  className="w-full text-left px-2.5 py-2 text-sm rounded-md transition-colors flex items-center gap-2
-                             text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  className="w-full text-left px-2.5 py-2 text-sm rounded-md transition-colors flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
                   <span>🗑️</span> Eliminar nota
                 </button>
 
                 <button
                   onClick={handleOpenLinkDialog}
-                  className="w-full text-left px-2.5 py-2 text-sm rounded-md transition-colors flex items-center gap-2
-                             text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
+                  className="w-full text-left px-2.5 py-2 text-sm rounded-md transition-colors flex items-center gap-2 text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
                 >
                   <span>🔗</span> Enlazar con otra nota
                 </button>
@@ -216,7 +210,6 @@ export default function NoteCard({
         </div>
       </article>
 
-      {/* Dialog fuera del <article> para evitar propagación de eventos al onClick={onOpen} */}
       {showLinkDialog && (
         <NoteLinkDialog
           currentNoteId={note.id}
