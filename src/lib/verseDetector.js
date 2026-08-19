@@ -64,12 +64,20 @@ function expandVerses(str) {
  */
 export function detectReferences(text) {
   if (!text) return []
+
+  // Normalizar a NFC primero (forma precompuesta estándar del navegador),
+  // luego quitar acentos y pasar a minúsculas para que "Gál" coincida con "gal".
+  // Para texto NFC estándar, normalize() preserva la longitud carácter a carácter,
+  // por lo que los índices del texto normalizado corresponden exactamente al original.
+  const nfcText = text.normalize('NFC')
+  const normText = normalize(nfcText)
+
   const results = []
   let match
 
   REFERENCE_REGEX.lastIndex = 0
-  while ((match = REFERENCE_REGEX.exec(text)) !== null) {
-    const [raw, bookRaw, segmentsRaw] = match
+  while ((match = REFERENCE_REGEX.exec(normText)) !== null) {
+    const [rawNorm, bookRaw, segmentsRaw] = match
     const book = normalizeMatchToBook(bookRaw)
     if (!book) continue
 
@@ -90,13 +98,17 @@ export function detectReferences(text) {
 
     const label = `${book.name} ${segments.map((s) => s.verseLabel).join('; ')}`
 
+    // Extraer el texto original (con acentos) usando los índices del texto normalizado.
+    // Correcto porque normalize() preserva la longitud para texto NFC estándar.
+    const rawOriginal = nfcText.slice(match.index, match.index + rawNorm.length)
+
     results.push({
       book: book.id,
       bookName: book.name,
-      raw: raw.trim(),
+      raw: rawOriginal.trim(),
       label,
       start: match.index,
-      end: match.index + raw.length,
+      end: match.index + rawNorm.length,
       segments,
     })
   }
