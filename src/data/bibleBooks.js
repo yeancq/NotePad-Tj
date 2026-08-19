@@ -59,7 +59,7 @@ export const bibleBooks = [
   { id: 56, name: 'Tito', chapters: 3, abbrevs: ['tit', 'tito'] },
   { id: 57, name: 'Filemón', chapters: 1, abbrevs: ['film', 'filem', 'filemon', 'flm'] },
   { id: 58, name: 'Hebreos', chapters: 13, abbrevs: ['heb', 'hebreos'] },
-  { id: 59, name: 'Santiago', chapters: 5, abbrevs: ['sant', 'stg', 'santiago'] },
+  { id: 59, name: 'Santiago', chapters: 5, abbrevs: ['sant', 'snt', 'santiago'] },
   { id: 60, name: '1 Pedro', chapters: 5, abbrevs: ['1 ped', '1ped', '1 pedro', '1pedro', '1 pe'] },
   { id: 61, name: '2 Pedro', chapters: 3, abbrevs: ['2 ped', '2ped', '2 pedro', '2pedro', '2 pe'] },
   { id: 62, name: '1 Juan', chapters: 5, abbrevs: ['1 jn', '1jn', '1 juan', '1juan'] },
