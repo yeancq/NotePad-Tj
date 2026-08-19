@@ -13,27 +13,32 @@ const guideSections = [
   {
     title: '📝 Notas y Notas Rápidas',
     content:
-      'Crea notas estructuradas para tus estudios o utiliza las notas rápidas para capturar ideas, textos o recordatorios al instante sin necesidad de asignarles una carpeta.',
+      'Crea y organiza tus ideas al instante.
+NotePad TJ te permite escribir notas de estudio con un editor enriquecido (negrita, cursiva, subrayado, resaltado de colores y encabezados). Puedes fijar las notas importantes para tenerlas siempre a mano y moverlas a la papelera cuando ya no las necesites (con opción de restaurarlas o eliminarlas definitivamente). Además, el auto-guardado integrado garantiza que nunca pierdas tu trabajo, incluso si cierras la aplicación sin guardar manualmente..',
   },
   {
     title: '📁 Carpetas y Organización',
     content:
-      'Organiza tu contenido por temas (reuniones, predicación, estudio personal). Puedes mover notas entre carpetas o mantenerlas en la vista principal.',
+      'Estructura tu estudio como un cuaderno físico.
+Organiza tus notas en carpetas y subcarpetas personalizadas (por ejemplo: "Estudio personal", "Reuniones", "Predicación", "Asambleas"). Puedes crear nuevas carpetas desde el botón flotante (FAB) o editarlas con un toque prolongado (en móvil) o desde el menú de opciones. Cada carpeta muestra el número de notas que contiene, y puedes mover notas entre carpetas arrastrándolas o usando el menú contextual..',
   },
   {
     title: '📖 Formato y Biblia',
     content:
-      'Añade formato a tu texto (negrita, listas, resaltados) e integra citas o lecturas bíblicas directamente en tus apuntes para revisarlas durante tus sesiones de estudio.',
+      'Escribe con estilo y referencia bíblica automática.
+El editor enriquecido te permite dar formato a tu texto (negrita, cursiva, subrayado, resaltado en varios colores y encabezados). Pero la joya de la corona es el reconocimiento automático de referencias bíblicas: cuando escribes algo como "Mateo 24:14" o "Filipenses 4:6, 7", la aplicación lo detecta y te muestra el texto real de la Traducción del Nuevo Mundo en un panel flotante. Solo necesitas importar tu propia copia del EPUB desde jw.org una sola vez; todo se procesa y guarda en tu dispositivo..',
   },
   {
     title: '💾 Respaldos y Privacidad',
     content:
-      'Tus datos se guardan exclusivamente en tu dispositivo. Usa los botones de "Exportar e Importar respaldo" para guardar una copia de seguridad en tu almacenamiento local o mover tus notas a otro teléfono.',
+      'Tus datos, solo tuyos.
+Todas tus notas, carpetas y preferencias se guardan exclusivamente en tu dispositivo (usando localStorage e IndexedDB). Nadie más tiene acceso a ellas. Para mayor seguridad, la aplicación incluye un sistema de respaldo y restauración que te permite exportar un archivo .json con todas tus notas y carpetas (ideal para hacer una copia de seguridad periódica o transferir tus datos a otro dispositivo). Al importar un respaldo, puedes elegir entre agregar (fusionar con tus notas actuales) o reemplazar (sobrescribir todo)..',
   },
   {
     title: '📲 Instalación como PWA',
     content:
-      'Al ser una aplicación web progresiva, puedes añadirla a la pantalla de inicio de tu móvil desde el menú del navegador para usarla como una app nativa, incluso sin conexión a internet.',
+      'Una app nativa sin necesidad de descargarla de la tienda.
+NotePad TJ es una aplicación web progresiva (PWA). Esto significa que, desde el navegador de tu teléfono, puedes añadirla a la pantalla de inicio (en Chrome, selecciona "Añadir a pantalla de inicio"; en Safari, "Añadir a la pantalla de inicio"). Una vez instalada, se comporta como una aplicación nativa: tiene su propio ícono, se abre en pantalla completa, funciona sin conexión a internet y se actualiza automáticamente cuando hay una nueva versión disponible..',
   },
 ]
 
