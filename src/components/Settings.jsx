@@ -8,32 +8,32 @@ const themeOptions = [
   { id: 'system', label: 'Sistema', icon: '📱' },
 ]
 
-// Guía con las explicaciones de la app
+// Guía con las explicaciones detalladas de la app
 const guideSections = [
   {
     title: '📝 Notas y Notas Rápidas',
     content:
-      'Crea notas estructuradas para tus estudios o utiliza las notas rápidas para capturar ideas, textos o recordatorios al instante sin necesidad de asignarles una carpeta.',
+      'Crea notas estructuradas para tus estudios o utiliza las notas rápidas para capturar ideas, textos o recordatorios al instante sin necesidad de asignarles una carpeta. El editor enriquecido te permite dar formato a tu texto con negrita, cursiva, subrayado, resaltado en varios colores y encabezados. Las notas se guardan automáticamente mientras escribes, y puedes fijar las más importantes para tenerlas siempre a mano. Si ya no necesitas una nota, muévela a la papelera; desde allí podrás restaurarla o eliminarla definitivamente.'
   },
   {
     title: '📁 Carpetas y Organización',
     content:
-      'Organiza tu contenido por temas (reuniones, predicación, estudio personal). Puedes mover notas entre carpetas o mantenerlas en la vista principal.',
+      'Organiza tu contenido por temas (reuniones, predicación, estudio personal, asambleas, bosquejos públicos). Puedes crear carpetas y subcarpetas personalizadas desde el botón flotante o manteniendo presionada una carpeta existente (en móvil). Cada carpeta muestra el número de notas que contiene, y puedes mover fácilmente tus notas entre carpetas usando el menú contextual. La vista principal te muestra todas tus carpetas organizadas jerárquicamente.'
   },
   {
     title: '📖 Formato y Biblia',
     content:
-      'Añade formato a tu texto (negrita, listas, resaltados) e integra citas o lecturas bíblicas directamente en tus apuntes para revisarlas durante tus sesiones de estudio.',
+      'Añade formato a tu texto (negrita, cursiva, subrayado, resaltado en varios colores y encabezados). La funcionalidad más destacada es el reconocimiento automático de referencias bíblicas: cuando escribes algo como "Mateo 24:14" o "Filipenses 4:6, 7", la aplicación lo detecta y te muestra el texto real de la Traducción del Nuevo Mundo en un panel flotante. Solo necesitas importar tu propia copia del EPUB desde jw.org una sola vez; todo se procesa y guarda en tu dispositivo sin necesidad de conexión a internet.'
   },
   {
     title: '💾 Respaldos y Privacidad',
     content:
-      'Tus datos se guardan exclusivamente en tu dispositivo. Usa los botones de "Exportar e Importar respaldo" para guardar una copia de seguridad en tu almacenamiento local o mover tus notas a otro teléfono.',
+      'Tus datos (notas, carpetas, preferencias) se guardan exclusivamente en tu dispositivo. Nadie más tiene acceso a ellos. Usa los botones de "Exportar respaldo" para descargar un archivo .json con todas tus notas y carpetas (ideal para hacer copias de seguridad periódicas o transferir tus datos a otro dispositivo). Al importar un respaldo, puedes elegir entre "Agregar" (fusionar con tus notas actuales) o "Reemplazar" (sobrescribir todo). La privacidad es total: no hay servidores ni sincronización en la nube.'
   },
   {
     title: '📲 Instalación como PWA',
     content:
-      'Al ser una aplicación web progresiva, puedes añadirla a la pantalla de inicio de tu móvil desde el menú del navegador para usarla como una app nativa, incluso sin conexión a internet.',
+      'Al ser una aplicación web progresiva (PWA), puedes añadirla a la pantalla de inicio de tu móvil desde el menú del navegador. En Chrome selecciona "Añadir a pantalla de inicio"; en Safari, "Añadir a la pantalla de inicio". Una vez instalada, se comporta como una app nativa: tiene su propio ícono, se abre en pantalla completa, funciona sin conexión a internet y se actualiza automáticamente cuando hay una nueva versión disponible. Así tienes siempre tu cuaderno de notas a un toque.'
   },
 ]
 
