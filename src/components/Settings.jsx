@@ -8,93 +8,6 @@ const themeOptions = [
   { id: 'system', label: 'Sistema', icon: '📱' },
 ]
 
-{/* Aviso de derechos de autor */}
-<section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-5">
-  <h2 className="font-display text-base mb-1">📄 Aviso sobre archivos importados</h2>
-  <p className="text-xs text-ink-soft/70 dark:text-night-text/40 mb-3">
-    Los archivos de formato EPUB y RTF que se importan en esta aplicación provienen del sitio web oficial JW.ORG y son propiedad intelectual de Watch Tower Bible and Tract Society of Pennsylvania.
-  </p>
-  <div className="text-xs text-ink-soft dark:text-night-text/60 space-y-2 leading-relaxed">
-    <div className="bg-sage/10 dark:bg-sage/5 p-3 rounded-lg border border-sage/20">
-      <p className="font-medium text-ink dark:text-night-text">✅ JW.ORG permite el uso de sus archivos en aplicaciones de terceros</p>
-      <p className="mt-1">
-        Los Términos de Uso de JW.ORG establecen expresamente que{' '}
-        <span className="font-medium">no se prohíbe</span> la distribución de{' '}
-        <strong>aplicaciones gratuitas y no comerciales</strong> diseñadas para descargar 
-        archivos electrónicos (EPUB, PDF, MP3 y MP4) de las secciones públicas del sitio.
-      </p>
-      <p className="mt-1 italic text-ink-soft/80 dark:text-night-text/50">
-        "No se prohíbe la distribución de aplicaciones informáticas o aplicaciones para 
-        teléfonos inteligentes gratuitas y no comerciales diseñadas para descargar 
-        archivos electrónicos (EPUB, PDF, MP3 y MP4) de las secciones públicas del sitio." 
-        — Punto 3.d de los Términos de Uso
-      </p>
-    </div>
-
-    <p>
-      <span className="font-medium">📖 ¿Qué significa esto para NotePad TJ?</span>
-    </p>
-    <ul className="list-disc pl-5 space-y-1">
-      <li>
-        <span className="font-medium">Puedes usar</span> los archivos EPUB de la Traducción 
-        del Nuevo Mundo y los archivos RTF de los programas de asamblea en esta aplicación 
-        con total tranquilidad.
-      </li>
-      <li>
-        <span className="font-medium">NotePad TJ es una aplicación gratuita y sin fines comerciales</span>, 
-        por lo que está dentro de los usos permitidos por JW.ORG.
-      </li>
-      <li>
-        <span className="font-medium">Los archivos se procesan localmente</span> en tu dispositivo; 
-        la aplicación no los distribuye, no los aloja en servidores ni los comparte con terceros.
-      </li>
-      <li>
-        <span className="font-medium">JW.ORG permite</span> que sus archivos se visualicen en 
-        lectores electrónicos y programas de terceros como NotePad TJ, siempre que se respeten 
-        las condiciones de uso.
-      </li>
-    </ul>
-
-    <div className="bg-ink/5 dark:bg-night-text/5 p-3 rounded-lg border border-ink/10 dark:border-night-text/10">
-      <p className="font-medium text-ink dark:text-night-text">⛔ Restricciones importantes</p>
-      <ul className="list-disc pl-5 space-y-1 mt-1">
-        <li>
-          No está permitido <span className="font-medium">publicar</span> estos archivos en 
-          internet (sitios web, redes sociales, plataformas para compartir archivos) sin autorización.
-        </li>
-        <li>
-          No está permitido <span className="font-medium">distribuir</span> estos archivos como 
-          parte de una aplicación o programa informático que los incluya empaquetados 
-          (NotePad TJ <span className="font-medium">no los incluye</span>, solo los importa desde tu dispositivo).
-        </li>
-        <li>
-          No está permitido <span className="font-medium">utilizarlos con fines comerciales</span> 
-          o publicitarios.
-        </li>
-        <li>
-          No está permitido <span className="font-medium">crear herramientas</span> para recolectar, 
-          copiar o extraer datos de JW.ORG para distribuirlos.
-        </li>
-      </ul>
-    </div>
-
-    <p className="mt-2">
-      <span className="font-medium">📌 Propiedad intelectual:</span> Los archivos EPUB, RTF y otros 
-      contenidos de JW.ORG siguen siendo propiedad de{' '}
-      <span className="font-medium">© Watch Tower Bible and Tract Society of Pennsylvania</span>. 
-      Se recomienda consultar regularmente los{' '}
-      <a 
-        href="https://www.jw.org/terms-of-use" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="text-leather dark:text-gilt-soft underline hover:no-underline"
-      >
-        Términos de Uso de JW.ORG
-      </a>{' '}
-      para estar al tanto de cualquier modificación.
-    </p>
-  </div>
-</section>
 // Guía con las explicaciones detalladas de la app
 const guideSections = [
   {
@@ -235,7 +148,7 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
 
         {/* Respaldo de notas */}
         <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-5">
-          <h2 className="font-display text-base mb-1">Respaldo de notas</h2>
+          <h2 className="font-display text-base mb-1">💾 Respaldo de notas</h2>
           <p className="text-xs text-ink-soft/70 dark:text-night-text/40 mb-4">
             Tus notas solo existen en este dispositivo. Descarga un respaldo de vez en cuando, o
             antes de cambiar de celular.
@@ -270,9 +183,97 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
           )}
         </section>
 
-        {/* Nueva Sección: Cómo funciona NotePad TJ */}
+        {/* Aviso de derechos de autor */}
+        <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-5">
+          <h2 className="font-display text-base mb-1">📄 Aviso sobre archivos importados</h2>
+          <p className="text-xs text-ink-soft/70 dark:text-night-text/40 mb-3">
+            Los archivos de formato EPUB y RTF que se importan en esta aplicación provienen del sitio web oficial JW.ORG y son propiedad intelectual de Watch Tower Bible and Tract Society of Pennsylvania.
+          </p>
+          <div className="text-xs text-ink-soft dark:text-night-text/60 space-y-2 leading-relaxed">
+            <div className="bg-sage/10 dark:bg-sage/5 p-3 rounded-lg border border-sage/20">
+              <p className="font-medium text-ink dark:text-night-text">✅ JW.ORG permite el uso de sus archivos en aplicaciones de terceros</p>
+              <p className="mt-1">
+                Los Términos de Uso de JW.ORG establecen expresamente que{' '}
+                <span className="font-medium">no se prohíbe</span> la distribución de{' '}
+                <strong>aplicaciones gratuitas y no comerciales</strong> diseñadas para descargar 
+                archivos electrónicos (EPUB, PDF, MP3 y MP4) de las secciones públicas del sitio.
+              </p>
+              <p className="mt-1 italic text-ink-soft/80 dark:text-night-text/50">
+                "No se prohíbe la distribución de aplicaciones informáticas o aplicaciones para 
+                teléfonos inteligentes gratuitas y no comerciales diseñadas para descargar 
+                archivos electrónicos (EPUB, PDF, MP3 y MP4) de las secciones públicas del sitio." 
+                — Punto 3.d de los Términos de Uso
+              </p>
+            </div>
+
+            <p>
+              <span className="font-medium">📖 ¿Qué significa esto para NotePad TJ?</span>
+            </p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>
+                <span className="font-medium">Puedes usar</span> los archivos EPUB de la Traducción 
+                del Nuevo Mundo y los archivos RTF de los programas de asamblea en esta aplicación 
+                con total tranquilidad.
+              </li>
+              <li>
+                <span className="font-medium">NotePad TJ es una aplicación gratuita y sin fines comerciales</span>, 
+                por lo que está dentro de los usos permitidos por JW.ORG.
+              </li>
+              <li>
+                <span className="font-medium">Los archivos se procesan localmente</span> en tu dispositivo; 
+                la aplicación no los distribuye, no los aloja en servidores ni los comparte con terceros.
+              </li>
+              <li>
+                <span className="font-medium">JW.ORG permite</span> que sus archivos se visualicen en 
+                lectores electrónicos y programas de terceros como NotePad TJ, siempre que se respeten 
+                las condiciones de uso.
+              </li>
+            </ul>
+
+            <div className="bg-ink/5 dark:bg-night-text/5 p-3 rounded-lg border border-ink/10 dark:border-night-text/10">
+              <p className="font-medium text-ink dark:text-night-text">⛔ Restricciones importantes</p>
+              <ul className="list-disc pl-5 space-y-1 mt-1">
+                <li>
+                  No está permitido <span className="font-medium">publicar</span> estos archivos en 
+                  internet (sitios web, redes sociales, plataformas para compartir archivos) sin autorización.
+                </li>
+                <li>
+                  No está permitido <span className="font-medium">distribuir</span> estos archivos como 
+                  parte de una aplicación o programa informático que los incluya empaquetados 
+                  (NotePad TJ <span className="font-medium">no los incluye</span>, solo los importa desde tu dispositivo).
+                </li>
+                <li>
+                  No está permitido <span className="font-medium">utilizarlos con fines comerciales</span> 
+                  o publicitarios.
+                </li>
+                <li>
+                  No está permitido <span className="font-medium">crear herramientas</span> para recolectar, 
+                  copiar o extraer datos de JW.ORG para distribuirlos.
+                </li>
+              </ul>
+            </div>
+
+            <p className="mt-2">
+              <span className="font-medium">📌 Propiedad intelectual:</span> Los archivos EPUB, RTF y otros 
+              contenidos de JW.ORG siguen siendo propiedad de{' '}
+              <span className="font-medium">© Watch Tower Bible and Tract Society of Pennsylvania</span>. 
+              Se recomienda consultar regularmente los{' '}
+              <a 
+                href="https://www.jw.org/terms-of-use" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-leather dark:text-gilt-soft underline hover:no-underline"
+              >
+                Términos de Uso de JW.ORG
+              </a>{' '}
+              para estar al tanto de cualquier modificación.
+            </p>
+          </div>
+        </section>
+
+        {/* Cómo funciona NotePad TJ */}
         <section className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-8">
-          <h2 className="font-display text-base mb-1">Cómo funciona NotePad TJ</h2>
+          <h2 className="font-display text-base mb-1">📖 Cómo funciona NotePad TJ</h2>
           <p className="text-xs text-ink-soft/70 dark:text-night-text/40 mb-4">
             Guía rápida sobre las funciones principales de la aplicación.
           </p>
