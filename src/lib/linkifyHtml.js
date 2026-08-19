@@ -50,10 +50,16 @@ export function linkifyHtml(html) {
 
   const refsById = {}
 
+  // Recopilar todos los nodos de texto
   const textNodes = []
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT)
   let node
-  while ((node = walker.nextNode())) textNodes.push(node)
+  while ((node = walker.nextNode())) {
+    // Solo procesar nodos de texto que no estén dentro de botones ya creados
+    if (!node.parentElement?.closest?.('button[data-ref-id]')) {
+      textNodes.push(node)
+    }
+  }
 
   textNodes.forEach((textNode) => {
     const text = textNode.textContent
@@ -63,7 +69,9 @@ export function linkifyHtml(html) {
     const frag = document.createDocumentFragment()
     let cursor = 0
     refs.forEach((r) => {
-      if (r.start > cursor) frag.appendChild(document.createTextNode(text.slice(cursor, r.start)))
+      if (r.start > cursor) {
+        frag.appendChild(document.createTextNode(text.slice(cursor, r.start)))
+      }
       const id = `ref-${refCounter++}`
       refsById[id] = r
       const btn = document.createElement('button')
@@ -74,7 +82,9 @@ export function linkifyHtml(html) {
       frag.appendChild(btn)
       cursor = r.end
     })
-    if (cursor < text.length) frag.appendChild(document.createTextNode(text.slice(cursor)))
+    if (cursor < text.length) {
+      frag.appendChild(document.createTextNode(text.slice(cursor)))
+    }
 
     textNode.parentNode.replaceChild(frag, textNode)
   })
