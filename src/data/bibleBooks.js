@@ -21,7 +21,7 @@ export const bibleBooks = [
   { id: 18, name: 'Job', chapters: 42, abbrevs: ['job'] },
   { id: 19, name: 'Salmos', chapters: 150, abbrevs: ['sal', 'salmo', 'salmos', 'sl'] },
   { id: 20, name: 'Proverbios', chapters: 31, abbrevs: ['prov', 'pr', 'proverbios'] },
-  { id: 21, name: 'Eclesiastés', chapters: 12, abbrevs: ['ecl', 'eclesiastes'] },
+  { id: 21, name: 'Eclesiastés', chapters: 12, abbrevs: ['ecl', 'ec', 'eclesiastes'] },
   { id: 22, name: 'Cantares', chapters: 8, abbrevs: ['cant', 'cantares', 'cantar de los cantares'] },
   { id: 23, name: 'Isaías', chapters: 66, abbrevs: ['is', 'isa', 'isaias'] },
   { id: 24, name: 'Jeremías', chapters: 52, abbrevs: ['jer', 'jeremias'] },
