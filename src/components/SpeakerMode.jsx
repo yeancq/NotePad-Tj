@@ -31,16 +31,31 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
     return () => clearInterval(id)
   }, [running])
 
-  const linked = useMemo(() => linkifyHtml(note.body || ''), [note.body])
+  const linked = useMemo(() => {
+    const body = note.body || ''
+    return linkifyHtml(body)
+  }, [note.body])
+
   const contentRef = useRef(null)
 
   const handleContentClick = (e) => {
-    const btn = e.target.closest('[data-ref-id]')
+    // Buscar el botón más cercano con data-ref-id
+    const btn = e.target.closest('button[data-ref-id]')
     if (!btn) return
-    const ref = linked.refsById[btn.getAttribute('data-ref-id')]
+    
+    const refId = btn.getAttribute('data-ref-id')
+    const ref = linked.refsById[refId]
     if (!ref) return
+    
+    // Toggle: si ya está abierto, lo cerramos; si no, lo abrimos
     setActiveRef((cur) => (refKey(cur) === refKey(ref) ? null : ref))
   }
+
+  // 🔧 Asegurar que el contenido se actualice cuando cambie la nota
+  useEffect(() => {
+    // Resetear la referencia activa al cambiar de nota
+    setActiveRef(null)
+  }, [note.id])
 
   return (
     <div className="fixed inset-0 z-50 bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex flex-col">
