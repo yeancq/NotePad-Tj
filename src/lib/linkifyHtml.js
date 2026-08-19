@@ -3,6 +3,38 @@ import { detectReferences } from './verseDetector'
 let refCounter = 0
 
 /**
+ * Fusiona elementos <strong> adyacentes en un solo elemento.
+ * Esto resuelve el problema de referencias bíblicas partidas
+ * al importar desde DOCX.
+ */
+function mergeAdjacentStrong(container) {
+  // Recorremos todos los <strong> y fusionamos los que están seguidos
+  const strongs = container.querySelectorAll('strong')
+  const toRemove = new Set()
+
+  for (let i = 0; i < strongs.length; i++) {
+    const el = strongs[i]
+    if (toRemove.has(el)) continue
+
+    let current = el
+    let next = el.nextElementSibling
+
+    // Mientras el siguiente también sea <strong> y no esté marcado para eliminar
+    while (next && next.tagName === 'STRONG' && !toRemove.has(next)) {
+      // Mover todos los hijos del siguiente al actual
+      while (next.firstChild) {
+        current.appendChild(next.firstChild)
+      }
+      toRemove.add(next)
+      next = next.nextElementSibling
+    }
+  }
+
+  // Eliminar los elementos fusionados
+  toRemove.forEach((el) => el.remove())
+}
+
+/**
  * Recorre los nodos de texto de un fragmento HTML ya parseado y envuelve las
  * referencias bíblicas detectadas en <button data-ref-id="..."> conservando
  * el resto del formato (negrita, cursiva, resaltado, etc.) intacto.
@@ -11,6 +43,11 @@ let refCounter = 0
 export function linkifyHtml(html) {
   const container = document.createElement('div')
   container.innerHTML = html
+
+  // 🔧 PASO 1: Fusionar <strong> adyacentes para que las referencias
+  // bíblicas no queden partidas al importar desde DOCX.
+  mergeAdjacentStrong(container)
+
   const refsById = {}
 
   const textNodes = []
