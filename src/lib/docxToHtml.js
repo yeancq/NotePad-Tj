@@ -42,7 +42,21 @@ function escapeHtml(str) {
 }
 
 function runsToInlineHtml(runs) {
-  return runs
+  // Fusionar corridas consecutivas con el mismo formato (negrita/cursiva) para
+  // evitar que las referencias bíblicas queden divididas entre varios nodos de
+  // texto cuando el documento tiene corridas separadas por otras razones internas
+  // (marcas de revisión, límites de corrector ortográfico, hipervínculos, etc.).
+  const merged = []
+  for (const r of runs) {
+    const prev = merged[merged.length - 1]
+    if (prev && prev.bold === r.bold && prev.italic === r.italic) {
+      prev.text += r.text
+    } else {
+      merged.push({ ...r })
+    }
+  }
+
+  return merged
     .map((r) => {
       if (!r.text) return ''
       let t = escapeHtml(r.text).replace(/\t/g, '&emsp;').replace(/\n/g, '<br>')
