@@ -1,14 +1,35 @@
 /**
  * Extrae el texto de cada versículo de un archivo de capítulo XHTML del EPUB.
- * Usa DOMParser + TreeWalker para caminar los nodos de texto en orden.
- * CONSERVA TODOS LOS TEXTOS, incluyendo números de versículo y notas al pie.
- * Devuelve un array donde el índice = número de versículo (índice 0 sin usar).
+ * También extrae las notas al pie del capítulo.
+ * Devuelve { verses, footnotes } donde:
+ *   - verses: array donde el índice = número de versículo (índice 0 sin usar)
+ *   - footnotes: array de strings con el texto de cada nota al pie
  */
 export function parseChapterXhtml(xhtmlText) {
   const doc = new DOMParser().parseFromString(xhtmlText, 'text/html')
   const body = doc.body
-  if (!body) return []
+  if (!body) return { verses: [], footnotes: [] }
 
+  // ── Extraer notas al pie (ANTES del walker de versículos) ───────────────
+  const footnotes = []
+  // Selector primario: párrafos dentro de .groupFootnote (formato JW.org EPUB)
+  body.querySelectorAll('.groupFootnote p').forEach((p) => {
+    const text = p.textContent.replace(/\s+/g, ' ').trim()
+    if (text) footnotes.push(text)
+  })
+  // Fallback: cualquier aside que no sea navegación ni numeración de páginas
+  if (footnotes.length === 0) {
+    body.querySelectorAll('aside').forEach((aside) => {
+      const cls = aside.className || ''
+      if (cls.includes('navigation') || cls.includes('pageNum')) return
+      aside.querySelectorAll('p').forEach((p) => {
+        const text = p.textContent.replace(/\s+/g, ' ').trim()
+        if (text) footnotes.push(text)
+      })
+    })
+  }
+
+  // ── Extraer versículos ──────────────────────────────────────────────────
   const walker = doc.createTreeWalker(body, NodeFilter.SHOW_TEXT)
   const verses = {}
   let currentVerse = null
@@ -16,10 +37,7 @@ export function parseChapterXhtml(xhtmlText) {
 
   const shouldSkip = (el) => {
     while (el) {
-      // Solo omitir elementos de navegación y notas al pie COMPLETAS
-      // (pero conservamos el texto de los números de versículo y las notas)
       if (el.tagName === 'ASIDE') return true
-      
       const cls = el.className || ''
       if (
         cls.includes('w_navigation') ||
@@ -28,7 +46,6 @@ export function parseChapterXhtml(xhtmlText) {
       ) {
         return true
       }
-      
       el = el.parentElement
     }
     return false
@@ -52,11 +69,10 @@ export function parseChapterXhtml(xhtmlText) {
   Object.keys(verses).forEach((v) => {
     result[Number(v)] = verses[v].replace(/\s+/g, ' ').trim()
   })
-  return result
+
+  return { verses: result, footnotes }
 }
 
-// Cachea, por nodo raíz recorrido, la lista de marcadores de versículo en orden documental,
-// y para un nodo de texto dado encuentra el último marcador que lo precede.
 const markerCache = new WeakMap()
 function findPrecedingVerseId(textNode, body) {
   let markers = markerCache.get(body)
