@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion'
 
+const BLUE = '#2f6fed'
+
 export default function VerseCardBody({
   activeRef,
   segmentTexts,
@@ -13,7 +15,10 @@ export default function VerseCardBody({
     <>
       {/* Encabezado: referencia + botones */}
       <div className="flex items-center gap-1.5 px-3.5 md:px-5 pt-4 pb-3 border-b border-ink/[0.06] dark:border-night-text/[0.06]">
-        <p className="flex-1 font-display font-medium text-ink dark:text-night-text text-[13px] md:text-[15px] tracking-tight truncate">
+        <p
+          className="flex-1 font-display font-medium text-[13px] md:text-[15px] tracking-tight truncate"
+          style={{ color: BLUE }}
+        >
           {activeRef.label}
         </p>
         <IconButton onClick={onCopy} label="Copiar">⧉</IconButton>
@@ -27,7 +32,8 @@ export default function VerseCardBody({
             Aún no has importado tu Biblia.{' '}
             <button
               onClick={onNeedImport}
-              className="text-leather dark:text-gilt-soft underline underline-offset-2"
+              className="underline underline-offset-2"
+              style={{ color: BLUE }}
             >
               Importarla ahora
             </button>
@@ -46,12 +52,9 @@ export default function VerseCardBody({
             {/* Textos de versículos */}
             <div className="space-y-3">
               {segmentTexts.map((s, i) => {
-                // Convertir marcadores de nota al pie en superíndices con color de acento.
-                // Se usa style inline para que el color respete el tema activo
-                // sin depender del árbol de clases de Tailwind.
                 const fullText = (s.text || '').replace(
                   /(\*|†|‡|§|‖|¶)/g,
-                  '<sup style="font-size:0.65em;color:var(--color-leather);font-weight:700;margin-left:1px;">$1</sup>'
+                  `<sup style="font-size:0.65em;color:${BLUE};font-weight:700;margin-left:1px;">$1</sup>`
                 )
                 return (
                   <div key={i}>
@@ -72,17 +75,15 @@ export default function VerseCardBody({
               <div className="mt-4 pt-3 border-t border-ink/[0.07] dark:border-night-text/[0.07]">
                 <div className="space-y-2">
                   {footnotes.map((fn, i) => {
-                    // Corregir espaciado ANTES de añadir HTML para no interferir con las etiquetas
                     const fixedText = fn
-                      .replace(/([\*†‡])\s*(\[)/g, '$1 $2')         // "* [8]" no "*[8]"
-                      .replace(/\]\s*([^\s\]])/g, '] $1')            // "[8] O" no "[8]O"
-                      .replace(/,([^\s"»\d])/g, ', $1')              // espacio tras coma
-                      .replace(/\.([A-ZÁÉÍÓÚÑ"«])/g, '. $1')        // espacio tras punto
+                      .replace(/([\*†‡])\s*(\[)/g, '$1 $2')
+                      .replace(/\]\s*([^\s\]])/g, '] $1')
+                      .replace(/,([^\s"»\d])/g, ', $1')
+                      .replace(/\.([A-ZÁÉÍÓÚÑ"«])/g, '. $1')
 
-                    // Colorear el marcador inicial (* o †) usando variable CSS
                     const formatted = fixedText.replace(
                       /^([\*†‡])/,
-                      '<span style="color:var(--color-leather);font-weight:700;">$1</span>'
+                      `<span style="color:${BLUE};font-weight:700;">$1</span>`
                     )
                     return (
                       <p
