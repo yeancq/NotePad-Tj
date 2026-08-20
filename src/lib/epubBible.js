@@ -7,7 +7,7 @@ const META_KEY = 'bible:meta'
 
 /**
  * Importa el EPUB completo: recorre los 66 libros y todos sus capítulos,
- * extrae el texto y lo guarda en IndexedDB como "verses:<bookId>:<chapter>".
+ * extrae el texto y las notas al pie, y los guarda en IndexedDB.
  * onProgress(done, total) se llama tras cada capítulo procesado.
  */
 export async function importBibleEpub(file, onProgress) {
@@ -26,8 +26,11 @@ export async function importBibleEpub(file, onProgress) {
         missing.push(`${book.name} ${chapter}`)
       } else {
         const xhtml = await zipEntry.async('string')
-        const verses = parseChapterXhtml(xhtml)
+        const { verses, footnotes } = parseChapterXhtml(xhtml)
         await set(`verses:${book.id}:${chapter}`, verses)
+        if (footnotes.length > 0) {
+          await set(`fnotes:${book.id}:${chapter}`, footnotes)
+        }
         imported++
       }
       done++
@@ -60,9 +63,16 @@ export async function getVerseText(bookId, chapter, verse) {
   return chapterVerses[verse] || null
 }
 
+/** Devuelve las notas al pie de un capítulo, o [] si no hay ninguna. */
+export async function getChapterFootnotes(bookId, chapter) {
+  return (await get(`fnotes:${bookId}:${chapter}`)) || []
+}
+
 export async function deleteBibleData() {
   const allKeys = await keys()
-  const toDelete = allKeys.filter((k) => typeof k === 'string' && k.startsWith('verses:'))
+  const toDelete = allKeys.filter(
+    (k) => typeof k === 'string' && (k.startsWith('verses:') || k.startsWith('fnotes:'))
+  )
   await Promise.all(toDelete.map((k) => del(k)))
   await del(META_KEY)
 }
