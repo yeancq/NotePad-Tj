@@ -43,15 +43,23 @@ export function useVerseSegments(activeRef, bibleReady) {
         allFootnotes.push(...chFn)
       }
 
-      // Filtrar las notas al pie relevantes para los versículos mostrados.
-      // El formato JW.org incluye "[N]" en cada nota (ej: "* [8] O «...».")
-      const displayedVerses = new Set()
-      activeRef.segments.forEach((seg) => seg.verses.forEach((v) => displayedVerses.add(v)))
+      // Construir el conjunto de referencias "capítulo:versículo" de los
+      // versículos que se están mostrando actualmente.
+      // El formato de las notas en el EPUB de JW.org es: "^ Ecl. 8:9 O ..."
+      // por lo que buscamos el patrón numérico capítulo:versículo en cada nota.
+      const displayedChapterVerses = new Set()
+      activeRef.segments.forEach((seg) => {
+        seg.verses.forEach((v) => {
+          displayedChapterVerses.add(`${seg.chapter}:${v}`)
+        })
+      })
 
       const filtered = allFootnotes.filter((fn) => {
-        const match = fn.match(/\[(\d+)\]/)
-        if (!match) return true // Sin referencia a versículo → mostrar siempre
-        return displayedVerses.has(parseInt(match[1], 10))
+        // Buscar el primer patrón "número:número" en el texto de la nota
+        const match = fn.match(/\b(\d+):(\d+)\b/)
+        // Si la nota no tiene referencia de versículo, no la mostramos
+        if (!match) return false
+        return displayedChapterVerses.has(`${match[1]}:${match[2]}`)
       })
 
       if (!cancelled) {
