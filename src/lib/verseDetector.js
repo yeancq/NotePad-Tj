@@ -22,12 +22,12 @@ const bookLookup = (() => {
 const bookPattern = bookLookup.map(([n]) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')
 
 // Un "segmento" es "capítulo:versículo(s)", ej. "24:15" o "4:6, 7" o "13:4-8"
-// 🔧 Soporte para guion largo (–) y guion normal (-)
-const SEGMENT = `\\d{1,3}\\s*:\\s*\\d{1,3}(?:\\s*[-,–]\\s*\\d{1,3})*(?:\\s*,\\s*\\d{1,3}(?:\\s*[-,–]\\s*\\d{1,3})*)*`
+const SEGMENT = `\\d{1,3}\\s*:\\s*\\d{1,3}(?:\\s*[-,]\\s*\\d{1,3})*`
 
 // Una referencia completa: Libro + segmento (";" segmento)*
+// Ej: "Mateo 24:15; 8:6" (mismo libro, dos capítulos distintos)
 const REFERENCE_REGEX = new RegExp(
-  `\\b(${bookPattern})\\.?\\s+(${SEGMENT}(?:\\s*[;,]\\s*${SEGMENT})*)`,
+  `\\b(${bookPattern})\\.?\\s+(${SEGMENT}(?:\\s*;\\s*${SEGMENT})*)`,
   'gi'
 )
 
@@ -39,14 +39,10 @@ function normalizeMatchToBook(matchedText) {
 
 /**
  * Expande "6, 7" o "4-8" en una lista de números de versículo.
- * 🔧 Soporte para guiones largos (– y —)
  */
 function expandVerses(str) {
   const verses = []
-  // Normalizar: reemplazar guiones largos por normales
-  const cleaned = str.replace(/[–—]/g, '-').trim()
-  
-  cleaned.split(',').forEach((part) => {
+  str.split(',').forEach((part) => {
     const range = part.trim().split('-').map((n) => parseInt(n.trim(), 10))
     if (range.length === 2 && !Number.isNaN(range[0]) && !Number.isNaN(range[1])) {
       for (let v = range[0]; v <= range[1] && v - range[0] < 30; v++) verses.push(v)
@@ -58,69 +54,58 @@ function expandVerses(str) {
 }
 
 /**
- * Detecta referencias bíblicas en un texto.
+ * Detecta referencias bíblicas en un texto, agrupando segmentos del mismo
+ * libro escritos juntos y separados por ";" (ej. "Mateo 24:15; 8:6").
+ *
+ * Normaliza el texto de entrada antes de aplicar el regex para soportar
+ * abreviaturas con tilde (Gál → gal, Éx → ex, Nú → nu, 1Pe → 1pe...).
+ * Los índices start/end se conservan porque quitar diacríticos NFD no cambia
+ * la longitud del string en strings NFC de español estándar.
  */
 export function detectReferences(text) {
   if (!text) return []
+
+  // Normalizar el texto de entrada: quita tildes y convierte a minúsculas,
+  // así "Gál 5:22" coincide con el patrón "gal" ya registrado en bookLookup.
+  const normalizedText = normalize(text)
+
   const results = []
   let match
 
-  // 🔧 Limpiar solo para la detección, pero devolver posiciones del original
-  const cleanText = text.replace(/[–—]/g, '-')
-  
-  // Usar el regex directamente sobre el texto limpio
-  const regex = new RegExp(REFERENCE_REGEX.source, 'gi')
-  let cleanMatch
-  
-  while ((cleanMatch = regex.exec(cleanText)) !== null) {
-    const [rawClean, bookRaw, segmentsRaw] = cleanMatch
+  REFERENCE_REGEX.lastIndex = 0
+  while ((match = REFERENCE_REGEX.exec(normalizedText)) !== null) {
+    const [rawNorm, bookRaw, segmentsRaw] = match
     const book = normalizeMatchToBook(bookRaw)
     if (!book) continue
 
-    // Encontrar la posición en el texto original
-    // Buscamos el texto normalizado en el original
-    const searchText = rawClean.replace(/[–—]/g, '-')
-    let startIndex = text.indexOf(searchText)
-    
-    // Si no lo encuentra, probar con el texto original tal cual
-    if (startIndex === -1) {
-      startIndex = text.indexOf(rawClean)
-    }
-    
-    // Si aún no lo encuentra, usar la posición del match limpio
-    // (puede haber pequeñas diferencias, pero es mejor que nada)
-    if (startIndex === -1) {
-      startIndex = cleanMatch.index
-    }
-
     const segments = []
-    // Soporte para separadores ; o ,
-    segmentsRaw.split(/[;,]/).forEach((segStr) => {
-      const trimmed = segStr.trim()
-      if (!trimmed) return
-      const parts = trimmed.split(':')
-      if (parts.length < 2) return
-      const chapter = parseInt(parts[0].trim(), 10)
+    segmentsRaw.split(';').forEach((segStr) => {
+      const [chapterRaw, versesRaw] = segStr.split(':')
+      const chapter = parseInt(chapterRaw.trim(), 10)
       if (Number.isNaN(chapter) || chapter < 1 || chapter > book.chapters) return
-      const verses = expandVerses(parts.slice(1).join(':'))
+      const verses = expandVerses(versesRaw)
       if (verses.length === 0) return
       segments.push({
         chapter,
         verses,
-        verseLabel: `${chapter}:${parts.slice(1).join(':').replace(/\s+/g, '')}`,
+        verseLabel: `${chapter}:${versesRaw.replace(/\s+/g, '')}`,
       })
     })
     if (segments.length === 0) continue
 
     const label = `${book.name} ${segments.map((s) => s.verseLabel).join('; ')}`
 
+    // Extraer el raw del texto ORIGINAL para conservar tildes y mayúsculas
+    // tal como el usuario las escribió (ej. "Gál 5:22" en vez de "gal 5:22").
+    const rawOriginal = text.slice(match.index, match.index + rawNorm.length).trim()
+
     results.push({
       book: book.id,
       bookName: book.name,
-      raw: rawClean.trim(),
+      raw: rawOriginal,
       label,
-      start: startIndex,
-      end: startIndex + rawClean.length,
+      start: match.index,
+      end: match.index + rawNorm.length,
       segments,
     })
   }
