@@ -1,3 +1,4 @@
+// FILE: src/components/VerseCardBody.jsx
 import { motion } from 'framer-motion'
 
 const BLUE = '#2f6fed'
@@ -59,9 +60,11 @@ export default function VerseCardBody({
                 return (
                   <div key={i}>
                     <p className="text-[14px] md:text-[15px] leading-[1.75] text-ink/90 dark:text-night-text/90">
-                      <span className="text-[11px] md:text-[12px] font-medium text-ink-soft/60 dark:text-night-text/40 align-super mr-0.5">
-                        {s.verseLabel}
-                      </span>
+                      {segmentTexts.length > 1 && (
+                        <span className="text-[11px] md:text-[12px] font-medium text-ink-soft/60 dark:text-night-text/40 align-super mr-0.5">
+                          {s.verseLabel}
+                        </span>
+                      )}
                       <span dangerouslySetInnerHTML={{ __html: fullText }} />
                     </p>
                     {i < segmentTexts.length - 1 && <div className="h-2" />}
