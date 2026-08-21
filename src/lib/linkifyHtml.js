@@ -98,7 +98,38 @@ function _processBlock(blockEl, refsById) {
     }
 
     try {
-      const matchedNodes = _isolateMatchedNodes(overlapping, ref)
+      const first = overlapping[0]
+      const last = overlapping[overlapping.length - 1]
+      const sameNode = first === last
+      // Guardamos el final ORIGINAL del último nodo antes de tocar nada,
+      // porque lo necesitamos después para re-registrar el sobrante final.
+      const originalLastEnd = last.end
+
+      let firstNode = first.node
+      const firstLocalStart = ref.start - first.start
+      if (firstLocalStart > 0) {
+        // splitText devuelve el nodo NUEVO con el texto posterior al offset;
+        // ese es el que nos interesa (donde empieza la referencia). El nodo
+        // ORIGINAL queda truncado en el DOM con el texto previo intacto.
+        firstNode = firstNode.splitText(firstLocalStart)
+      }
+
+      let lastNode = sameNode ? firstNode : last.node
+      const lastLocalEnd = sameNode
+        ? ref.end - first.start - firstLocalStart
+        : ref.end - last.start
+
+      // Si sobra texto después del final de la referencia, splitText()
+      // separa ese sobrante en un nodo nuevo que hay que seguir rastreando
+      // (puede contener OTRA referencia todavía sin procesar).
+      let trailingNode = null
+      if (lastLocalEnd < lastNode.textContent.length) {
+        trailingNode = lastNode.splitText(lastLocalEnd)
+      }
+
+      const matchedNodes = sameNode
+        ? [firstNode]
+        : [firstNode, ...overlapping.slice(1, -1).map((p) => p.node), lastNode]
 
       const btn = document.createElement('button')
       btn.setAttribute('data-ref-id', id)
@@ -108,55 +139,33 @@ function _processBlock(blockEl, refsById) {
 
       matchedNodes[0].parentNode.insertBefore(btn, matchedNodes[0])
       matchedNodes.forEach((n) => n.parentNode && n.parentNode.removeChild(n))
+
+      // Actualizar textParts: quitar lo que se acaba de consumir, pero
+      // conservar (con sus límites correctos) cualquier texto sobrante en
+      // los bordes — ese sobrante puede contener OTRA referencia todavía
+      // sin procesar (p. ej. dos referencias seguidas en un mismo nodo de
+      // texto, como "Sal 55:22; Isa 41:10, 13", sin ningún cambio de
+      // formato entre ellas). Sin esto, esa segunda referencia quedaba
+      // "invisible" para el resto del procesamiento aunque el nodo con su
+      // texto siguiera intacto en el DOM.
+      for (const part of overlapping) {
+        const idx = textParts.indexOf(part)
+        if (idx !== -1) textParts.splice(idx, 1)
+      }
+      if (firstLocalStart > 0) {
+        textParts.push({ node: first.node, start: first.start, end: first.start + firstLocalStart })
+      }
+      if (trailingNode) {
+        textParts.push({ node: trailingNode, start: ref.end, end: originalLastEnd })
+      }
+      // Reordenar por posición para que la próxima referencia (que siempre
+      // tiene un start menor, porque procesamos de derecha a izquierda)
+      // siga viendo "primero" y "último" en el orden correcto del documento.
+      textParts.sort((a, b) => a.start - b.start)
     } catch {
       // Si la manipulación del DOM falla por algún motivo inesperado,
       // omitir esta referencia y dejar el texto tal cual.
       delete refsById[id]
-      continue
-    }
-
-    // Eliminar las partes procesadas del mapa (ya no son nodos de texto válidos)
-    for (const part of overlapping) {
-      const idx = textParts.indexOf(part)
-      if (idx !== -1) textParts.splice(idx, 1)
     }
   }
-}
-
-/**
- * A partir de la lista de nodos de texto que se superponen con `ref` (en
- * orden de documento), recorta el primero y el último con Text.splitText()
- * para que TODOS los nodos devueltos queden enteramente dentro del rango
- * de la referencia. Los nodos intermedios ya están completamente contenidos
- * por definición (la cobertura de textParts es continua, sin huecos).
- */
-function _isolateMatchedNodes(overlapping, ref) {
-  const first = overlapping[0]
-  const last = overlapping[overlapping.length - 1]
-  const sameNode = first === last
-
-  let firstNode = first.node
-  const firstLocalStart = ref.start - first.start
-  if (firstLocalStart > 0) {
-    // splitText devuelve el nodo NUEVO con el texto posterior al offset;
-    // ese es el que nos interesa (donde empieza la referencia).
-    firstNode = firstNode.splitText(firstLocalStart)
-  }
-
-  if (sameNode) {
-    const localEnd = ref.end - first.start - firstLocalStart
-    if (localEnd < firstNode.textContent.length) {
-      firstNode.splitText(localEnd)
-    }
-    return [firstNode]
-  }
-
-  let lastNode = last.node
-  const lastLocalEnd = ref.end - last.start
-  if (lastLocalEnd < lastNode.textContent.length) {
-    lastNode.splitText(lastLocalEnd)
-  }
-
-  const middle = overlapping.slice(1, -1).map((p) => p.node)
-  return [firstNode, ...middle, lastNode]
 }
