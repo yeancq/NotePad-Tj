@@ -7,7 +7,8 @@ let refCounter = 0
  * referencias bíblicas detectadas en <button data-ref-id="..."> conservando
  * el resto del formato (negrita, cursiva, resaltado, etc.) intacto, incluso
  * cuando la referencia está distribuida en múltiples nodos de texto (p.ej.
- * corridas separadas en documentos importados desde .docx).
+ * corridas separadas en documentos importados desde .docx, o texto pegado
+ * desde otra app con resaltados/formatos propios).
  * Devuelve { html, refsById } para poder resolver el clic después.
  */
 export function linkifyHtml(html) {
@@ -48,8 +49,16 @@ export function linkifyHtml(html) {
 
 /**
  * Procesa un elemento de bloque: detecta referencias en su texto completo
- * y las envuelve en botones usando el Range API, soportando referencias
- * distribuidas entre múltiples nodos de texto.
+ * y las envuelve en botones, recortando únicamente los nodos de texto en
+ * los bordes de cada referencia con Text.splitText().
+ *
+ * NOTA: a propósito NO se usa un único Range que abarque del primer al
+ * último nodo (range.setStart/setEnd + deleteContents + insertNode). Ese
+ * enfoque puede fallar silenciosamente cuando la referencia queda repartida
+ * entre nodos que viven dentro de envoltorios de formato distintos
+ * (negrita, resaltado de color, contenido pegado desde otra app), dejando
+ * la referencia como texto plano sin aviso de error. Recortar nodo por
+ * nodo con splitText() evita ese problema por completo.
  */
 function _processBlock(blockEl, refsById) {
   // 1. Mapear todos los nodos de texto con sus desplazamientos acumulados
@@ -88,27 +97,20 @@ function _processBlock(blockEl, refsById) {
       continue
     }
 
-    const first = overlapping[0]
-    const last = overlapping[overlapping.length - 1]
-    const firstLocalStart = ref.start - first.start
-    const lastLocalEnd = ref.end - last.start
-
-    const btn = document.createElement('button')
-    btn.setAttribute('data-ref-id', id)
-    btn.className =
-      'text-leather dark:text-gilt-soft underline decoration-dotted underline-offset-2 font-medium'
-    btn.textContent = ref.raw
-
     try {
-      // El Range API maneja correctamente tanto el caso de un solo nodo
-      // como el de múltiples nodos de texto repartidos en distintos elementos.
-      const range = document.createRange()
-      range.setStart(first.node, firstLocalStart)
-      range.setEnd(last.node, lastLocalEnd)
-      range.deleteContents()
-      range.insertNode(btn)
+      const matchedNodes = _isolateMatchedNodes(overlapping, ref)
+
+      const btn = document.createElement('button')
+      btn.setAttribute('data-ref-id', id)
+      btn.className =
+        'text-leather dark:text-gilt-soft underline decoration-dotted underline-offset-2 font-medium'
+      btn.textContent = ref.raw
+
+      matchedNodes[0].parentNode.insertBefore(btn, matchedNodes[0])
+      matchedNodes.forEach((n) => n.parentNode && n.parentNode.removeChild(n))
     } catch {
-      // Si la manipulación del rango falla, omitir esta referencia
+      // Si la manipulación del DOM falla por algún motivo inesperado,
+      // omitir esta referencia y dejar el texto tal cual.
       delete refsById[id]
       continue
     }
@@ -119,4 +121,42 @@ function _processBlock(blockEl, refsById) {
       if (idx !== -1) textParts.splice(idx, 1)
     }
   }
+}
+
+/**
+ * A partir de la lista de nodos de texto que se superponen con `ref` (en
+ * orden de documento), recorta el primero y el último con Text.splitText()
+ * para que TODOS los nodos devueltos queden enteramente dentro del rango
+ * de la referencia. Los nodos intermedios ya están completamente contenidos
+ * por definición (la cobertura de textParts es continua, sin huecos).
+ */
+function _isolateMatchedNodes(overlapping, ref) {
+  const first = overlapping[0]
+  const last = overlapping[overlapping.length - 1]
+  const sameNode = first === last
+
+  let firstNode = first.node
+  const firstLocalStart = ref.start - first.start
+  if (firstLocalStart > 0) {
+    // splitText devuelve el nodo NUEVO con el texto posterior al offset;
+    // ese es el que nos interesa (donde empieza la referencia).
+    firstNode = firstNode.splitText(firstLocalStart)
+  }
+
+  if (sameNode) {
+    const localEnd = ref.end - first.start - firstLocalStart
+    if (localEnd < firstNode.textContent.length) {
+      firstNode.splitText(localEnd)
+    }
+    return [firstNode]
+  }
+
+  let lastNode = last.node
+  const lastLocalEnd = ref.end - last.start
+  if (lastLocalEnd < lastNode.textContent.length) {
+    lastNode.splitText(lastLocalEnd)
+  }
+
+  const middle = overlapping.slice(1, -1).map((p) => p.node)
+  return [firstNode, ...middle, lastNode]
 }
