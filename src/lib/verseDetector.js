@@ -1,10 +1,19 @@
 import { bibleBooks } from '../data/bibleBooks'
 
+// Caracteres invisibles que a veces vienen en texto copiado de jw.org o de
+// Meeting Workbook (p. ej. un espacio de ancho cero después de "48:" para
+// controlar el salto de línea al justificar el texto). Se sustituyen por un
+// espacio normal — nunca se eliminan — para que \s en las expresiones
+// regulares los reconozca sin desalinear los índices start/end respecto al
+// texto original.
+const INVISIBLE_CHARS = /[\u200B\u200C\u200D\u2060\uFEFF\u00AD]/g
+
 function normalize(str) {
   return str
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // quitar acentos
+    .replace(INVISIBLE_CHARS, ' ') // caracteres invisibles → espacio normal
 }
 
 // Construye, una sola vez, la lista de (abreviatura normalizada -> libro),
@@ -58,15 +67,20 @@ function expandVerses(str) {
  * libro escritos juntos y separados por ";" (ej. "Mateo 24:15; 8:6").
  *
  * Normaliza el texto de entrada antes de aplicar el regex para soportar
- * abreviaturas con tilde (Gál → gal, Éx → ex, Nú → nu, 1Pe → 1pe...).
- * Los índices start/end se conservan porque quitar diacríticos NFD no cambia
- * la longitud del string en strings NFC de español estándar.
+ * abreviaturas con tilde (Gál → gal, Éx → ex, Nú → nu, 1Pe → 1pe...) y para
+ * tolerar caracteres invisibles (espacios de ancho cero, etc.) que a veces
+ * vienen en texto copiado de otras apps.
+ * Los índices start/end se conservan porque tanto quitar diacríticos NFD
+ * como sustituir caracteres invisibles por un espacio no cambian la
+ * longitud del string en strings NFC de español estándar.
  */
 export function detectReferences(text) {
   if (!text) return []
 
-  // Normalizar el texto de entrada: quita tildes y convierte a minúsculas,
-  // así "Gál 5:22" coincide con el patrón "gal" ya registrado en bookLookup.
+  // Normalizar el texto de entrada: quita tildes, caracteres invisibles y
+  // convierte a minúsculas, así "Gál 5:22" coincide con el patrón "gal" ya
+  // registrado en bookLookup, y "48:​17" (con espacio de ancho cero) coincide
+  // igual que "48:17".
   const normalizedText = normalize(text)
 
   const results = []
@@ -95,8 +109,9 @@ export function detectReferences(text) {
 
     const label = `${book.name} ${segments.map((s) => s.verseLabel).join('; ')}`
 
-    // Extraer el raw del texto ORIGINAL para conservar tildes y mayúsculas
-    // tal como el usuario las escribió (ej. "Gál 5:22" en vez de "gal 5:22").
+    // Extraer el raw del texto ORIGINAL para conservar tildes, mayúsculas y
+    // los caracteres invisibles tal como el usuario los escribió/pegó (ej.
+    // "Gál 5:22" en vez de "gal 5:22").
     const rawOriginal = text.slice(match.index, match.index + rawNorm.length).trim()
 
     results.push({
