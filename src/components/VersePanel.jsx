@@ -42,7 +42,14 @@ export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChan
 
   const handleCopy = () => {
     if (!activeRef) return
-    const body = segmentTexts.map((s) => `${s.verseLabel} ${s.text}`).join(' ')
+    // Solo repetimos la etiqueta de versículo (s.verseLabel) por segmento
+    // cuando hay más de un segmento (ej. "Mateo 24:15; 8:6"), igual que en
+    // pantalla. Con un solo segmento, la referencia ya está en
+    // activeRef.label, así que agregarla de nuevo la duplicaba
+    // (ej. "Isaías 48:17,18  48:17,18 17 Esto es...").
+    const body = segmentTexts
+      .map((s) => (segmentTexts.length > 1 ? `${s.verseLabel} ${s.text}` : s.text))
+      .join(' ')
     navigator.clipboard?.writeText(`${activeRef.label}  ${body}`)
   }
 
