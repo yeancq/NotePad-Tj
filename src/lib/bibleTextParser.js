@@ -30,18 +30,26 @@ export function parseChapterXhtml(xhtmlText) {
   }
 
   // ── Extraer versículos ──────────────────────────────────────────────────
-  // Recorremos TEXTO y ELEMENTOS. Esto es necesario porque los versículos en
-  // formato poético (ej. Isaías, Salmos) suelen partir cada línea con un
-  // <br> u otro elemento de "salto de línea" que NO tiene texto propio. Si
-  // solo camináramos por nodos de texto (como antes), esos saltos se
-  // saltaban sin dejar ningún espacio en el string final, uniendo palabras
-  // de líneas distintas (ej. "Dios,el que te enseña" en vez de
-  // "Dios, el que te enseña").
-  const LINE_BREAK_TAGS = new Set(['BR'])
+  // IMPORTANTE: en poesía (Isaías, Salmos, etc.) cada línea del verso viene
+  // en su PROPIA etiqueta <p> separada, ej:
+  //   <p class="p1471 sz">"Yo, Jehová, soy tu Dios,</p>
+  //   <p class="p1471 sz">el que te enseña por tu propio bien,...</p>
+  // Sin ningún <br> entre ellas. Si solo concatenamos el texto de cada nodo
+  // sin más, el final de un <p> queda pegado directo al inicio del
+  // siguiente ("Dios,el que enseña"). Por eso hay que detectar cuándo el
+  // texto pertenece a un bloque (<p>/<li>/etc.) distinto al anterior y
+  // forzar un espacio ahí — pase o no pase también el número de verso.
+  const BLOCK_TAGS = new Set(['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'])
 
-  const walker = doc.createTreeWalker(body, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT)
+  function closestBlock(el) {
+    while (el && !BLOCK_TAGS.has(el.tagName)) el = el.parentElement
+    return el
+  }
+
+  const walker = doc.createTreeWalker(body, NodeFilter.SHOW_TEXT)
   const verses = {}
   let currentVerse = null
+  let lastBlock = null
   let node
 
   const shouldSkip = (el) => {
@@ -61,16 +69,6 @@ export function parseChapterXhtml(xhtmlText) {
   }
 
   while ((node = walker.nextNode())) {
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      // Elemento de salto de línea (poesía): insertamos un espacio para que
-      // la línea siguiente no quede pegada a la anterior. El .replace(/\s+/g)
-      // final se encarga de colapsar espacios de más si ya había uno.
-      if (LINE_BREAK_TAGS.has(node.tagName) && !shouldSkip(node) && currentVerse !== null) {
-        verses[currentVerse] = (verses[currentVerse] || '') + ' '
-      }
-      continue
-    }
-
     const el = node.parentElement
     if (shouldSkip(el)) continue
 
@@ -81,6 +79,17 @@ export function parseChapterXhtml(xhtmlText) {
 
     const text = node.textContent
     if (!text) continue
+
+    const block = closestBlock(el)
+    // Si este texto viene de un bloque distinto al del texto anterior
+    // (y ya había algo escrito para este verso), insertamos un espacio
+    // antes de pegar el nuevo texto, para separar líneas de poesía que
+    // vienen en <p> separados sin <br> entre ellos.
+    if (block !== lastBlock && verses[currentVerse]) {
+      verses[currentVerse] += ' '
+    }
+    lastBlock = block
+
     verses[currentVerse] = (verses[currentVerse] || '') + text
   }
 
