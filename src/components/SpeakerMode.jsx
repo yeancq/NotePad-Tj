@@ -76,7 +76,12 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
                 bibleReady={bibleReady}
                 onNeedImport={onNeedImport}
                 onCopy={() => {
-                  const body = segmentTexts.map((s) => `${s.verseLabel} ${s.text}`).join(' ')
+                  // Ver nota en VersePanel.jsx: solo repetimos verseLabel por
+                  // segmento cuando hay más de uno, para no duplicar la
+                  // referencia que ya va en activeRef.label.
+                  const body = segmentTexts
+                    .map((s) => (segmentTexts.length > 1 ? `${s.verseLabel} ${s.text}` : s.text))
+                    .join(' ')
                   navigator.clipboard?.writeText(`${activeRef.label}  ${body}`)
                 }}
                 onClose={() => setActiveRef(null)}
