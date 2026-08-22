@@ -13,7 +13,7 @@ const guideSections = [
   {
     title: '📝 Notas y Notas Rápidas',
     content:
-      'Crea notas estructuradas para tus estudios o utiliza las notas rápidas para capturar ideas, textos o recordatorios al instante sin necesidad de asignarles una carpeta. El editor enriquecido te permite dar formato a tu texto con negrita, cursiva, subrayado, resaltado en varios colores y encabezados. Las notas se guardan automáticamente mientras escribes, y puedes fijar las más importantes para tenerlas siempre a mano. Si ya no necesitas una nota, muévela a la papelera; desde allí podrás restaurarla o eliminarla definitivamente.'
+      'Crea notas estructuradas para tus estudios o utiliza las notas rápidas para capturar ideas, textos o recordatorios al instante sin necesidad de asignarles una carpeta. El editor enriquecido te permite dar formato a tu texto con negrita, cursiva, subrayado, resaltados de color y encabezados. Las notas se guardan automáticamente mientras escribes, y puedes fijar las más importantes para tenerlas siempre a mano. Si ya no necesitas una nota, muévela a la papelera; desde allí podrás restaurarla o eliminarla definitivamente.'
   },
   {
     title: '📁 Carpetas y Organización',
@@ -58,8 +58,8 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
       .catch(() => {})
   }, [])
 
-  const handleExport = () => {
-    const { notesCount, foldersCount } = exportBackup()
+  const handleExport = async () => {
+    const { notesCount, foldersCount } = await exportBackup()
     setStatus({
       type: 'ok',
       text: `Respaldo descargado: ${notesCount} notas, ${foldersCount} carpetas.`,
@@ -79,8 +79,8 @@ export default function Settings({ themeMode, setThemeMode, accentId, setAccentI
     }
   }
 
-  const confirmImport = (mode) => {
-    applyBackup(pendingImport, mode)
+  const confirmImport = async (mode) => {
+    await applyBackup(pendingImport, mode)
     setPendingImport(null)
     setStatus({ type: 'ok', text: 'Respaldo importado. Recargando…' })
     setTimeout(() => window.location.reload(), 800)
