@@ -2,13 +2,10 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { detectReferences } from '../lib/verseDetector'
 import { useBibleReady, useVerseSegments } from '../hooks/useVerseSegments'
+import { refKey, buildCopyText } from '../lib/verseCardHelpers'
 import VerseCardBody from './VerseCardBody'
 
 const EASE = [0.2, 0, 0, 1]
-
-function refKey(ref) {
-  return ref ? `${ref.start}:${ref.end}:${ref.raw}` : null
-}
 
 export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChange }) {
   const bibleReady = useBibleReady()
@@ -42,15 +39,7 @@ export default function VersePanel({ text, cursorPos, onNeedImport, onActiveChan
 
   const handleCopy = () => {
     if (!activeRef) return
-    // Solo repetimos la etiqueta de versículo (s.verseLabel) por segmento
-    // cuando hay más de un segmento (ej. "Mateo 24:15; 8:6"), igual que en
-    // pantalla. Con un solo segmento, la referencia ya está en
-    // activeRef.label, así que agregarla de nuevo la duplicaba
-    // (ej. "Isaías 48:17,18  48:17,18 17 Esto es...").
-    const body = segmentTexts
-      .map((s) => (segmentTexts.length > 1 ? `${s.verseLabel} ${s.text}` : s.text))
-      .join(' ')
-    navigator.clipboard?.writeText(`${activeRef.label}  ${body}`)
+    navigator.clipboard?.writeText(buildCopyText(activeRef, segmentTexts))
   }
 
   return (
