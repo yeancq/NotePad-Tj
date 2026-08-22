@@ -2,13 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBibleReady, useVerseSegments } from '../hooks/useVerseSegments'
 import { linkifyHtml } from '../lib/linkifyHtml'
+import { refKey, buildCopyText } from '../lib/verseCardHelpers'
 import VerseCardBody from './VerseCardBody'
 
 const EASE = [0.2, 0, 0, 1]
-
-function refKey(ref) {
-  return ref ? `${ref.start}:${ref.end}:${ref.raw}` : null
-}
 
 function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60)
@@ -76,13 +73,7 @@ export default function SpeakerMode({ note, onClose, onNeedImport }) {
                 bibleReady={bibleReady}
                 onNeedImport={onNeedImport}
                 onCopy={() => {
-                  // Ver nota en VersePanel.jsx: solo repetimos verseLabel por
-                  // segmento cuando hay más de uno, para no duplicar la
-                  // referencia que ya va en activeRef.label.
-                  const body = segmentTexts
-                    .map((s) => (segmentTexts.length > 1 ? `${s.verseLabel} ${s.text}` : s.text))
-                    .join(' ')
-                  navigator.clipboard?.writeText(`${activeRef.label}  ${body}`)
+                  navigator.clipboard?.writeText(buildCopyText(activeRef, segmentTexts))
                 }}
                 onClose={() => setActiveRef(null)}
               />
