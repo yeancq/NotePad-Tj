@@ -28,8 +28,8 @@ function getGreeting() {
 }
 
 export default function App() {
-  const [notes, setNotes] = useLocalStorageNotes(initialNotes)
-  const [folders, setFolders] = useLocalStorageFolders(defaultFolders)
+  const [notes, setNotes, notesLoaded] = useLocalStorageNotes(initialNotes)
+  const [folders, setFolders, foldersLoaded] = useLocalStorageFolders(defaultFolders)
   const [activeFolder, setActiveFolder] = useState(null)
   const [search, setSearch] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -43,6 +43,11 @@ export default function App() {
   const [editingFolderId, setEditingFolderId] = useState(null)
   const { themeMode, setThemeMode, accentId, setAccentId, dark } = useThemeSettings()
   const [showSplash, setShowSplash] = useState(true)
+  // Los datos ahora se cargan de forma asíncrona desde IndexedDB. Mientras
+  // no terminen de cargar, seguimos mostrando el splash (que de por sí ya
+  // dura unos segundos por su animación) en vez de arriesgarnos a mostrar
+  // la app con notas/carpetas todavía vacías o a medio migrar.
+  const dataReady = notesLoaded && foldersLoaded
 
   const counts = useMemo(() => {
     const c = { all: 0, pinned: 0, trash: 0 }
@@ -259,7 +264,7 @@ export default function App() {
     setEditingFolderId(null)
   }
 
-  if (showSplash) {
+  if (showSplash || !dataReady) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />
   }
 
