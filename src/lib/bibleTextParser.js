@@ -30,7 +30,16 @@ export function parseChapterXhtml(xhtmlText) {
   }
 
   // ── Extraer versículos ──────────────────────────────────────────────────
-  const walker = doc.createTreeWalker(body, NodeFilter.SHOW_TEXT)
+  // Recorremos TEXTO y ELEMENTOS. Esto es necesario porque los versículos en
+  // formato poético (ej. Isaías, Salmos) suelen partir cada línea con un
+  // <br> u otro elemento de "salto de línea" que NO tiene texto propio. Si
+  // solo camináramos por nodos de texto (como antes), esos saltos se
+  // saltaban sin dejar ningún espacio en el string final, uniendo palabras
+  // de líneas distintas (ej. "Dios,el que te enseña" en vez de
+  // "Dios, el que te enseña").
+  const LINE_BREAK_TAGS = new Set(['BR'])
+
+  const walker = doc.createTreeWalker(body, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT)
   const verses = {}
   let currentVerse = null
   let node
@@ -52,6 +61,16 @@ export function parseChapterXhtml(xhtmlText) {
   }
 
   while ((node = walker.nextNode())) {
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      // Elemento de salto de línea (poesía): insertamos un espacio para que
+      // la línea siguiente no quede pegada a la anterior. El .replace(/\s+/g)
+      // final se encarga de colapsar espacios de más si ya había uno.
+      if (LINE_BREAK_TAGS.has(node.tagName) && !shouldSkip(node) && currentVerse !== null) {
+        verses[currentVerse] = (verses[currentVerse] || '') + ' '
+      }
+      continue
+    }
+
     const el = node.parentElement
     if (shouldSkip(el)) continue
 
