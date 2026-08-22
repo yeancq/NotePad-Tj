@@ -53,9 +53,16 @@ export default function VerseCardBody({
             {/* Textos de versículos */}
             <div className="space-y-3">
               {segmentTexts.map((s, i) => {
+                // Envolvemos los marcadores de nota al pie (*, †, ‡, §, ‖, ¶) en un
+                // <sup>, y forzamos SIEMPRE exactamente un espacio después del
+                // marcador (consumiendo cualquier espacio que ya hubiera en el
+                // texto original). El EPUB de jw.org suele traer el marcador
+                // pegado a la palabra siguiente sin espacio (ej. "bien,*el que"),
+                // lo que hacía que las palabras se vieran unidas.
                 const fullText = (s.text || '').replace(
-                  /(\*|†|‡|§|‖|¶)/g,
-                  `<sup style="font-size:0.65em;color:${BLUE};font-weight:700;margin-left:1px;">$1</sup>`
+                  /(\*|†|‡|§|‖|¶)\s*/g,
+                  (_, marker) =>
+                    `<sup style="font-size:0.65em;color:${BLUE};font-weight:700;margin-left:1px;">${marker}</sup> `
                 )
                 return (
                   <div key={i}>
