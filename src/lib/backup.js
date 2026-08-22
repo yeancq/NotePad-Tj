@@ -1,9 +1,11 @@
+import { get, set } from 'idb-keyval'
+
 const NOTES_KEY = 'cuaderno:notes'
 const FOLDERS_KEY = 'cuaderno:folders'
 
-export function exportBackup() {
-  const notes = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]')
-  const folders = JSON.parse(localStorage.getItem(FOLDERS_KEY) || '[]')
+export async function exportBackup() {
+  const notes = (await get(NOTES_KEY)) || []
+  const folders = (await get(FOLDERS_KEY)) || []
 
   const backup = {
     app: 'NotePad TJ',
@@ -29,7 +31,7 @@ export function exportBackup() {
 
 /**
  * Lee un archivo de respaldo y devuelve su contenido validado, sin tocar
- * todavía el localStorage (eso lo hace applyBackup, tras confirmar).
+ * todavía el almacenamiento (eso lo hace applyBackup, tras confirmar).
  */
 export async function readBackupFile(file) {
   const text = await file.text()
@@ -49,15 +51,15 @@ export async function readBackupFile(file) {
  * mode: 'merge' agrega lo que falte sin borrar lo que ya tienes (evita
  * duplicados comparando por id). 'replace' sustituye todo por completo.
  */
-export function applyBackup(data, mode) {
+export async function applyBackup(data, mode) {
   if (mode === 'replace') {
-    localStorage.setItem(NOTES_KEY, JSON.stringify(data.notes))
-    localStorage.setItem(FOLDERS_KEY, JSON.stringify(data.folders))
+    await set(NOTES_KEY, data.notes)
+    await set(FOLDERS_KEY, data.folders)
     return
   }
 
-  const currentNotes = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]')
-  const currentFolders = JSON.parse(localStorage.getItem(FOLDERS_KEY) || '[]')
+  const currentNotes = (await get(NOTES_KEY)) || []
+  const currentFolders = (await get(FOLDERS_KEY)) || []
 
   const noteIds = new Set(currentNotes.map((n) => n.id))
   const mergedNotes = [...currentNotes, ...data.notes.filter((n) => !noteIds.has(n.id))]
@@ -65,6 +67,6 @@ export function applyBackup(data, mode) {
   const folderIds = new Set(currentFolders.map((f) => f.id))
   const mergedFolders = [...currentFolders, ...data.folders.filter((f) => !folderIds.has(f.id))]
 
-  localStorage.setItem(NOTES_KEY, JSON.stringify(mergedNotes))
-  localStorage.setItem(FOLDERS_KEY, JSON.stringify(mergedFolders))
+  await set(NOTES_KEY, mergedNotes)
+  await set(FOLDERS_KEY, mergedFolders)
 }
