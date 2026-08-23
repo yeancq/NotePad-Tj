@@ -408,157 +408,173 @@ export default function App() {
           />
 
           <div className="flex-1 min-w-0 flex flex-col">
-            {showHome ? (
-              <>
-                <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-4">
-                  <div className="flex items-center justify-between gap-3 mb-4">
-                    <div className="min-w-0">
+            <AnimatePresence mode="wait" initial={false}>
+              {showHome ? (
+                <motion.div
+                  key="grid"
+                  variants={pushVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  className="flex-1 min-w-0 flex flex-col"
+                >
+                  <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-4">
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <div className="min-w-0">
+                        <button
+                          onClick={() => setSidebarOpen(true)}
+                          className="md:hidden mb-1 w-9 h-9 -ml-1.5 flex items-center justify-center rounded-full text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
+                          aria-label="Abrir menú"
+                        >
+                          ☰
+                        </button>
+                        <p className="font-display text-2xl md:text-3xl text-ink dark:text-night-text tracking-tight">
+                          NotePad TJ
+                        </p>
+                        <p className="text-xs text-ink-soft dark:text-night-text/60 mt-0.5">
+                          Estudio, reuniones y predicación
+                        </p>
+                      </div>
                       <button
-                        onClick={() => setSidebarOpen(true)}
-                        className="md:hidden mb-1 w-9 h-9 -ml-1.5 flex items-center justify-center rounded-full text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
-                        aria-label="Abrir menú"
+                        onClick={() => setThemeMode(dark ? 'light' : 'dark')}
+                        className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full
+                                   text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
+                        aria-label="Cambiar modo oscuro"
                       >
-                        ☰
+                        {dark ? '☀️' : '🌙'}
                       </button>
-                      <p className="font-display text-2xl md:text-3xl text-ink dark:text-night-text tracking-tight">
-                        NotePad TJ
-                      </p>
-                      <p className="text-xs text-ink-soft dark:text-night-text/60 mt-0.5">
-                        Estudio, reuniones y predicación
-                      </p>
                     </div>
-                    <button
-                      onClick={() => setThemeMode(dark ? 'light' : 'dark')}
-                      className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full
-                                 text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
-                      aria-label="Cambiar modo oscuro"
-                    >
-                      {dark ? '☀️' : '🌙'}
-                    </button>
-                  </div>
-                  <div className="relative max-w-md">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-soft/50 dark:text-night-text/40 text-sm">
-                      ⌕
-                    </span>
-                    <input
-                      value={search}
-                      onChange={(e) => {
-                        setSearch(e.target.value)
-                        setActiveFolder(null)
+                    <div className="relative max-w-md">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-soft/50 dark:text-night-text/40 text-sm">
+                        ⌕
+                      </span>
+                      <input
+                        value={search}
+                        onChange={(e) => {
+                          setSearch(e.target.value)
+                          setActiveFolder(null)
+                          setShowHome(false)
+                        }}
+                        type="text"
+                        placeholder="Buscar en tus notas…"
+                        className="w-full bg-white/60 dark:bg-night-surface-2 border border-ink/10 dark:border-night-text/10
+                                   rounded-full pl-9 pr-4 py-2.5 text-sm text-ink dark:text-night-text
+                                   placeholder:text-ink-soft/50 dark:placeholder:text-night-text/30
+                                   focus:outline-none focus:ring-2 focus:ring-gilt/60 transition-shadow"
+                      />
+                    </div>
+                  </header>
+
+                  <main className="flex-1 px-4 md:px-8 py-6 pb-28">
+                    <FolderGrid
+                      folders={folders}
+                      counts={counts}
+                      onSelect={(f) => {
+                        setActiveFolder(f)
                         setShowHome(false)
                       }}
-                      type="text"
-                      placeholder="Buscar en tus notas…"
-                      className="w-full bg-white/60 dark:bg-night-surface-2 border border-ink/10 dark:border-night-text/10
-                                 rounded-full pl-9 pr-4 py-2.5 text-sm text-ink dark:text-night-text
-                                 placeholder:text-ink-soft/50 dark:placeholder:text-night-text/30
-                                 focus:outline-none focus:ring-2 focus:ring-gilt/60 transition-shadow"
+                      onEditFolder={setEditingFolderId}
+                      onDeleteFolder={deleteFolderAndContents}
                     />
-                  </div>
-                </header>
-
-                <main className="flex-1 px-4 md:px-8 py-6 pb-28">
-                  <FolderGrid
-                    folders={folders}
-                    counts={counts}
-                    onSelect={(f) => {
-                      setActiveFolder(f)
-                      setShowHome(false)
+                  </main>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={`folder-${activeFolder ?? 'all'}`}
+                  variants={pushVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  className="flex-1 min-w-0 flex flex-col"
+                >
+                  <TopBar
+                    search={search}
+                    onSearch={setSearch}
+                    dark={dark}
+                    onToggleDark={() => setThemeMode(dark ? 'light' : 'dark')}
+                    onOpenSidebar={() => setSidebarOpen(true)}
+                    onGoHome={() => {
+                      setShowHome(true)
+                      setSearch('')
                     }}
-                    onEditFolder={setEditingFolderId}
-                    onDeleteFolder={deleteFolderAndContents}
+                    showBack
+                    greeting={`${getGreeting()} · ${filteredNotes.length} ${
+                      filteredNotes.length === 1 ? 'nota' : 'notas'
+                    }`}
                   />
-                </main>
-              </>
-            ) : (
-              <>
-                <TopBar
-                  search={search}
-                  onSearch={setSearch}
-                  dark={dark}
-                  onToggleDark={() => setThemeMode(dark ? 'light' : 'dark')}
-                  onOpenSidebar={() => setSidebarOpen(true)}
-                  onGoHome={() => {
-                    setShowHome(true)
-                    setSearch('')
-                  }}
-                  showBack
-                  greeting={`${getGreeting()} · ${filteredNotes.length} ${
-                    filteredNotes.length === 1 ? 'nota' : 'notas'
-                  }`}
-                />
 
-                <main className="flex-1 px-4 md:px-8 py-6 pb-28">
-                  {(() => {
-                    const subfolders = folders.filter(f => f.parentId === activeFolder)
-                    const hasContent = filteredNotes.length > 0 || subfolders.length > 0
+                  <main className="flex-1 px-4 md:px-8 py-6 pb-28">
+                    {(() => {
+                      const subfolders = folders.filter(f => f.parentId === activeFolder)
+                      const hasContent = filteredNotes.length > 0 || subfolders.length > 0
 
-                    if (!hasContent) {
-                      return <EmptyState onCreate={createNote} filtered={Boolean(search || activeFolder)} />
-                    }
+                      if (!hasContent) {
+                        return <EmptyState onCreate={createNote} filtered={Boolean(search || activeFolder)} />
+                      }
 
-                    return (
-                      <div className="space-y-6 max-w-6xl">
-                        {/* Subcarpetas */}
-                        {subfolders.length > 0 && (
-                          <div>
-                            <div className="flex items-center justify-between mb-3">
-                              <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40">
-                                Subcarpetas
-                              </p>
-                              <p className="text-[11px] text-ink-soft/40 dark:text-night-text/30">
-                                ⋮ para opciones
-                              </p>
+                      return (
+                        <div className="space-y-6 max-w-6xl">
+                          {/* Subcarpetas */}
+                          {subfolders.length > 0 && (
+                            <div>
+                              <div className="flex items-center justify-between mb-3">
+                                <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40">
+                                  Subcarpetas
+                                </p>
+                                <p className="text-[11px] text-ink-soft/40 dark:text-night-text/30">
+                                  ⋮ para opciones
+                                </p>
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                                {subfolders.map((folder) => {
+                                  const noteCount = notes.filter(n => n.folder === folder.id && !n.trashed).length
+                                  return (
+                                    <FolderCard
+                                      key={folder.id}
+                                      folder={folder}
+                                      noteCount={noteCount}
+                                      onOpen={() => setActiveFolder(folder.id)}
+                                      onEdit={() => setEditingFolderId(folder.id)}
+                                      onDelete={() => deleteFolderAndContents(folder.id)}
+                                    />
+                                  )
+                                })}
+                              </div>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
-                              {subfolders.map((folder) => {
-                                const noteCount = notes.filter(n => n.folder === folder.id && !n.trashed).length
-                                return (
-                                  <FolderCard
-                                    key={folder.id}
-                                    folder={folder}
-                                    noteCount={noteCount}
-                                    onOpen={() => setActiveFolder(folder.id)}
-                                    onEdit={() => setEditingFolderId(folder.id)}
-                                    onDelete={() => deleteFolderAndContents(folder.id)}
+                          )}
+
+                          {/* Notas */}
+                          {filteredNotes.length > 0 && (
+                            <div>
+                              {subfolders.length > 0 && (
+                                <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40 mb-3">
+                                  Notas
+                                </p>
+                              )}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                                {filteredNotes.map((note) => (
+                                  <NoteCard
+                                    key={note.id}
+                                    note={note}
+                                    folders={folders}
+                                    allNotes={notes}
+                                    onOpen={() => setOpenNoteId(note.id)}
+                                    onTogglePin={() => togglePin(note.id)}
+                                    onMoveNote={moveNoteToFolder}
+                                    onTrash={trashNote}
+                                    onLink={(targetId) => linkNotes(note.id, targetId)}
                                   />
-                                )
-                              })}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
-
-                        {/* Notas */}
-                        {filteredNotes.length > 0 && (
-                          <div>
-                            {subfolders.length > 0 && (
-                              <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40 mb-3">
-                                Notas
-                              </p>
-                            )}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
-                              {filteredNotes.map((note) => (
-                                <NoteCard
-                                  key={note.id}
-                                  note={note}
-                                  folders={folders}
-                                  allNotes={notes}
-                                  onOpen={() => setOpenNoteId(note.id)}
-                                  onTogglePin={() => togglePin(note.id)}
-                                  onMoveNote={moveNoteToFolder}
-                                  onTrash={trashNote}
-                                  onLink={(targetId) => linkNotes(note.id, targetId)}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })()}
-                </main>
-              </>
-            )}
+                          )}
+                        </div>
+                      )
+                    })()}
+                  </main>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {activeFolder !== 'trash' && (
