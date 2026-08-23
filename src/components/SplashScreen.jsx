@@ -51,8 +51,17 @@ export default function SplashScreen({ onFinish }) {
 
   const phrase = PHRASES[phraseIndex]
 
+  // Fondo SIEMPRE oscuro (bg-night, el mismo tono cálido que usa el resto
+  // de la app en modo oscuro) sin importar el tema claro/oscuro elegido
+  // por el usuario — el splash es una decisión de marca fija.
+  //
+  // El color del texto/brillo usa las variables --color-gilt-soft y
+  // --color-accent-shadow, las mismas que useThemeSettings.js actualiza
+  // según el acento que el usuario eligió en Configuración, así el splash
+  // queda alineado con el resto de la app en vez de un teal fijo ajeno a
+  // la paleta cuero/pergamino.
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#161616]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-night">
       <AnimatePresence mode="wait">
         {!showLogo ? (
           <motion.p
@@ -61,11 +70,11 @@ export default function SplashScreen({ onFinish }) {
             animate={{ opacity: showText ? 1 : 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: FADE_MS / 1000 }}
-            className="font-display italic text-3xl md:text-4xl text-[#5ff2e8]"
-            style={{ textShadow: '0 0 18px rgba(95,242,232,0.45)' }}
+            className="font-display italic text-3xl md:text-4xl text-gilt-soft"
+            style={{ textShadow: '0 0 18px var(--color-accent-shadow)' }}
           >
             {phrase.slice(0, charCount)}
-            <span className="inline-block w-[2px] h-[1em] bg-[#5ff2e8] ml-1 align-middle animate-pulse" />
+            <span className="inline-block w-[2px] h-[1em] bg-gilt-soft ml-1 align-middle animate-pulse" />
           </motion.p>
         ) : (
           <motion.div
@@ -76,7 +85,7 @@ export default function SplashScreen({ onFinish }) {
             className="flex flex-col items-center gap-4"
           >
             <img src="./icons/icon-512.png" alt="" className="w-24 h-24 rounded-[22%] shadow-2xl" />
-            <p className="font-display text-lg text-[#5ff2e8] tracking-wide">NotePad TJ</p>
+            <p className="font-display text-lg text-gilt-soft tracking-wide">NotePad TJ</p>
           </motion.div>
         )}
       </AnimatePresence>
