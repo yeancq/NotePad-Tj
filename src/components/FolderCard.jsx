@@ -68,10 +68,12 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
               e.stopPropagation()
               setShowMenu(!showMenu)
             }}
-            className="text-sm opacity-0 group-hover:opacity-100 transition-opacity
+            className={`text-sm transition-colors
                        text-ink-soft/40 dark:text-night-text/30 hover:text-ink dark:hover:text-night-text
-                       p-1 rounded-md hover:bg-ink/5 dark:hover:bg-night-text/10"
+                       p-1 rounded-md hover:bg-ink/5 dark:hover:bg-night-text/10
+                       ${showMenu ? 'bg-ink/5 dark:bg-night-text/10 text-ink dark:text-night-text' : ''}`}
             title="Opciones"
+            aria-label="Opciones de la carpeta"
           >
             ⋮
           </button>
