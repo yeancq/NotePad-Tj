@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import NoteCard from './components/NoteCard'
@@ -19,6 +20,25 @@ import { useLocalStorageFolders } from './hooks/useLocalStorageFolders'
 import { useThemeSettings } from './hooks/useThemeSettings'
 import { useBackHandler } from './hooks/useBackHandler'
 import { stripHtml } from './lib/htmlUtils'
+
+const EASE = [0.2, 0, 0, 1]
+
+// "push": para pantallas que se sienten como una navegación tipo app nativa
+// (Configuración, Importar…, la Nota). Entran deslizándose desde la derecha
+// con un fundido; al salir se deslizan de regreso hacia la derecha.
+const pushVariants = {
+  initial: { opacity: 0, x: 28 },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.34, ease: EASE } },
+  exit: { opacity: 0, x: 28, transition: { duration: 0.22, ease: EASE } },
+}
+
+// "fade": para la pantalla de Inicio/Carpetas — un fundido con un leve
+// desplazamiento vertical, en línea con el estilo ya usado en los diálogos.
+const fadeVariants = {
+  initial: { opacity: 0, y: 6 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: EASE } },
+  exit: { opacity: 0, y: -6, transition: { duration: 0.2, ease: EASE } },
+}
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -268,243 +288,306 @@ export default function App() {
     return <SplashScreen onFinish={() => setShowSplash(false)} />
   }
 
-  if (showSettings) {
-    return (
-      <Settings
-        themeMode={themeMode}
-        setThemeMode={setThemeMode}
-        accentId={accentId}
-        setAccentId={setAccentId}
-        onBack={() => setShowSettings(false)}
-      />
-    )
-  }
-
-  if (showImportOutline) {
-    return <ImportOutline onBack={() => setShowImportOutline(false)} onCreateNote={createNoteFromOutline} />
-  }
-
-  if (showImportProgram) {
-    return (
-      <ImportProgram onBack={() => setShowImportProgram(false)} onCreateNotes={createNotesFromProgram} />
-    )
-  }
-
-  if (showImport) {
-    return <ImportBible onBack={() => setShowImport(false)} onImported={() => setShowImport(false)} />
-  }
-
-  if (openNote) {
-    return (
-      <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex overflow-x-hidden">
-        <NoteEditor
-          key={openNote.id}
-          note={openNote}
-          folders={folders}
-          allNotes={notes}
-          onBack={() => setOpenNoteId(null)}
-          onSave={saveNote}
-          onTrash={trashNote}
-          onRestore={restoreNote}
-          onDeleteForever={deleteForever}
-          onNeedImport={() => setShowImport(true)}
-          onLink={(targetId) => linkNotes(openNote.id, targetId)}
-          onUnlink={(targetId) => unlinkNotes(openNote.id, targetId)}
-          onOpenNote={(id) => setOpenNoteId(id)}
-        />
-      </div>
-    )
-  }
+  // Determina cuál "pantalla" está activa en este momento, con la misma
+  // prioridad que antes se resolvía con returns tempranos. Ahora, en vez de
+  // reemplazar instantáneamente el árbol de React, todas las pantallas viven
+  // dentro de un único AnimatePresence para poder animar tanto la entrada
+  // como la salida (los returns tempranos no permitían animar la salida,
+  // porque desmontaban el componente anterior de inmediato).
+  const screen = showSettings
+    ? 'settings'
+    : showImportOutline
+    ? 'importOutline'
+    : showImportProgram
+    ? 'importProgram'
+    : showImport
+    ? 'import'
+    : openNote
+    ? 'note'
+    : 'home'
 
   return (
-    <div className="min-h-screen bg-parchment dark:bg-night paper-texture flex text-ink dark:text-night-text">
-      <Sidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onOpenImport={() => setShowImport(true)}
-        onOpenImportProgram={() => setShowImportProgram(true)}
-        onOpenSettings={() => setShowSettings(true)}
-      />
+    <AnimatePresence mode="wait" initial={false}>
+      {screen === 'settings' && (
+        <motion.div
+          key="settings"
+          variants={pushVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        >
+          <Settings
+            themeMode={themeMode}
+            setThemeMode={setThemeMode}
+            accentId={accentId}
+            setAccentId={setAccentId}
+            onBack={() => setShowSettings(false)}
+          />
+        </motion.div>
+      )}
 
-      <div className="flex-1 min-w-0 flex flex-col">
-        {showHome ? (
-          <>
-            <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-4">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <div className="min-w-0">
-                  <button
-                    onClick={() => setSidebarOpen(true)}
-                    className="md:hidden mb-1 w-9 h-9 -ml-1.5 flex items-center justify-center rounded-full text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
-                    aria-label="Abrir menú"
-                  >
-                    ☰
-                  </button>
-                  <p className="font-display text-2xl md:text-3xl text-ink dark:text-night-text tracking-tight">
-                    NotePad TJ
-                  </p>
-                  <p className="text-xs text-ink-soft dark:text-night-text/60 mt-0.5">
-                    Estudio, reuniones y predicación
-                  </p>
-                </div>
-                <button
-                  onClick={() => setThemeMode(dark ? 'light' : 'dark')}
-                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full
-                             text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
-                  aria-label="Cambiar modo oscuro"
-                >
-                  {dark ? '☀️' : '🌙'}
-                </button>
-              </div>
-              <div className="relative max-w-md">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-soft/50 dark:text-night-text/40 text-sm">
-                  ⌕
-                </span>
-                <input
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value)
-                    setActiveFolder(null)
-                    setShowHome(false)
-                  }}
-                  type="text"
-                  placeholder="Buscar en tus notas…"
-                  className="w-full bg-white/60 dark:bg-night-surface-2 border border-ink/10 dark:border-night-text/10
-                             rounded-full pl-9 pr-4 py-2.5 text-sm text-ink dark:text-night-text
-                             placeholder:text-ink-soft/50 dark:placeholder:text-night-text/30
-                             focus:outline-none focus:ring-2 focus:ring-gilt/60 transition-shadow"
-                />
-              </div>
-            </header>
+      {screen === 'importOutline' && (
+        <motion.div
+          key="importOutline"
+          variants={pushVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        >
+          <ImportOutline onBack={() => setShowImportOutline(false)} onCreateNote={createNoteFromOutline} />
+        </motion.div>
+      )}
 
-            <main className="flex-1 px-4 md:px-8 py-6 pb-28">
-              <FolderGrid
-                folders={folders}
-                counts={counts}
-                onSelect={(f) => {
-                  setActiveFolder(f)
-                  setShowHome(false)
-                }}
-                onEditFolder={setEditingFolderId}
-                onDeleteFolder={deleteFolderAndContents}
-              />
-            </main>
-          </>
-        ) : (
-          <>
-            <TopBar
-              search={search}
-              onSearch={setSearch}
-              dark={dark}
-              onToggleDark={() => setThemeMode(dark ? 'light' : 'dark')}
-              onOpenSidebar={() => setSidebarOpen(true)}
-              onGoHome={() => {
-                setShowHome(true)
-                setSearch('')
-              }}
-              showBack
-              greeting={`${getGreeting()} · ${filteredNotes.length} ${
-                filteredNotes.length === 1 ? 'nota' : 'notas'
-              }`}
+      {screen === 'importProgram' && (
+        <motion.div
+          key="importProgram"
+          variants={pushVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        >
+          <ImportProgram onBack={() => setShowImportProgram(false)} onCreateNotes={createNotesFromProgram} />
+        </motion.div>
+      )}
+
+      {screen === 'import' && (
+        <motion.div
+          key="import"
+          variants={pushVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        >
+          <ImportBible onBack={() => setShowImport(false)} onImported={() => setShowImport(false)} />
+        </motion.div>
+      )}
+
+      {screen === 'note' && (
+        <motion.div
+          key={`note-${openNote.id}`}
+          variants={pushVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        >
+          <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex overflow-x-hidden">
+            <NoteEditor
+              key={openNote.id}
+              note={openNote}
+              folders={folders}
+              allNotes={notes}
+              onBack={() => setOpenNoteId(null)}
+              onSave={saveNote}
+              onTrash={trashNote}
+              onRestore={restoreNote}
+              onDeleteForever={deleteForever}
+              onNeedImport={() => setShowImport(true)}
+              onLink={(targetId) => linkNotes(openNote.id, targetId)}
+              onUnlink={(targetId) => unlinkNotes(openNote.id, targetId)}
+              onOpenNote={(id) => setOpenNoteId(id)}
             />
+          </div>
+        </motion.div>
+      )}
 
-            <main className="flex-1 px-4 md:px-8 py-6 pb-28">
-              {(() => {
-                const subfolders = folders.filter(f => f.parentId === activeFolder)
-                const hasContent = filteredNotes.length > 0 || subfolders.length > 0
+      {screen === 'home' && (
+        <motion.div
+          key="home"
+          variants={fadeVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          className="min-h-screen bg-parchment dark:bg-night paper-texture flex text-ink dark:text-night-text"
+        >
+          <Sidebar
+            open={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            onOpenImport={() => setShowImport(true)}
+            onOpenImportProgram={() => setShowImportProgram(true)}
+            onOpenSettings={() => setShowSettings(true)}
+          />
 
-                if (!hasContent) {
-                  return <EmptyState onCreate={createNote} filtered={Boolean(search || activeFolder)} />
-                }
-
-                return (
-                  <div className="space-y-6 max-w-6xl">
-                    {/* Subcarpetas */}
-                    {subfolders.length > 0 && (
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40">
-                            Subcarpetas
-                          </p>
-                          <p className="text-[11px] text-ink-soft/40 dark:text-night-text/30">
-                            ⋮ para opciones
-                          </p>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
-                          {subfolders.map((folder) => {
-                            const noteCount = notes.filter(n => n.folder === folder.id && !n.trashed).length
-                            return (
-                              <FolderCard
-                                key={folder.id}
-                                folder={folder}
-                                noteCount={noteCount}
-                                onOpen={() => setActiveFolder(folder.id)}
-                                onEdit={() => setEditingFolderId(folder.id)}
-                                onDelete={() => deleteFolderAndContents(folder.id)}
-                              />
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Notas */}
-                    {filteredNotes.length > 0 && (
-                      <div>
-                        {subfolders.length > 0 && (
-                          <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40 mb-3">
-                            Notas
-                          </p>
-                        )}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
-                          {filteredNotes.map((note) => (
-                            <NoteCard
-                              key={note.id}
-                              note={note}
-                              folders={folders}
-                              allNotes={notes}
-                              onOpen={() => setOpenNoteId(note.id)}
-                              onTogglePin={() => togglePin(note.id)}
-                              onMoveNote={moveNoteToFolder}
-                              onTrash={trashNote}
-                              onLink={(targetId) => linkNotes(note.id, targetId)}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
+          <div className="flex-1 min-w-0 flex flex-col">
+            {showHome ? (
+              <>
+                <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-4">
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <div className="min-w-0">
+                      <button
+                        onClick={() => setSidebarOpen(true)}
+                        className="md:hidden mb-1 w-9 h-9 -ml-1.5 flex items-center justify-center rounded-full text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10"
+                        aria-label="Abrir menú"
+                      >
+                        ☰
+                      </button>
+                      <p className="font-display text-2xl md:text-3xl text-ink dark:text-night-text tracking-tight">
+                        NotePad TJ
+                      </p>
+                      <p className="text-xs text-ink-soft dark:text-night-text/60 mt-0.5">
+                        Estudio, reuniones y predicación
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setThemeMode(dark ? 'light' : 'dark')}
+                      className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full
+                                 text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
+                      aria-label="Cambiar modo oscuro"
+                    >
+                      {dark ? '☀️' : '🌙'}
+                    </button>
                   </div>
-                )
-              })()}
-            </main>
-          </>
-        )}
-      </div>
+                  <div className="relative max-w-md">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-soft/50 dark:text-night-text/40 text-sm">
+                      ⌕
+                    </span>
+                    <input
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value)
+                        setActiveFolder(null)
+                        setShowHome(false)
+                      }}
+                      type="text"
+                      placeholder="Buscar en tus notas…"
+                      className="w-full bg-white/60 dark:bg-night-surface-2 border border-ink/10 dark:border-night-text/10
+                                 rounded-full pl-9 pr-4 py-2.5 text-sm text-ink dark:text-night-text
+                                 placeholder:text-ink-soft/50 dark:placeholder:text-night-text/30
+                                 focus:outline-none focus:ring-2 focus:ring-gilt/60 transition-shadow"
+                    />
+                  </div>
+                </header>
 
-      {activeFolder !== 'trash' && (
-        <Fab
-          onNewNote={createNote}
-          onNewFolder={() => setShowNewFolder(true)}
-          onImportProgram={() => setShowImportProgram(true)}
-          onImportOutline={() => setShowImportOutline(true)}
-        />
-      )}
+                <main className="flex-1 px-4 md:px-8 py-6 pb-28">
+                  <FolderGrid
+                    folders={folders}
+                    counts={counts}
+                    onSelect={(f) => {
+                      setActiveFolder(f)
+                      setShowHome(false)
+                    }}
+                    onEditFolder={setEditingFolderId}
+                    onDeleteFolder={deleteFolderAndContents}
+                  />
+                </main>
+              </>
+            ) : (
+              <>
+                <TopBar
+                  search={search}
+                  onSearch={setSearch}
+                  dark={dark}
+                  onToggleDark={() => setThemeMode(dark ? 'light' : 'dark')}
+                  onOpenSidebar={() => setSidebarOpen(true)}
+                  onGoHome={() => {
+                    setShowHome(true)
+                    setSearch('')
+                  }}
+                  showBack
+                  greeting={`${getGreeting()} · ${filteredNotes.length} ${
+                    filteredNotes.length === 1 ? 'nota' : 'notas'
+                  }`}
+                />
 
-      {showNewFolder && (
-        <NewFolderDialog
-          parentName={!showHome ? folders.find((f) => f.id === activeFolder)?.name : null}
-          onCreate={createFolder}
-          onClose={() => setShowNewFolder(false)}
-        />
-      )}
+                <main className="flex-1 px-4 md:px-8 py-6 pb-28">
+                  {(() => {
+                    const subfolders = folders.filter(f => f.parentId === activeFolder)
+                    const hasContent = filteredNotes.length > 0 || subfolders.length > 0
 
-      {editingFolderId && (
-        <NewFolderDialog
-          initial={folders.find((f) => f.id === editingFolderId)}
-          onCreate={(name, icon) => updateFolder(editingFolderId, name, icon)}
-          onDelete={() => deleteFolderAndContents(editingFolderId)}
-          onClose={() => setEditingFolderId(null)}
-        />
+                    if (!hasContent) {
+                      return <EmptyState onCreate={createNote} filtered={Boolean(search || activeFolder)} />
+                    }
+
+                    return (
+                      <div className="space-y-6 max-w-6xl">
+                        {/* Subcarpetas */}
+                        {subfolders.length > 0 && (
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40">
+                                Subcarpetas
+                              </p>
+                              <p className="text-[11px] text-ink-soft/40 dark:text-night-text/30">
+                                ⋮ para opciones
+                              </p>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                              {subfolders.map((folder) => {
+                                const noteCount = notes.filter(n => n.folder === folder.id && !n.trashed).length
+                                return (
+                                  <FolderCard
+                                    key={folder.id}
+                                    folder={folder}
+                                    noteCount={noteCount}
+                                    onOpen={() => setActiveFolder(folder.id)}
+                                    onEdit={() => setEditingFolderId(folder.id)}
+                                    onDelete={() => deleteFolderAndContents(folder.id)}
+                                  />
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Notas */}
+                        {filteredNotes.length > 0 && (
+                          <div>
+                            {subfolders.length > 0 && (
+                              <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40 mb-3">
+                                Notas
+                              </p>
+                            )}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
+                              {filteredNotes.map((note) => (
+                                <NoteCard
+                                  key={note.id}
+                                  note={note}
+                                  folders={folders}
+                                  allNotes={notes}
+                                  onOpen={() => setOpenNoteId(note.id)}
+                                  onTogglePin={() => togglePin(note.id)}
+                                  onMoveNote={moveNoteToFolder}
+                                  onTrash={trashNote}
+                                  onLink={(targetId) => linkNotes(note.id, targetId)}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
+                </main>
+              </>
+            )}
+          </div>
+
+          {activeFolder !== 'trash' && (
+            <Fab
+              onNewNote={createNote}
+              onNewFolder={() => setShowNewFolder(true)}
+              onImportProgram={() => setShowImportProgram(true)}
+              onImportOutline={() => setShowImportOutline(true)}
+            />
+          )}
+
+          {showNewFolder && (
+            <NewFolderDialog
+              parentName={!showHome ? folders.find((f) => f.id === activeFolder)?.name : null}
+              onCreate={createFolder}
+              onClose={() => setShowNewFolder(false)}
+            />
+          )}
+
+          {editingFolderId && (
+            <NewFolderDialog
+              initial={folders.find((f) => f.id === editingFolderId)}
+              onCreate={(name, icon) => updateFolder(editingFolderId, name, icon)}
+              onDelete={() => deleteFolderAndContents(editingFolderId)}
+              onClose={() => setEditingFolderId(null)}
+            />
+          )}
+        </motion.div>
       )}
-    </div>
+    </AnimatePresence>
   )
 }
