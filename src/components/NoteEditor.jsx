@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import VersePanel from './VersePanel'
 import SpeakerMode from './SpeakerMode'
 import SpeakerIcon from './SpeakerIcon'
-import RichEditor from './RichEditor'
+import RichEditor, { RichEditorToolbar } from './RichEditor'
 import NoteLinkDialog from './NoteLinkDialog'
 import { ensureHtml } from '../lib/htmlUtils'
 import { useBackHandler } from '../hooks/useBackHandler'
@@ -30,8 +30,10 @@ export default function NoteEditor({
   const [showSpeaker, setShowSpeaker] = useState(false)
   const [saving, setSaving] = useState(false)
   const [showLinkDialog, setShowLinkDialog] = useState(false)
+  const [heading, setHeading] = useState('P')
 
   const autoSaveTimer = useRef(null)
+  const richEditorRef = useRef(null)
 
   const dirty = title !== note.title || body !== note.body || folder !== note.folder
 
@@ -70,6 +72,11 @@ export default function NoteEditor({
   const handleOpenLinked = (id) => {
     if (dirty) handleSave()
     setTimeout(() => onOpenNote?.(id), 100)
+  }
+
+  const handleHeadingChange = (value) => {
+    setHeading(value)
+    richEditorRef.current?.applyHeading(value)
   }
 
   const linkedNotes = (note.linkedNoteIds || [])
@@ -158,23 +165,38 @@ export default function NoteEditor({
               Esta nota está en la papelera. Restáurala para poder editarla.
             </div>
           )}
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            disabled={note.trashed}
-            placeholder="Título de la nota"
-            className="w-full font-display text-2xl md:text-3xl bg-transparent focus:outline-none text-ink dark:text-night-text placeholder:text-ink-soft/40 mb-4 disabled:opacity-60"
-          />
-          <RichEditor
-            html={body}
-            onChange={setBody}
-            onCursorChange={(text, offset) => {
-              setPlainText(text)
-              setCursorPos(offset)
-            }}
-            disabled={note.trashed}
-            placeholder="Escribe aquí… (ej. Filipenses 4:6, 7)"
-          />
+
+          {/* Título y barra de herramientas: van dentro de una franja
+              `sticky` para que queden siempre visibles arriba, justo debajo
+              del header, mientras se hace scroll en notas largas. */}
+          <div className="sticky top-0 z-10 bg-parchment/95 dark:bg-night/95 backdrop-blur-sm pb-3 border-b border-ink/10 dark:border-night-text/10">
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              disabled={note.trashed}
+              placeholder="Título de la nota"
+              className="w-full font-display text-2xl md:text-3xl bg-transparent focus:outline-none text-ink dark:text-night-text placeholder:text-ink-soft/40 mb-3 disabled:opacity-60"
+            />
+            <RichEditorToolbar
+              heading={heading}
+              onHeadingChange={handleHeadingChange}
+              disabled={note.trashed}
+            />
+          </div>
+
+          <div className="mt-3">
+            <RichEditor
+              ref={richEditorRef}
+              html={body}
+              onChange={setBody}
+              onCursorChange={(text, offset) => {
+                setPlainText(text)
+                setCursorPos(offset)
+              }}
+              disabled={note.trashed}
+              placeholder="Escribe aquí… (ej. Filipenses 4:6, 7)"
+            />
+          </div>
 
           {!note.trashed && (
             <div className="mt-10 pt-6 border-t border-ink/10 dark:border-night-text/10">

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 
 const HIGHLIGHTS = [
   { id: 'yellow', color: '#fde68a', label: 'Amarillo' },
@@ -27,16 +27,84 @@ function highlight(color) {
   }
 }
 
-export default function RichEditor({ html, onChange, onCursorChange, placeholder, disabled }) {
-  const ref = useRef(null)
-  const [heading, setHeading] = useState('P')
+/**
+ * Barra de herramientas del editor enriquecido.
+ *
+ * Se separó del área editable (más abajo) para que NoteEditor pueda
+ * colocarla, junto con el título, dentro de una franja `sticky` y así
+ * queden siempre visibles al hacer scroll en notas largas. Los botones de
+ * negrita/cursiva/subrayado/resaltado siguen actuando directo sobre
+ * `document.execCommand` (no dependen de ninguna referencia local); el
+ * cambio de encabezado se delega al padre, que lo aplica sobre el editor
+ * a través de `editorRef` (ver RichEditor más abajo).
+ */
+export function RichEditorToolbar({ heading, onHeadingChange, disabled }) {
+  return (
+    <div
+      className={`flex items-center gap-1 flex-wrap ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
+    >
+      <ToolButton onClick={() => exec('bold')} label="Negrita">
+        <strong>B</strong>
+      </ToolButton>
+      <ToolButton onClick={() => exec('italic')} label="Cursiva">
+        <em>I</em>
+      </ToolButton>
+      <ToolButton onClick={() => exec('underline')} label="Subrayado">
+        <span className="underline">U</span>
+      </ToolButton>
+
+      <span className="w-px h-5 bg-ink/10 dark:bg-night-text/15 mx-1" />
+
+      {HIGHLIGHTS.map((h) => (
+        <button
+          key={h.id}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => highlight(h.color)}
+          title={`Resaltar en ${h.label.toLowerCase()}`}
+          aria-label={`Resaltar en ${h.label.toLowerCase()}`}
+          className="w-6 h-6 rounded-full border border-ink/10 dark:border-night-text/20 shrink-0"
+          style={{ backgroundColor: h.color }}
+        />
+      ))}
+      <ToolButton onClick={() => highlight('transparent')} label="Quitar resaltado">
+        <span className="text-[11px]">✕</span>
+      </ToolButton>
+
+      <span className="w-px h-5 bg-ink/10 dark:bg-night-text/15 mx-1" />
+
+      <select
+        value={heading}
+        onChange={(e) => onHeadingChange(e.target.value)}
+        className="text-xs bg-transparent border border-ink/15 dark:border-night-text/15 rounded-full px-2 py-1
+                   text-ink dark:text-night-text focus:outline-none"
+      >
+        {HEADINGS.map((h) => (
+          <option key={h.value} value={h.value}>
+            {h.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+/**
+ * Área de texto editable. Expone `applyHeading` mediante ref para que la
+ * barra de herramientas (ahora fuera de este componente) pueda cambiar el
+ * bloque de encabezado del párrafo actual.
+ */
+const RichEditor = forwardRef(function RichEditor(
+  { html, onChange, onCursorChange, placeholder, disabled },
+  ref
+) {
+  const editorRef = useRef(null)
   const initialized = useRef(false)
 
   // Cargar el contenido inicial una sola vez (no en cada re-render, para no
   // pelear con el cursor del usuario mientras escribe).
   useEffect(() => {
-    if (ref.current && !initialized.current) {
-      ref.current.innerHTML = html || ''
+    if (editorRef.current && !initialized.current) {
+      editorRef.current.innerHTML = html || ''
       initialized.current = true
     }
   }, [html])
@@ -47,7 +115,7 @@ export default function RichEditor({ html, onChange, onCursorChange, placeholder
    * que ambos valores queden alineados sin importar cuántos párrafos haya.
    */
   const getTextAndOffset = () => {
-    const el = ref.current
+    const el = editorRef.current
     if (!el) return { text: '', offset: 0 }
 
     const sel = window.getSelection()
@@ -93,7 +161,7 @@ export default function RichEditor({ html, onChange, onCursorChange, placeholder
   // párrafo.
   useEffect(() => {
     const handler = () => {
-      if (ref.current && ref.current.contains(document.activeElement)) {
+      if (editorRef.current && editorRef.current.contains(document.activeElement)) {
         reportCursor()
       }
     }
@@ -102,77 +170,34 @@ export default function RichEditor({ html, onChange, onCursorChange, placeholder
   })
 
   const handleInput = () => {
-    onChange?.(ref.current.innerHTML)
+    onChange?.(editorRef.current.innerHTML)
     reportCursor()
   }
 
-  const applyHeading = (value) => {
-    setHeading(value)
-    exec('formatBlock', value === 'P' ? 'P' : value)
-    handleInput()
-  }
+  useImperativeHandle(ref, () => ({
+    applyHeading(value) {
+      exec('formatBlock', value === 'P' ? 'P' : value)
+      handleInput()
+    },
+  }))
 
   return (
-    <div className={disabled ? 'opacity-60 pointer-events-none' : ''}>
-      <div className="flex items-center gap-1 flex-wrap mb-3 pb-3 border-b border-ink/10 dark:border-night-text/10">
-        <ToolButton onClick={() => exec('bold')} label="Negrita">
-          <strong>B</strong>
-        </ToolButton>
-        <ToolButton onClick={() => exec('italic')} label="Cursiva">
-          <em>I</em>
-        </ToolButton>
-        <ToolButton onClick={() => exec('underline')} label="Subrayado">
-          <span className="underline">U</span>
-        </ToolButton>
-
-        <span className="w-px h-5 bg-ink/10 dark:bg-night-text/15 mx-1" />
-
-        {HIGHLIGHTS.map((h) => (
-          <button
-            key={h.id}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => highlight(h.color)}
-            title={`Resaltar en ${h.label.toLowerCase()}`}
-            aria-label={`Resaltar en ${h.label.toLowerCase()}`}
-            className="w-6 h-6 rounded-full border border-ink/10 dark:border-night-text/20 shrink-0"
-            style={{ backgroundColor: h.color }}
-          />
-        ))}
-        <ToolButton onClick={() => highlight('transparent')} label="Quitar resaltado">
-          <span className="text-[11px]">✕</span>
-        </ToolButton>
-
-        <span className="w-px h-5 bg-ink/10 dark:bg-night-text/15 mx-1" />
-
-        <select
-          value={heading}
-          onChange={(e) => applyHeading(e.target.value)}
-          className="text-xs bg-transparent border border-ink/15 dark:border-night-text/15 rounded-full px-2 py-1
-                     text-ink dark:text-night-text focus:outline-none"
-        >
-          {HEADINGS.map((h) => (
-            <option key={h.value} value={h.value}>
-              {h.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div
-        ref={ref}
-        contentEditable={!disabled}
-        suppressContentEditableWarning
-        onInput={handleInput}
-        data-placeholder={placeholder}
-        className="rich-editor min-h-[240px] outline-none text-ink dark:text-night-text leading-relaxed
-                   [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:mb-2
-                   [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2
-                   [&_h3]:font-display [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-1
-                   [&_p]:mb-3"
-      />
-    </div>
+    <div
+      ref={editorRef}
+      contentEditable={!disabled}
+      suppressContentEditableWarning
+      onInput={handleInput}
+      data-placeholder={placeholder}
+      className={`rich-editor min-h-[240px] outline-none text-ink dark:text-night-text leading-relaxed
+                 [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:mb-2
+                 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2
+                 [&_h3]:font-display [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-1
+                 [&_p]:mb-3 ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
+    />
   )
-}
+})
+
+export default RichEditor
 
 function ToolButton({ onClick, label, children }) {
   return (
