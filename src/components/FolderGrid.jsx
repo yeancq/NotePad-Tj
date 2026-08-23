@@ -1,3 +1,4 @@
+import { Library, Pin, Trash2 } from 'lucide-react'
 import FolderCard from './FolderCard'
 
 export default function FolderGrid({ folders, counts, onSelect, onEditFolder, onDeleteFolder }) {
@@ -22,7 +23,7 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder, on
           className="flex flex-col items-start gap-3 p-5 rounded-2xl text-left bg-leather text-parchment
                      hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200"
         >
-          <span className="text-2xl">📚</span>
+          <Library className="w-6 h-6" strokeWidth={1.75} />
           <span>
             <span className="block font-display text-base">Todas las notas</span>
             <span className="block text-xs text-parchment/70 mt-0.5">
@@ -37,7 +38,7 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder, on
                      bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10
                      hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
         >
-          <span className="text-2xl">📌</span>
+          <Pin className="w-6 h-6 text-leather dark:text-gilt-soft" strokeWidth={1.75} />
           <span>
             <span className="block font-display text-base text-ink dark:text-night-text">Fijadas</span>
             <span className="block text-xs text-ink-soft/60 dark:text-night-text/40 mt-0.5">
@@ -70,9 +71,10 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder, on
 
       <button
         onClick={() => onSelect('trash')}
-        className="text-xs text-ink-soft/60 dark:text-night-text/40 hover:text-leather dark:hover:text-gilt-soft transition-colors"
+        className="text-xs text-ink-soft/60 dark:text-night-text/40 hover:text-leather dark:hover:text-gilt-soft transition-colors flex items-center gap-1.5"
       >
-        🗑️ Papelera {counts.trash > 0 ? `(${counts.trash})` : ''}
+        <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+        Papelera {counts.trash > 0 ? `(${counts.trash})` : ''}
       </button>
     </div>
   )

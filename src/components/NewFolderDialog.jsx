@@ -1,28 +1,16 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-
-const ICON_CHOICES = ['📁', '📚', '🏫', '🗂️', '📌', '🎯', '🌱', '✝️', '🙏', '📖', '🧭', '🎟️', '📜', '🗓️', '⭐']
-
-// Sugiere un ícono más apropiado según el nombre, si el usuario no elige uno.
-function suggestIcon(name) {
-  const n = name.toLowerCase()
-  if (/escuela/.test(n)) return '🏫'
-  if (/estudio/.test(n)) return '📖'
-  if (/reuni/.test(n)) return '🗓️'
-  if (/predicaci/.test(n)) return '🧭'
-  if (/asamblea|congreso/.test(n)) return '🎟️'
-  return '📁'
-}
+import { ICON_CHOICES, FolderIcon, suggestIconKey, resolveFolderIconKey } from '../data/folderIcons.jsx'
 
 export default function NewFolderDialog({ initial, parentName, onCreate, onClose, onDelete }) {
   const [name, setName] = useState(initial?.name || '')
-  const [icon, setIcon] = useState(initial?.icon || '📁')
+  const [icon, setIcon] = useState(resolveFolderIconKey(initial?.icon) || 'folder')
   const [iconTouched, setIconTouched] = useState(Boolean(initial))
   const isEdit = Boolean(initial)
 
   const handleNameChange = (value) => {
     setName(value)
-    if (!iconTouched) setIcon(suggestIcon(value))
+    if (!iconTouched) setIcon(suggestIconKey(value))
   }
 
   const handleCreate = () => {
@@ -53,8 +41,8 @@ export default function NewFolderDialog({ initial, parentName, onCreate, onClose
         )}
 
         <div className="flex gap-2 mb-3">
-          <div className="w-11 h-11 shrink-0 rounded-full bg-white/60 dark:bg-night-surface-2 border border-ink/10 dark:border-night-text/10 flex items-center justify-center text-xl">
-            {icon}
+          <div className="w-11 h-11 shrink-0 rounded-full bg-white/60 dark:bg-night-surface-2 border border-ink/10 dark:border-night-text/10 flex items-center justify-center text-leather dark:text-gilt-soft">
+            <FolderIcon icon={icon} className="w-5 h-5" strokeWidth={1.75} />
           </div>
           <input
             autoFocus
@@ -70,21 +58,21 @@ export default function NewFolderDialog({ initial, parentName, onCreate, onClose
 
         <p className="text-xs text-ink-soft/60 dark:text-night-text/40 mb-1.5">Ícono</p>
         <div className="flex flex-wrap gap-1.5 mb-5">
-          {ICON_CHOICES.map((ic) => (
+          {ICON_CHOICES.map((key) => (
             <button
-              key={ic}
+              key={key}
               onClick={() => {
-                setIcon(ic)
+                setIcon(key)
                 setIconTouched(true)
               }}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-colors
+              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
                 ${
-                  icon === ic
-                    ? 'bg-leather/15 ring-2 ring-leather dark:ring-gilt-soft'
-                    : 'hover:bg-ink/5 dark:hover:bg-night-text/10'
+                  icon === key
+                    ? 'bg-leather/15 ring-2 ring-leather dark:ring-gilt-soft text-leather dark:text-gilt-soft'
+                    : 'text-ink-soft dark:text-night-text/60 hover:bg-ink/5 dark:hover:bg-night-text/10'
                 }`}
             >
-              {ic}
+              <FolderIcon icon={key} className="w-[18px] h-[18px]" strokeWidth={1.75} />
             </button>
           ))}
         </div>

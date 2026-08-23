@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react'
+import { MoreVertical, Pencil, Trash2 } from 'lucide-react'
+import { FolderIcon } from '../data/folderIcons.jsx'
 
 const LONG_PRESS_MS = 480
 
@@ -62,20 +64,22 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
                    hover:-translate-y-0.5 active:scale-[0.97] transition-all duration-150"
       >
         <div className="w-full flex items-start justify-between">
-          <span className="text-2xl">{folder.icon || '📁'}</span>
+          <span className="text-leather dark:text-gilt-soft">
+            <FolderIcon icon={folder.icon} className="w-6 h-6" strokeWidth={1.75} />
+          </span>
           <button
             onClick={(e) => {
               e.stopPropagation()
               setShowMenu(!showMenu)
             }}
-            className={`text-sm transition-colors
+            className={`flex items-center justify-center transition-colors
                        text-ink-soft/40 dark:text-night-text/30 hover:text-ink dark:hover:text-night-text
                        p-1 rounded-md hover:bg-ink/5 dark:hover:bg-night-text/10
                        ${showMenu ? 'bg-ink/5 dark:bg-night-text/10 text-ink dark:text-night-text' : ''}`}
             title="Opciones"
             aria-label="Opciones de la carpeta"
           >
-            ⋮
+            <MoreVertical className="w-[18px] h-[18px]" strokeWidth={2} />
           </button>
         </div>
         <span className="w-full">
@@ -108,14 +112,14 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
               className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-ink/5 dark:hover:bg-night-text/10 
                          text-ink dark:text-night-text flex items-center gap-2 transition-colors"
             >
-              <span>✏️</span> Editar carpeta
+              <Pencil className="w-4 h-4" strokeWidth={1.75} /> Editar carpeta
             </button>
             <button
               onClick={handleDelete}
               className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 
                          text-red-600 dark:text-red-400 flex items-center gap-2 transition-colors"
             >
-              <span>🗑️</span> Eliminar carpeta
+              <Trash2 className="w-4 h-4" strokeWidth={1.75} /> Eliminar carpeta
             </button>
           </div>
         </>
