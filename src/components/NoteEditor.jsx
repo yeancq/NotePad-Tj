@@ -158,18 +158,19 @@ export default function NoteEditor({
         )}
       </header>
 
-      <div className="flex-1 min-h-0 min-w-0 overflow-y-auto px-4 md:px-8 py-6 pb-24">
+      <div className="flex-1 min-h-0 min-w-0 overflow-y-auto px-4 md:px-8 pb-24">
         <div className="max-w-3xl w-full mx-auto">
-          {note.trashed && (
-            <div className="mb-4 text-sm px-3 py-2 rounded-lg bg-leather/10 text-leather dark:text-gilt-soft">
-              Esta nota está en la papelera. Restáurala para poder editarla.
-            </div>
-          )}
-
           {/* Título y barra de herramientas: van dentro de una franja
-              `sticky` para que queden siempre visibles arriba, justo debajo
-              del header, mientras se hace scroll en notas largas. */}
-          <div className="sticky top-0 z-10 bg-parchment/95 dark:bg-night/95 backdrop-blur-sm pb-3 border-b border-ink/10 dark:border-night-text/10">
+              `sticky` que arranca justo en el borde superior del área con
+              scroll (top-0) y trae su propio padding-top (en vez de que ese
+              espacio esté en el contenedor), así su fondo cubre toda la
+              zona y no se alcanza a ver el texto de atrás al hacer scroll. */}
+          <div className="sticky top-0 z-10 bg-parchment/95 dark:bg-night/95 backdrop-blur-sm pt-6 pb-3 border-b border-ink/10 dark:border-night-text/10">
+            {note.trashed && (
+              <div className="mb-4 text-sm px-3 py-2 rounded-lg bg-leather/10 text-leather dark:text-gilt-soft">
+                Esta nota está en la papelera. Restáurala para poder editarla.
+              </div>
+            )}
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
