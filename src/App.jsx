@@ -200,8 +200,18 @@ export default function App() {
     setOpenNoteId(null)
   }
 
+  // Al restaurar, si la carpeta original de la nota ya no existe (por
+  // ejemplo, porque se eliminó esa carpeta mientras la nota estaba en la
+  // papelera), la nota se reasigna a "Estudio personal" en vez de quedar
+  // huérfana apuntando a un folder inexistente.
   const restoreNote = (id) => {
-    setNotes((prev) => prev.map((n) => (n.id === id ? { ...n, trashed: false } : n)))
+    setNotes((prev) =>
+      prev.map((n) => {
+        if (n.id !== id) return n
+        const folderStillExists = folders.some((f) => f.id === n.folder)
+        return { ...n, trashed: false, folder: folderStillExists ? n.folder : 'estudio' }
+      })
+    )
   }
 
   const deleteForever = (id) => {
@@ -276,11 +286,19 @@ export default function App() {
     setEditingFolderId(null)
   }
 
+  // Eliminar una carpeta ya NO borra sus notas para siempre: se eliminan la
+  // carpeta (y subcarpetas) del array de carpetas, pero las notas que
+  // vivían ahí se mueven a la papelera (igual que al eliminar una nota
+  // individual), para que el usuario pueda recuperarlas si fue un error.
+  // El folder original de la nota se conserva tal cual; restoreNote es
+  // quien decide, al momento de restaurar, si esa carpeta todavía existe.
   const deleteFolderAndContents = (id) => {
     const childIds = folders.filter((f) => f.parentId === id).map((f) => f.id)
     const idsToRemove = new Set([id, ...childIds])
     setFolders((prev) => prev.filter((f) => !idsToRemove.has(f.id)))
-    setNotes((prev) => prev.filter((n) => !idsToRemove.has(n.folder)))
+    setNotes((prev) =>
+      prev.map((n) => (idsToRemove.has(n.folder) ? { ...n, trashed: true, pinned: false } : n))
+    )
     setEditingFolderId(null)
   }
 
