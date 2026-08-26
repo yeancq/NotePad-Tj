@@ -39,7 +39,9 @@ export default function FolderCard({ folder, noteCount, onOpen, onEdit, onDelete
   const handleDelete = (e) => {
     e.stopPropagation()
     setShowMenu(false)
-    if (window.confirm(`¿Eliminar la carpeta "${folder.name}" y todo su contenido?`)) {
+    // La carpeta se elimina, pero sus notas se mueven a la papelera (no se
+    // borran para siempre) — ver deleteFolderAndContents en App.jsx.
+    if (window.confirm(`¿Eliminar la carpeta "${folder.name}"? Sus notas se moverán a la papelera.`)) {
       onDelete?.()
     }
   }

@@ -19,6 +19,17 @@ export default function NewFolderDialog({ initial, parentName, onCreate, onClose
     onCreate(trimmed, icon)
   }
 
+  // Antes este botón llamaba a onDelete() directamente, sin confirmar —
+  // inconsistente con el menú de la tarjeta de carpeta (FolderCard.jsx),
+  // que sí pregunta. Ahora ambos caminos confirman igual. Las notas de la
+  // carpeta se mueven a la papelera, no se borran para siempre (ver
+  // deleteFolderAndContents en App.jsx).
+  const handleDeleteClick = () => {
+    if (window.confirm(`¿Eliminar la carpeta "${initial?.name}"? Sus notas se moverán a la papelera.`)) {
+      onDelete?.()
+    }
+  }
+
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-ink/30 dark:bg-black/50 px-4"
@@ -80,7 +91,7 @@ export default function NewFolderDialog({ initial, parentName, onCreate, onClose
         <div className="flex justify-between items-center gap-2">
           {isEdit && onDelete ? (
             <button
-              onClick={onDelete}
+              onClick={handleDeleteClick}
               className="px-3 py-2 rounded-full text-sm text-leather hover:bg-leather/10 transition-colors"
             >
               Eliminar
