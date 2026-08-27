@@ -25,6 +25,8 @@ export default function NoteEditor({
   const [body, setBody] = useState(() => ensureHtml(note.body))
   const [plainText, setPlainText] = useState('')
   const [folder, setFolder] = useState(note.folder)
+  const [tags, setTags] = useState(note.tags || [])
+  const [tagInput, setTagInput] = useState('')
   const [cursorPos, setCursorPos] = useState(0)
   const [hasActiveVerse, setHasActiveVerse] = useState(false)
   const [showSpeaker, setShowSpeaker] = useState(false)
@@ -35,12 +37,21 @@ export default function NoteEditor({
   const autoSaveTimer = useRef(null)
   const richEditorRef = useRef(null)
 
-  const dirty = title !== note.title || body !== note.body || folder !== note.folder
+  // Comparación simple de arrays de etiquetas para saber si cambiaron
+  // (se usa en "dirty" en vez de comparar por referencia, que siempre da
+  // distinto porque tags es un array nuevo cada vez que se agrega/quita).
+  const tagsEqual = (a, b) => a.length === b.length && a.every((t, i) => t === b[i])
+
+  const dirty =
+    title !== note.title ||
+    body !== note.body ||
+    folder !== note.folder ||
+    !tagsEqual(tags, note.tags || [])
 
   const handleSave = () => {
     if (!dirty) return
     setSaving(true)
-    onSave({ ...note, title: title.trim() || 'Sin título', body, folder })
+    onSave({ ...note, title: title.trim() || 'Sin título', body, folder, tags })
     setTimeout(() => setSaving(false), 300)
   }
 
@@ -58,7 +69,7 @@ export default function NoteEditor({
         clearTimeout(autoSaveTimer.current)
       }
     }
-  }, [title, body, folder])
+  }, [title, body, folder, tags])
 
   useBackHandler(showSpeaker, () => setShowSpeaker(false))
 
@@ -78,6 +89,40 @@ export default function NoteEditor({
     setHeading(value)
     richEditorRef.current?.applyHeading(value)
   }
+
+  // ── Etiquetas ────────────────────────────────────────────────────────────
+  // Limpia el texto escrito (quita espacios sobrantes, pasa a minúsculas y
+  // elimina un "#" inicial si el usuario lo escribió por costumbre) y evita
+  // duplicados antes de agregarla a la lista.
+  const addTag = (raw) => {
+    const clean = raw.trim().toLowerCase().replace(/^#+/, '')
+    if (!clean) return
+    setTags((prev) => (prev.includes(clean) ? prev : [...prev, clean]))
+    setTagInput('')
+  }
+
+  const removeTag = (tag) => {
+    setTags((prev) => prev.filter((t) => t !== tag))
+  }
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addTag(tagInput)
+    } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+      // Con el campo vacío, Backspace borra la última etiqueta — patrón
+      // común en inputs de chips (Gmail, etc.).
+      removeTag(tags[tags.length - 1])
+    }
+  }
+
+  const handleTagBlur = () => {
+    // En móvil no siempre hay una tecla "Enter" clara en el teclado, así
+    // que si el usuario escribe una etiqueta y toca fuera del campo sin
+    // presionar Enter, igual se agrega.
+    addTag(tagInput)
+  }
+  // ────────────────────────────────────────────────────────────────────────
 
   const linkedNotes = (note.linkedNoteIds || [])
     .map((id) => allNotes.find((n) => n.id === id))
@@ -200,56 +245,93 @@ export default function NoteEditor({
           </div>
 
           {!note.trashed && (
-            <div className="mt-10 pt-6 border-t border-ink/10 dark:border-night-text/10">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40">
-                  Notas enlazadas
+            <div className="mt-10 pt-6 border-t border-ink/10 dark:border-night-text/10 space-y-8">
+              {/* Etiquetas */}
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40 mb-3">
+                  Etiquetas
                 </h4>
-                <button
-                  onClick={() => setShowLinkDialog(true)}
-                  className="text-xs px-3 py-1 rounded-full flex items-center gap-1 bg-ink/5 dark:bg-night-text/10 text-ink-soft dark:text-night-text/60 hover:bg-ink/10 dark:hover:bg-night-text/20 transition-colors"
-                >
-                  🔗 Enlazar
-                </button>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="flex items-center gap-1 text-xs pl-2.5 pr-1.5 py-1 rounded-full bg-sage/15 text-sage dark:text-sage-soft"
+                    >
+                      #{tag}
+                      <button
+                        onClick={() => removeTag(tag)}
+                        className="w-4 h-4 flex items-center justify-center rounded-full hover:bg-sage/25 transition-colors"
+                        title="Quitar etiqueta"
+                        aria-label={`Quitar etiqueta ${tag}`}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    onBlur={handleTagBlur}
+                    placeholder={tags.length ? 'Agregar…' : 'Agregar etiqueta y presiona Enter'}
+                    className="flex-1 min-w-[140px] bg-transparent text-sm text-ink dark:text-night-text
+                               placeholder:text-ink-soft/40 focus:outline-none py-1"
+                  />
+                </div>
               </div>
 
-              {linkedNotes.length === 0 ? (
-                <p className="text-xs text-ink-soft/40 dark:text-night-text/30 italic">
-                  Sin notas enlazadas todavía
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {linkedNotes.map((linked) => {
-                    const linkedFolder = folders.find((f) => f.id === linked.folder)
-                    return (
-                      <div
-                        key={linked.id}
-                        className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-ink/[0.04] dark:bg-night-text/[0.06] border border-ink/[0.07] dark:border-night-text/[0.08]"
-                      >
-                        <span className="text-base shrink-0">
-                          {linkedFolder?.icon || '📄'}
-                        </span>
-                        <button
-                          onClick={() => handleOpenLinked(linked.id)}
-                          className="flex-1 min-w-0 text-left"
-                        >
-                          <p className="font-display text-sm text-ink dark:text-night-text truncate leading-snug">
-                            {linked.title || 'Sin título'}
-                          </p>
-                        </button>
-                        <button
-                          onClick={() => onUnlink?.(linked.id)}
-                          className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-ink-soft/40 dark:text-night-text/30 text-xs hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                          title="Quitar enlace"
-                          aria-label="Quitar enlace"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )
-                  })}
+              {/* Notas enlazadas */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40">
+                    Notas enlazadas
+                  </h4>
+                  <button
+                    onClick={() => setShowLinkDialog(true)}
+                    className="text-xs px-3 py-1 rounded-full flex items-center gap-1 bg-ink/5 dark:bg-night-text/10 text-ink-soft dark:text-night-text/60 hover:bg-ink/10 dark:hover:bg-night-text/20 transition-colors"
+                  >
+                    🔗 Enlazar
+                  </button>
                 </div>
-              )}
+
+                {linkedNotes.length === 0 ? (
+                  <p className="text-xs text-ink-soft/40 dark:text-night-text/30 italic">
+                    Sin notas enlazadas todavía
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {linkedNotes.map((linked) => {
+                      const linkedFolder = folders.find((f) => f.id === linked.folder)
+                      return (
+                        <div
+                          key={linked.id}
+                          className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-ink/[0.04] dark:bg-night-text/[0.06] border border-ink/[0.07] dark:border-night-text/[0.08]"
+                        >
+                          <span className="text-base shrink-0">
+                            {linkedFolder?.icon || '📄'}
+                          </span>
+                          <button
+                            onClick={() => handleOpenLinked(linked.id)}
+                            className="flex-1 min-w-0 text-left"
+                          >
+                            <p className="font-display text-sm text-ink dark:text-night-text truncate leading-snug">
+                              {linked.title || 'Sin título'}
+                            </p>
+                          </button>
+                          <button
+                            onClick={() => onUnlink?.(linked.id)}
+                            className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-ink-soft/40 dark:text-night-text/30 text-xs hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                            title="Quitar enlace"
+                            aria-label="Quitar enlace"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
