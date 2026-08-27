@@ -7,6 +7,18 @@ import NoteLinkDialog from './NoteLinkDialog'
 import { ensureHtml } from '../lib/htmlUtils'
 import { useBackHandler } from '../hooks/useBackHandler'
 
+// Cuántas "fotos" del contenido guardamos como máximo en el historial de
+// deshacer/rehacer. Cada nota mantiene su propio historial en memoria
+// (se reinicia al cerrar la nota, ya que NoteEditor se desmonta por
+// completo — ver key={openNote.id} en App.jsx), así que un límite generoso
+// no representa un riesgo real de memoria en una sesión de estudio típica.
+const MAX_HISTORY = 50
+
+// Cuánto esperar sin cambios antes de guardar una nueva "foto" del cuerpo
+// en el historial. Agrupa así ráfagas de escritura en un solo paso de
+// deshacer, en vez de un paso por cada letra tecleada.
+const HISTORY_DEBOUNCE_MS = 600
+
 export default function NoteEditor({
   note,
   folders,
@@ -36,6 +48,57 @@ export default function NoteEditor({
 
   const autoSaveTimer = useRef(null)
   const richEditorRef = useRef(null)
+
+  // ── Historial de deshacer/rehacer (solo para el cuerpo de la nota) ──────
+  // historyRef es la fuente de verdad (mutable, síncrona) — evita bugs de
+  // "estado obsoleto" si el usuario toca deshacer/rehacer varias veces muy
+  // rápido. historyTick solo existe para forzar un re-render y así
+  // actualizar si los botones deben verse habilitados o no.
+  const historyRef = useRef({ list: [ensureHtml(note.body)], index: 0 })
+  const historyTimer = useRef(null)
+  const skipHistoryPush = useRef(false)
+  const [historyTick, setHistoryTick] = useState(0)
+
+  const canUndo = historyRef.current.index > 0
+  const canRedo = historyRef.current.index < historyRef.current.list.length - 1
+
+  // Cada vez que el cuerpo cambia (por escribir o por un botón de formato),
+  // se agenda guardar una "foto" nueva tras una pausa. Si el cambio vino de
+  // deshacer/rehacer (skipHistoryPush), no se vuelve a guardar — si no, el
+  // historial nunca podría avanzar hacia adelante (rehacer).
+  useEffect(() => {
+    if (skipHistoryPush.current) {
+      skipHistoryPush.current = false
+      return
+    }
+    if (historyTimer.current) clearTimeout(historyTimer.current)
+    historyTimer.current = setTimeout(() => {
+      const h = historyRef.current
+      if (h.list[h.index] === body) return
+      const trimmed = h.list.slice(0, h.index + 1)
+      let list = [...trimmed, body]
+      if (list.length > MAX_HISTORY) list = list.slice(list.length - MAX_HISTORY)
+      historyRef.current = { list, index: list.length - 1 }
+      setHistoryTick((t) => t + 1)
+    }, HISTORY_DEBOUNCE_MS)
+    return () => {
+      if (historyTimer.current) clearTimeout(historyTimer.current)
+    }
+  }, [body])
+
+  const jumpHistory = (newIndex) => {
+    const h = historyRef.current
+    if (newIndex < 0 || newIndex > h.list.length - 1) return
+    if (historyTimer.current) clearTimeout(historyTimer.current)
+    historyRef.current = { ...h, index: newIndex }
+    skipHistoryPush.current = true
+    richEditorRef.current?.setHtml(h.list[newIndex])
+    setHistoryTick((t) => t + 1)
+  }
+
+  const handleUndo = () => jumpHistory(historyRef.current.index - 1)
+  const handleRedo = () => jumpHistory(historyRef.current.index + 1)
+  // ──────────────────────────────────────────────────────────────────────
 
   // Comparación simple de arrays de etiquetas para saber si cambiaron
   // (se usa en "dirty" en vez de comparar por referencia, que siempre da
@@ -227,6 +290,11 @@ export default function NoteEditor({
               heading={heading}
               onHeadingChange={handleHeadingChange}
               disabled={note.trashed}
+              editorRef={richEditorRef}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+              canUndo={canUndo}
+              canRedo={canRedo}
             />
           </div>
 

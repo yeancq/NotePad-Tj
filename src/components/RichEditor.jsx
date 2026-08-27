@@ -32,24 +32,45 @@ function highlight(color) {
  *
  * Se separó del área editable (más abajo) para que NoteEditor pueda
  * colocarla, junto con el título, dentro de una franja `sticky` y así
- * queden siempre visibles al hacer scroll en notas largas. Los botones de
- * negrita/cursiva/subrayado/resaltado siguen actuando directo sobre
- * `document.execCommand` (no dependen de ninguna referencia local); el
- * cambio de encabezado se delega al padre, que lo aplica sobre el editor
- * a través de `editorRef` (ver RichEditor más abajo).
+ * queden siempre visibles al hacer scroll en notas largas.
+ *
+ * Los botones de negrita/cursiva/subrayado/resaltado y los de
+ * deshacer/rehacer actúan a través de `editorRef` (los métodos expuestos
+ * por RichEditor más abajo), en vez de llamar a document.execCommand
+ * directamente — así cada acción queda sincronizada con el estado de React
+ * (NoteEditor.body) al instante, sin depender de que el usuario escriba
+ * algo después para que el cambio "se note".
  */
-export function RichEditorToolbar({ heading, onHeadingChange, disabled }) {
+export function RichEditorToolbar({
+  heading,
+  onHeadingChange,
+  disabled,
+  editorRef,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+}) {
   return (
     <div
       className={`flex items-center gap-1 flex-wrap ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
     >
-      <ToolButton onClick={() => exec('bold')} label="Negrita">
+      <ToolButton onClick={onUndo} label="Deshacer" disabled={disabled || !canUndo}>
+        <span className="text-[15px] leading-none">↶</span>
+      </ToolButton>
+      <ToolButton onClick={onRedo} label="Rehacer" disabled={disabled || !canRedo}>
+        <span className="text-[15px] leading-none">↷</span>
+      </ToolButton>
+
+      <span className="w-px h-5 bg-ink/10 dark:bg-night-text/15 mx-1" />
+
+      <ToolButton onClick={() => editorRef.current?.runCommand('bold')} label="Negrita">
         <strong>B</strong>
       </ToolButton>
-      <ToolButton onClick={() => exec('italic')} label="Cursiva">
+      <ToolButton onClick={() => editorRef.current?.runCommand('italic')} label="Cursiva">
         <em>I</em>
       </ToolButton>
-      <ToolButton onClick={() => exec('underline')} label="Subrayado">
+      <ToolButton onClick={() => editorRef.current?.runCommand('underline')} label="Subrayado">
         <span className="underline">U</span>
       </ToolButton>
 
@@ -59,14 +80,14 @@ export function RichEditorToolbar({ heading, onHeadingChange, disabled }) {
         <button
           key={h.id}
           onMouseDown={(e) => e.preventDefault()}
-          onClick={() => highlight(h.color)}
+          onClick={() => editorRef.current?.applyHighlight(h.color)}
           title={`Resaltar en ${h.label.toLowerCase()}`}
           aria-label={`Resaltar en ${h.label.toLowerCase()}`}
           className="w-6 h-6 rounded-full border border-ink/10 dark:border-night-text/20 shrink-0"
           style={{ backgroundColor: h.color }}
         />
       ))}
-      <ToolButton onClick={() => highlight('transparent')} label="Quitar resaltado">
+      <ToolButton onClick={() => editorRef.current?.applyHighlight('transparent')} label="Quitar resaltado">
         <span className="text-[11px]">✕</span>
       </ToolButton>
 
@@ -89,9 +110,18 @@ export function RichEditorToolbar({ heading, onHeadingChange, disabled }) {
 }
 
 /**
- * Área de texto editable. Expone `applyHeading` mediante ref para que la
- * barra de herramientas (ahora fuera de este componente) pueda cambiar el
- * bloque de encabezado del párrafo actual.
+ * Área de texto editable. Expone varios métodos mediante ref para que
+ * NoteEditor (a través de la barra de herramientas y de sus propios botones
+ * de deshacer/rehacer) pueda manipular el contenido y mantenerlo
+ * sincronizado con el estado de React:
+ *
+ * - applyHeading(value): cambia el bloque de encabezado del párrafo actual.
+ * - runCommand(command, value): ejecuta un comando de formato (bold,
+ *   italic, underline...) y sincroniza el resultado hacia React.
+ * - applyHighlight(color): aplica/quita resaltado y sincroniza.
+ * - setHtml(html): reemplaza todo el contenido (usado por deshacer/rehacer)
+ *   y sincroniza — a diferencia de la carga inicial del prop `html`, que
+ *   solo ocurre una vez, este método se puede llamar en cualquier momento.
  */
 const RichEditor = forwardRef(function RichEditor(
   { html, onChange, onCursorChange, placeholder, disabled },
@@ -179,6 +209,19 @@ const RichEditor = forwardRef(function RichEditor(
       exec('formatBlock', value === 'P' ? 'P' : value)
       handleInput()
     },
+    runCommand(command, value = null) {
+      exec(command, value)
+      handleInput()
+    },
+    applyHighlight(color) {
+      highlight(color)
+      handleInput()
+    },
+    setHtml(newHtml) {
+      if (!editorRef.current) return
+      editorRef.current.innerHTML = newHtml || ''
+      handleInput()
+    },
   }))
 
   return (
@@ -199,15 +242,17 @@ const RichEditor = forwardRef(function RichEditor(
 
 export default RichEditor
 
-function ToolButton({ onClick, label, children }) {
+function ToolButton({ onClick, label, children, disabled }) {
   return (
     <button
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
+      disabled={disabled}
       title={label}
       aria-label={label}
-      className="w-8 h-8 flex items-center justify-center rounded-lg text-sm
-                 text-ink-soft dark:text-night-text/70 hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
+      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm
+                 text-ink-soft dark:text-night-text/70 transition-colors
+                 ${disabled ? 'opacity-30 pointer-events-none' : 'hover:bg-ink/5 dark:hover:bg-night-text/10'}`}
     >
       {children}
     </button>
