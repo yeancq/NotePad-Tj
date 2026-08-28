@@ -33,6 +33,19 @@ html.dark {
   color-scheme: dark;
 }
 
+/* Color de texto "consciente del tema": sigue automáticamente el mismo
+   color que ya usa el resto de la app (ink en modo claro, night-text en
+   modo oscuro), pero como variable CSS reutilizable. Se usa específicamente
+   en RichEditor.jsx para restablecer el color del texto al quitar un
+   resaltado, en vez de dejarlo con un color fijo que no reaccionaría si el
+   usuario cambia de tema más adelante. */
+:root {
+  --color-editor-text: var(--color-ink);
+}
+html.dark {
+  --color-editor-text: var(--color-night-text);
+}
+
 body, #root {
   overflow-x: hidden;
   max-width: 100vw;
@@ -63,6 +76,21 @@ body {
 html.dark .rich-editor:empty:before {
   color: var(--color-night-text);
   opacity: 0.3;
+}
+
+/* Texto resaltado: los 3 colores de resaltado (amarillo/verde/azul) son
+   pasteles claros pensados para leerse con texto oscuro encima, igual que
+   un marcador real sobre papel — por eso el texto dentro de un resaltado
+   se fuerza a tinta oscura sin importar el tema. RichEditor.jsx ya hace
+   esto explícitamente para los resaltados que se creen de ahora en
+   adelante (agrega el color de texto junto con el de fondo); esta regla es
+   una red de seguridad para notas que ya tenías resaltadas ANTES de ese
+   cambio, que quedaron guardadas sin ese color de texto y por eso se veían
+   ilegibles en modo oscuro. "transparent" queda excluido a propósito: es
+   el fondo que deja "quitar resaltado", y ahí el texto sí debe seguir el
+   color normal del tema (--color-editor-text de arriba). */
+.rich-editor [style*="background-color"]:not([style*="transparent"]) {
+  color: #241f1c !important;
 }
 
 .indent-1 { margin-left: 1.4em; }
