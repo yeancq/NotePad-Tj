@@ -13,6 +13,13 @@ const HEADINGS = [
   { value: 'H3', label: 'Encabezado 3' },
 ]
 
+// Tinta oscura fija para el texto resaltado: los 3 colores de resaltado
+// (amarillo/verde/azul) son pasteles claros pensados para leerse con texto
+// oscuro encima, igual que un marcador real sobre papel — por eso el texto
+// dentro de un resaltado siempre usa esta tinta oscura, sin importar si la
+// app está en modo claro u oscuro.
+const HIGHLIGHT_TEXT_COLOR = '#241f1c'
+
 function exec(command, value = null) {
   document.execCommand(command, false, value)
 }
@@ -118,7 +125,8 @@ export function RichEditorToolbar({
  * - applyHeading(value): cambia el bloque de encabezado del párrafo actual.
  * - runCommand(command, value): ejecuta un comando de formato (bold,
  *   italic, underline...) y sincroniza el resultado hacia React.
- * - applyHighlight(color): aplica/quita resaltado y sincroniza.
+ * - applyHighlight(color): aplica/quita resaltado, ajusta el color del
+ *   texto para que siga siendo legible, y sincroniza.
  * - setHtml(html): reemplaza todo el contenido (usado por deshacer/rehacer)
  *   y sincroniza — a diferencia de la carga inicial del prop `html`, que
  *   solo ocurre una vez, este método se puede llamar en cualquier momento.
@@ -215,6 +223,20 @@ const RichEditor = forwardRef(function RichEditor(
     },
     applyHighlight(color) {
       highlight(color)
+      // Justo después de aplicar/quitar el fondo, la selección del
+      // navegador sigue activa sobre ese mismo texto — encadenamos
+      // "foreColor" sobre esa selección (mismo patrón que ya usan bold/
+      // italic al combinarse entre sí) para que el color del texto quede
+      // sincronizado con el del fondo:
+      // - Al resaltar: tinta oscura fija (como un marcador real).
+      // - Al quitar el resaltado: la variable --color-editor-text, que seguirá
+      //   automáticamente el tema claro/oscuro incluso si el usuario lo
+      //   cambia más adelante (en vez de quedar con un color fijo).
+      if (color === 'transparent') {
+        exec('foreColor', 'var(--color-editor-text)')
+      } else {
+        exec('foreColor', HIGHLIGHT_TEXT_COLOR)
+      }
       handleInput()
     },
     setHtml(newHtml) {
