@@ -1,4 +1,5 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
+import { sanitizePastedHtml, escapeHtml } from '../lib/htmlUtils'
 
 const HIGHLIGHTS = [
   { id: 'yellow', color: '#fde68a', label: 'Amarillo' },
@@ -12,13 +13,6 @@ const HEADINGS = [
   { value: 'H2', label: 'Encabezado 2' },
   { value: 'H3', label: 'Encabezado 3' },
 ]
-
-// Tinta oscura fija para el texto resaltado: los 3 colores de resaltado
-// (amarillo/verde/azul) son pasteles claros pensados para leerse con texto
-// oscuro encima, igual que un marcador real sobre papel — por eso el texto
-// dentro de un resaltado siempre usa esta tinta oscura, sin importar si la
-// app está en modo claro u oscuro.
-const HIGHLIGHT_TEXT_COLOR = '#241f1c'
 
 function exec(command, value = null) {
   document.execCommand(command, false, value)
@@ -39,45 +33,24 @@ function highlight(color) {
  *
  * Se separó del área editable (más abajo) para que NoteEditor pueda
  * colocarla, junto con el título, dentro de una franja `sticky` y así
- * queden siempre visibles al hacer scroll en notas largas.
- *
- * Los botones de negrita/cursiva/subrayado/resaltado y los de
- * deshacer/rehacer actúan a través de `editorRef` (los métodos expuestos
- * por RichEditor más abajo), en vez de llamar a document.execCommand
- * directamente — así cada acción queda sincronizada con el estado de React
- * (NoteEditor.body) al instante, sin depender de que el usuario escriba
- * algo después para que el cambio "se note".
+ * queden siempre visibles al hacer scroll en notas largas. Los botones de
+ * negrita/cursiva/subrayado/resaltado siguen actuando directo sobre
+ * `document.execCommand` (no dependen de ninguna referencia local); el
+ * cambio de encabezado se delega al padre, que lo aplica sobre el editor
+ * a través de `editorRef` (ver RichEditor más abajo).
  */
-export function RichEditorToolbar({
-  heading,
-  onHeadingChange,
-  disabled,
-  editorRef,
-  onUndo,
-  onRedo,
-  canUndo,
-  canRedo,
-}) {
+export function RichEditorToolbar({ heading, onHeadingChange, disabled }) {
   return (
     <div
       className={`flex items-center gap-1 flex-wrap ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
     >
-      <ToolButton onClick={onUndo} label="Deshacer" disabled={disabled || !canUndo}>
-        <span className="text-[15px] leading-none">↶</span>
-      </ToolButton>
-      <ToolButton onClick={onRedo} label="Rehacer" disabled={disabled || !canRedo}>
-        <span className="text-[15px] leading-none">↷</span>
-      </ToolButton>
-
-      <span className="w-px h-5 bg-ink/10 dark:bg-night-text/15 mx-1" />
-
-      <ToolButton onClick={() => editorRef.current?.runCommand('bold')} label="Negrita">
+      <ToolButton onClick={() => exec('bold')} label="Negrita">
         <strong>B</strong>
       </ToolButton>
-      <ToolButton onClick={() => editorRef.current?.runCommand('italic')} label="Cursiva">
+      <ToolButton onClick={() => exec('italic')} label="Cursiva">
         <em>I</em>
       </ToolButton>
-      <ToolButton onClick={() => editorRef.current?.runCommand('underline')} label="Subrayado">
+      <ToolButton onClick={() => exec('underline')} label="Subrayado">
         <span className="underline">U</span>
       </ToolButton>
 
@@ -87,14 +60,14 @@ export function RichEditorToolbar({
         <button
           key={h.id}
           onMouseDown={(e) => e.preventDefault()}
-          onClick={() => editorRef.current?.applyHighlight(h.color)}
+          onClick={() => highlight(h.color)}
           title={`Resaltar en ${h.label.toLowerCase()}`}
           aria-label={`Resaltar en ${h.label.toLowerCase()}`}
           className="w-6 h-6 rounded-full border border-ink/10 dark:border-night-text/20 shrink-0"
           style={{ backgroundColor: h.color }}
         />
       ))}
-      <ToolButton onClick={() => editorRef.current?.applyHighlight('transparent')} label="Quitar resaltado">
+      <ToolButton onClick={() => highlight('transparent')} label="Quitar resaltado">
         <span className="text-[11px]">✕</span>
       </ToolButton>
 
@@ -117,19 +90,9 @@ export function RichEditorToolbar({
 }
 
 /**
- * Área de texto editable. Expone varios métodos mediante ref para que
- * NoteEditor (a través de la barra de herramientas y de sus propios botones
- * de deshacer/rehacer) pueda manipular el contenido y mantenerlo
- * sincronizado con el estado de React:
- *
- * - applyHeading(value): cambia el bloque de encabezado del párrafo actual.
- * - runCommand(command, value): ejecuta un comando de formato (bold,
- *   italic, underline...) y sincroniza el resultado hacia React.
- * - applyHighlight(color): aplica/quita resaltado, ajusta el color del
- *   texto para que siga siendo legible, y sincroniza.
- * - setHtml(html): reemplaza todo el contenido (usado por deshacer/rehacer)
- *   y sincroniza — a diferencia de la carga inicial del prop `html`, que
- *   solo ocurre una vez, este método se puede llamar en cualquier momento.
+ * Área de texto editable. Expone `applyHeading` mediante ref para que la
+ * barra de herramientas (ahora fuera de este componente) pueda cambiar el
+ * bloque de encabezado del párrafo actual.
  */
 const RichEditor = forwardRef(function RichEditor(
   { html, onChange, onCursorChange, placeholder, disabled },
@@ -212,36 +175,37 @@ const RichEditor = forwardRef(function RichEditor(
     reportCursor()
   }
 
+  // Pegar contenido desde otra app (Word, WhatsApp, una página web, o
+  // incluso otra nota de esta misma app) trae HTML "sucio": estilos en
+  // línea, spans de formato ajenos, tablas, enlaces, y espacios/caracteres
+  // invisibles (NBSP, ancho cero) que ya nos mordieron una vez en el
+  // detector de referencias bíblicas. sanitizePastedHtml() reconstruye ese
+  // HTML dejando solo negrita/cursiva/subrayado/párrafos/encabezados/listas
+  // y los 3 resaltados propios de la app; todo lo demás se descarta
+  // conservando solo el texto. Si el portapapeles no trae HTML (solo texto
+  // plano), se convierte a párrafos igual que ensureHtml().
+  const handlePaste = (e) => {
+    e.preventDefault()
+    const clipboard = e.clipboardData
+    const html = clipboard?.getData('text/html')
+    let insertHtml
+
+    if (html) {
+      insertHtml = sanitizePastedHtml(html)
+    } else {
+      const text = clipboard?.getData('text/plain') || ''
+      insertHtml = text
+        .split('\n')
+        .map((line) => (line ? escapeHtml(line) : '<br>'))
+        .join('<br>')
+    }
+
+    document.execCommand('insertHTML', false, insertHtml)
+  }
+
   useImperativeHandle(ref, () => ({
     applyHeading(value) {
       exec('formatBlock', value === 'P' ? 'P' : value)
-      handleInput()
-    },
-    runCommand(command, value = null) {
-      exec(command, value)
-      handleInput()
-    },
-    applyHighlight(color) {
-      highlight(color)
-      // Justo después de aplicar/quitar el fondo, la selección del
-      // navegador sigue activa sobre ese mismo texto — encadenamos
-      // "foreColor" sobre esa selección (mismo patrón que ya usan bold/
-      // italic al combinarse entre sí) para que el color del texto quede
-      // sincronizado con el del fondo:
-      // - Al resaltar: tinta oscura fija (como un marcador real).
-      // - Al quitar el resaltado: la variable --color-editor-text, que seguirá
-      //   automáticamente el tema claro/oscuro incluso si el usuario lo
-      //   cambia más adelante (en vez de quedar con un color fijo).
-      if (color === 'transparent') {
-        exec('foreColor', 'var(--color-editor-text)')
-      } else {
-        exec('foreColor', HIGHLIGHT_TEXT_COLOR)
-      }
-      handleInput()
-    },
-    setHtml(newHtml) {
-      if (!editorRef.current) return
-      editorRef.current.innerHTML = newHtml || ''
       handleInput()
     },
   }))
@@ -252,6 +216,7 @@ const RichEditor = forwardRef(function RichEditor(
       contentEditable={!disabled}
       suppressContentEditableWarning
       onInput={handleInput}
+      onPaste={handlePaste}
       data-placeholder={placeholder}
       className={`rich-editor min-h-[240px] outline-none text-ink dark:text-night-text leading-relaxed
                  [&_h1]:font-display [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:mb-2
@@ -264,17 +229,15 @@ const RichEditor = forwardRef(function RichEditor(
 
 export default RichEditor
 
-function ToolButton({ onClick, label, children, disabled }) {
+function ToolButton({ onClick, label, children }) {
   return (
     <button
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      disabled={disabled}
       title={label}
       aria-label={label}
-      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm
-                 text-ink-soft dark:text-night-text/70 transition-colors
-                 ${disabled ? 'opacity-30 pointer-events-none' : 'hover:bg-ink/5 dark:hover:bg-night-text/10'}`}
+      className="w-8 h-8 flex items-center justify-center rounded-lg text-sm
+                 text-ink-soft dark:text-night-text/70 hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
     >
       {children}
     </button>
