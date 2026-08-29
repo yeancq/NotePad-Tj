@@ -181,20 +181,53 @@ const RichEditor = forwardRef(function RichEditor(
     onCursorChange?.(text, offset)
   }
 
-  // selectionchange es la única señal 100% confiable de "el cursor ya se
-  // movió de verdad" — a diferencia de click/keyup, que a veces se disparan
-  // justo ANTES de que el navegador termine de reubicar el cursor (sobre
-  // todo al tocar la pantalla en celular), dejando la lectura desfasada un
-  // párrafo.
+  // reportCursorRef siempre apunta a la versión más reciente de
+  // reportCursor (que a su vez depende de onCursorChange, prop que puede
+  // ser una función nueva en cada render de NoteEditor). Guardarla en un
+  // ref permite registrar el listener de selectionchange UNA SOLA VEZ (ver
+  // useEffect de abajo, con [] como dependencias) sin quedarnos con una
+  // versión vieja/obsoleta de la función.
+  const reportCursorRef = useRef(reportCursor)
+  reportCursorRef.current = reportCursor
+
+  // selectionchange es la señal más confiable de "el cursor ya se movió",
+  // pero en móvil (sobre todo al tocar una palabra dentro del texto) el
+  // navegador a veces dispara este evento una primera vez con una posición
+  // todavía "vieja" — antes de terminar de asentar el toque — y recién en
+  // un segundo disparo reporta la posición final y correcta. Eso es lo que
+  // causaba que una cita bíblica no se detectara al primer toque, pero sí
+  // al segundo (o al mover el cursor de nuevo): estábamos procesando esa
+  // primera lectura, todavía desfasada.
+  //
+  // La solución es un debounce corto (60ms, imperceptible para el
+  // usuario): en vez de reaccionar al primer selectionchange, esperamos a
+  // que la ráfaga de eventos se calme y solo entonces leemos la posición
+  // real del cursor.
+  //
+  // Antes este efecto no tenía arreglo de dependencias (se re-registraba
+  // en cada render) — funcionaba, pero al usarlo junto con un debounce eso
+  // sería un problema: cada re-render (que ocurre todo el tiempo mientras
+  // se escribe) cancelaría el listener y con él cualquier debounce
+  // pendiente. Por eso ahora el listener se registra una sola vez ([] de
+  // dependencias) y usa reportCursorRef para no quedar con una versión
+  // obsoleta de reportCursor.
   useEffect(() => {
+    let debounceTimer = null
+
     const handler = () => {
-      if (editorRef.current && editorRef.current.contains(document.activeElement)) {
-        reportCursor()
-      }
+      if (!(editorRef.current && editorRef.current.contains(document.activeElement))) return
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(() => {
+        reportCursorRef.current()
+      }, 60)
     }
+
     document.addEventListener('selectionchange', handler)
-    return () => document.removeEventListener('selectionchange', handler)
-  })
+    return () => {
+      document.removeEventListener('selectionchange', handler)
+      if (debounceTimer) clearTimeout(debounceTimer)
+    }
+  }, [])
 
   const handleInput = () => {
     onChange?.(editorRef.current.innerHTML)
