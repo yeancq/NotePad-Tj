@@ -1,4 +1,5 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
+import { Undo2, Redo2 } from 'lucide-react'
 import { sanitizePastedHtml, escapeHtml } from '../lib/htmlUtils'
 
 const HIGHLIGHTS = [
@@ -38,12 +39,34 @@ function highlight(color) {
  * `document.execCommand` (no dependen de ninguna referencia local); el
  * cambio de encabezado se delega al padre, que lo aplica sobre el editor
  * a través de `editorRef` (ver RichEditor más abajo).
+ *
+ * Deshacer/rehacer (onUndo/onRedo/canUndo/canRedo) vienen controlados por
+ * NoteEditor.jsx, que mantiene el historial de "fotos" del cuerpo de la
+ * nota — aquí solo se dibujan los botones y se reflejan como
+ * habilitados/deshabilitados según canUndo/canRedo.
  */
-export function RichEditorToolbar({ heading, onHeadingChange, disabled }) {
+export function RichEditorToolbar({
+  heading,
+  onHeadingChange,
+  disabled,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+}) {
   return (
     <div
       className={`flex items-center gap-1 flex-wrap ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
     >
+      <ToolButton onClick={onUndo} label="Deshacer" disabled={!canUndo}>
+        <Undo2 className="w-4 h-4" strokeWidth={2} />
+      </ToolButton>
+      <ToolButton onClick={onRedo} label="Rehacer" disabled={!canRedo}>
+        <Redo2 className="w-4 h-4" strokeWidth={2} />
+      </ToolButton>
+
+      <span className="w-px h-5 bg-ink/10 dark:bg-night-text/15 mx-1" />
+
       <ToolButton onClick={() => exec('bold')} label="Negrita">
         <strong>B</strong>
       </ToolButton>
@@ -90,9 +113,12 @@ export function RichEditorToolbar({ heading, onHeadingChange, disabled }) {
 }
 
 /**
- * Área de texto editable. Expone `applyHeading` mediante ref para que la
- * barra de herramientas (ahora fuera de este componente) pueda cambiar el
- * bloque de encabezado del párrafo actual.
+ * Área de texto editable. Expone mediante ref:
+ * - applyHeading(value): cambia el bloque de encabezado del párrafo actual.
+ * - setHtml(html): reemplaza el contenido completo (usado por
+ *   deshacer/rehacer en NoteEditor.jsx) y dispara el mismo camino que una
+ *   edición normal (onChange + reporte de cursor), para que el resto de la
+ *   app (autoguardado, detector de versículos) quede sincronizado.
  */
 const RichEditor = forwardRef(function RichEditor(
   { html, onChange, onCursorChange, placeholder, disabled },
@@ -208,6 +234,14 @@ const RichEditor = forwardRef(function RichEditor(
       exec('formatBlock', value === 'P' ? 'P' : value)
       handleInput()
     },
+    setHtml(newHtml) {
+      if (!editorRef.current) return
+      editorRef.current.innerHTML = newHtml || ''
+      // Mismo camino que una edición normal: sincroniza el estado `body`
+      // en NoteEditor (onChange) y reporta la nueva posición de cursor
+      // para el detector de versículos.
+      handleInput()
+    },
   }))
 
   return (
@@ -229,15 +263,17 @@ const RichEditor = forwardRef(function RichEditor(
 
 export default RichEditor
 
-function ToolButton({ onClick, label, children }) {
+function ToolButton({ onClick, label, children, disabled }) {
   return (
     <button
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
+      disabled={disabled}
       title={label}
       aria-label={label}
       className="w-8 h-8 flex items-center justify-center rounded-lg text-sm
-                 text-ink-soft dark:text-night-text/70 hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
+                 text-ink-soft dark:text-night-text/70 hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors
+                 disabled:opacity-30 disabled:pointer-events-none"
     >
       {children}
     </button>
