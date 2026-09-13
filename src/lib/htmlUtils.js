@@ -39,10 +39,11 @@ export function escapeHtml(str) {
 //
 // sanitizePastedHtml() reconstruye el HTML desde cero usando solo una lista
 // blanca de etiquetas (negrita, cursiva, subrayado, párrafos, encabezados,
-// listas), descartando cualquier atributo (style, class, onclick, etc.).
-// La única excepción es el resaltado de color: si un <span> trae uno de los
-// 3 colores que la propia app usa para resaltar texto, se conserva — así
-// copiar/pegar texto resaltado entre notas de NotePad TJ sigue funcionando.
+// listas, imágenes), descartando cualquier atributo (style, class, onclick,
+// etc.). La única excepción es el resaltado de color: si un <span> trae uno
+// de los 3 colores que la propia app usa para resaltar texto, se conserva —
+// así copiar/pegar texto resaltado entre notas de NotePad TJ sigue
+// funcionando.
 
 // Caracteres invisibles y NBSP que verseDetector.js ya identificó como
 // problemáticos en texto pegado desde jw.org / Meeting Workbook.
@@ -79,11 +80,26 @@ function normalizeColorValue(v) {
   return (v || '').trim().toLowerCase().replace(/\s+/g, '')
 }
 
+// Esquemas de src permitidos para <img>: "data:image/..." (el caso normal
+// al pegar una imagen copiada, ej. de una captura de pantalla o desde otra
+// app) y http/https (una imagen enlazada desde la web). Cualquier otro
+// esquema (javascript:, data:text/html, etc.) se descarta por seguridad —
+// sin esto, un <img src="javascript:..."> pegado desde una página
+// maliciosa podría ejecutar código dentro del editor.
+function isSafeImageSrc(src) {
+  if (!src) return false
+  const trimmed = src.trim()
+  return (
+    /^data:image\//i.test(trimmed) ||
+    /^https?:\/\//i.test(trimmed)
+  )
+}
+
 /**
  * Copia recursivamente los hijos de sourceNode dentro de targetNode,
  * reconstruyendo solo las etiquetas permitidas y descartando todo lo demás
- * (atributos, spans de formato ajenos, tablas, enlaces, imágenes, etc. —
- * de esos últimos se conserva únicamente su texto interno).
+ * (atributos, spans de formato ajenos, tablas, enlaces, etc. — de esos
+ * últimos se conserva únicamente su texto interno).
  */
 function sanitizeChildren(sourceNode, targetNode) {
   Array.from(sourceNode.childNodes).forEach((child) => {
@@ -105,6 +121,27 @@ function sanitizeChildren(sourceNode, targetNode) {
 
     if (tag === 'BR') {
       targetNode.appendChild(document.createElement('br'))
+      return
+    }
+
+    // <img> es una etiqueta "vacía" (no tiene texto ni hijos que rescatar
+    // si se descarta), así que antes de este cambio caía en la rama
+    // genérica de "descartar etiqueta mas conservar contenido" y
+    // desaparecía sin dejar rastro. Aquí se reconstruye conservando
+    // ÚNICAMENTE src (validado) y alt — nunca width/height/style pegados,
+    // para que el tamaño en pantalla lo controle siempre el CSS del editor
+    // (ver .rich-editor img en index.css) y no una imagen con un ancho fijo
+    // heredado de Word/WhatsApp que se vea desproporcionada o desborde la
+    // pantalla en móvil.
+    if (tag === 'IMG') {
+      const src = child.getAttribute('src')
+      if (isSafeImageSrc(src)) {
+        const img = document.createElement('img')
+        img.setAttribute('src', src.trim())
+        const alt = child.getAttribute('alt')
+        if (alt) img.setAttribute('alt', alt)
+        targetNode.appendChild(img)
+      }
       return
     }
 
@@ -137,7 +174,7 @@ function sanitizeChildren(sourceNode, targetNode) {
       return
     }
 
-    // Cualquier otra etiqueta (a, table, tr, td, img, div raro, etc.): se
+    // Cualquier otra etiqueta (a, table, tr, td, div raro, etc.): se
     // descarta la etiqueta pero se conserva su contenido de texto/formato.
     sanitizeChildren(child, targetNode)
   })
@@ -146,8 +183,8 @@ function sanitizeChildren(sourceNode, targetNode) {
 /**
  * Limpia HTML pegado desde otra app (Word, WhatsApp, una página web, u
  * otra nota de NotePad TJ) dejando solo negrita, cursiva, subrayado,
- * párrafos, encabezados, listas y resaltados propios de la app — sin
- * estilos, clases, tablas, enlaces ni espacios/caracteres invisibles
+ * párrafos, encabezados, listas, imágenes y resaltados propios de la app —
+ * sin estilos, clases, tablas, enlaces ni espacios/caracteres invisibles
  * ajenos.
  */
 export function sanitizePastedHtml(html) {
