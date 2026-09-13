@@ -93,6 +93,26 @@ html.dark .rich-editor:empty:before {
   color: #241f1c !important;
 }
 
+/* Imágenes pegadas dentro de una nota: nunca deben exceder el ancho del
+   contenedor (evita que desborden horizontalmente en móvil, causando
+   scroll lateral) ni tener un alto fijo (para no deformarse) — height:auto
+   conserva siempre la proporción original de la imagen sin importar el
+   ancho al que termine ajustada. Se aplica tanto en el editor (.rich-editor)
+   como en el modo orador (.speaker-content), que renderiza el mismo HTML
+   de la nota fuera del editor.
+   Nota: aquí no hay límite de TAMAÑO EN BYTES para la imagen pegada, solo
+   de ancho visual en pantalla — una imagen pesada sigue ocupando su
+   espacio real en IndexedDB y en el respaldo exportado. */
+.rich-editor img,
+.speaker-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  display: block;
+  margin: 0.75rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
 .indent-1 { margin-left: 1.4em; }
 .indent-2 { margin-left: 2.8em; }
 .indent-3 { margin-left: 4.2em; }
