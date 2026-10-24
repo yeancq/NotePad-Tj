@@ -8,7 +8,11 @@
 // Se guarda en IndexedDB con un número de versión: si algún día se mejora
 // esta detección, basta con subir TOC_VERSION para que los PDF ya
 // importados se vuelvan a analizar.
-export const TOC_VERSION = 1
+//
+// v2: la comparación ignora TODOS los espacios (algunos PDF parten el texto
+// en trozos, sobre todo en mayúsculas con letra espaciada) y acepta más
+// variantes de guion.
+export const TOC_VERSION = 2
 
 /**
  * Limpia un artefacto típico de la extracción de texto de algunos PDF: la
@@ -19,31 +23,33 @@ export function cleanPdfText(str) {
   return (str || '').replace(/\s?[´˜]/g, '')
 }
 
-// Para comparar: sin tildes, en mayúsculas y con espacios simples.
-function norm(str) {
+// Para comparar: sin tildes, en mayúsculas y SIN ningún espacio ni carácter
+// invisible. Así da igual cómo haya troceado el PDF el texto.
+function normCompact(str) {
   return cleanPdfText(str)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
+    .replace(/[\s\u200B\u200C\u200D\u2060\uFEFF\u00AD]+/g, '')
     .toUpperCase()
 }
 
 const MONTHS =
   'ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|SEPTIEMBRE|SETIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE'
 
-// "26 DE OCTUBRE-1 DE NOVIEMBRE DE 2026" (la semana cruza de mes)
-const RANGE_CROSS = new RegExp(
-  `\\b(\\d{1,2}) DE (${MONTHS}) ?[-–—] ?(\\d{1,2}) DE (${MONTHS}) DE (\\d{4})`
-)
-// "5-11 DE OCTUBRE DE 2026"
-const RANGE_SAME = new RegExp(`\\b(\\d{1,2}) ?[-–—] ?(\\d{1,2}) DE (${MONTHS}) DE (\\d{4})`)
+// Guion normal, guion largo, raya, guion tipográfico, de no separación,
+// figura y signo menos.
+const DASH = '[-\\u2010\\u2011\\u2012\\u2013\\u2014\\u2212]'
+
+// "26DEOCTUBRE-1DENOVIEMBRE" (la semana cruza de mes)
+const RANGE_CROSS = new RegExp(`(\\d{1,2})DE(${MONTHS})${DASH}(\\d{1,2})DE(${MONTHS})`)
+// "5-11DEOCTUBRE"
+const RANGE_SAME = new RegExp(`(\\d{1,2})${DASH}(\\d{1,2})DE(${MONTHS})`)
 
 const lower = (s) => s.toLowerCase()
 
 /**
  * El título del artículo es el texto de mayor tamaño de su primera página.
- * Es una mejor aproximación: si no sale algo razonable, se deja vacío.
+ * Es una aproximación: si no sale algo razonable, se deja vacío.
  */
 function guessTitle(items) {
   const sized = items.filter((i) => i.str.trim() && i.height > 0)
@@ -75,7 +81,7 @@ export async function extractToc(pdf) {
       continue
     }
 
-    const text = norm(items.map((i) => i.str).join(' '))
+    const text = normCompact(items.map((i) => i.str).join(''))
     let entry = null
     let m
 
@@ -86,9 +92,9 @@ export async function extractToc(pdf) {
       }
     } else if ((m = text.match(RANGE_SAME))) {
       entry = { kind: 'study', label: `${m[1]}–${m[2]} de ${lower(m[3])}` }
-    } else if (/RELATADA POR/.test(text)) {
+    } else if (text.includes('RELATADAPOR')) {
       entry = { kind: 'bio', label: 'Biografía' }
-    } else if (/LO SABIAS\?/.test(text) && !/EN ESTE NUMERO/.test(text)) {
+    } else if (text.includes('LOSABIAS?') && !text.includes('ENESTENUMERO')) {
       // El índice impreso del PDF (última página) también nombra
       // "¿Lo sabías?", por eso se excluye la página que dice "EN ESTE NÚMERO".
       entry = { kind: 'extra', label: '¿Lo sabías?' }
@@ -103,4 +109,19 @@ export async function extractToc(pdf) {
   }
 
   return result
+}
+
+/**
+ * Diagnóstico: devuelve el texto "crudo" que pdf.js lee de una página
+ * (cada trozo con su tamaño de letra), para poder ver por qué no se
+ * reconoce algo. Se copia al portapapeles desde el visor.
+ */
+export async function dumpPageText(pdf, pageNumber) {
+  const page = await pdf.getPage(pageNumber)
+  const content = await page.getTextContent()
+  const items = content.items.filter((i) => typeof i.str === 'string' && i.str !== '')
+  const lines = items
+    .slice(0, 90)
+    .map((i) => `${JSON.stringify(i.str)} h=${Math.round(i.height * 10) / 10}`)
+  return `Página ${pageNumber} — ${items.length} trozos de texto\n${lines.join('\n')}`
 }
