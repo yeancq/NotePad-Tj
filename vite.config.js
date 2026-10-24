@@ -8,6 +8,9 @@ const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'))
 // https://vite.dev/config/
 export default defineConfig({
   base: '/NotePad-Tj/',
+  build: {
+    target: 'es2022',
+  },
   plugins: [
     react(),
     VitePWA({
@@ -17,6 +20,12 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        // El lector de PDF (pdf.js) trae un "worker" en formato .mjs que
+        // por defecto NO se guarda para uso sin conexión, y pesa más de
+        // los 2 MB que Workbox acepta por archivo. Se amplían ambos
+        // límites para que la sección Atalaya funcione offline.
+        globPatterns: ['**/*.{js,mjs,css,html}'],
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       },
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
       manifest: {
