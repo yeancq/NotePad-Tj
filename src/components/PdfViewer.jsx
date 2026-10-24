@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getPdfData, getToc, saveToc } from '../lib/atalayaStore'
 import { loadPdfjs } from '../lib/pdfjsLoader'
-import { extractToc, TOC_VERSION } from '../lib/pdfToc'
+import { dumpPageText, extractToc, TOC_VERSION } from '../lib/pdfToc'
 
 const GAP = 12 // separación entre páginas (px) y margen superior
 const SIDE = 16 // margen total a los lados al 100% de zoom (px)
@@ -20,6 +20,7 @@ export default function PdfViewer({ entry, onBack }) {
   const [currentPage, setCurrentPage] = useState(1)
   const [toc, setToc] = useState(null) // null = buscando, [] = no se detectó nada
   const [showIndex, setShowIndex] = useState(true) // se muestra al abrir el PDF
+  const [diagMsg, setDiagMsg] = useState('')
   const rafRef = useRef(0)
 
   // Carga del documento desde IndexedDB y medida de todas las páginas.
@@ -146,6 +147,20 @@ export default function PdfViewer({ entry, onBack }) {
     setShowIndex(false)
   }
 
+  // Copia al portapapeles el texto crudo de la página actual, para poder
+  // diagnosticar por qué no se detectaron los artículos.
+  const copyDiagnostic = async () => {
+    if (!pdf) return
+    try {
+      const text = await dumpPageText(pdf, currentPage)
+      await navigator.clipboard.writeText(text)
+      setDiagMsg(`Copiado el texto de la página ${currentPage}. Pégalo en el chat.`)
+    } catch (err) {
+      console.error(err)
+      setDiagMsg('No se pudo copiar.')
+    }
+  }
+
   // Artículo en el que estamos: el último del índice que empieza en esta
   // página o antes.
   const currentTocIndex = useMemo(() => {
@@ -230,9 +245,22 @@ export default function PdfViewer({ entry, onBack }) {
               Buscando artículos…
             </p>
           ) : toc.length === 0 ? (
-            <p className="text-xs text-ink-soft/70 dark:text-night-text/50 px-3 py-2 leading-relaxed">
-              No pude detectar los artículos en este PDF. Puedes saltar tocando “Página X / N”.
-            </p>
+            <div className="px-3 py-2">
+              <p className="text-xs text-ink-soft/70 dark:text-night-text/50 leading-relaxed">
+                No pude detectar los artículos en este PDF. Puedes saltar tocando “Página X / N”.
+              </p>
+              <button
+                onClick={copyDiagnostic}
+                className="mt-2 text-xs px-3 py-1.5 rounded-full border border-ink/15 dark:border-night-text/15 text-ink dark:text-night-text hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors"
+              >
+                Copiar texto de la página {currentPage} (diagnóstico)
+              </button>
+              {diagMsg && (
+                <p className="text-[11px] text-ink-soft/60 dark:text-night-text/40 mt-1.5">
+                  {diagMsg}
+                </p>
+              )}
+            </div>
           ) : (
             toc.map((item, i) => (
               <button
