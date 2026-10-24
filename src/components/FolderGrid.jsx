@@ -1,7 +1,14 @@
-import { Library, Pin, Trash2 } from 'lucide-react'
+import { Library, Newspaper, Pin, Trash2 } from 'lucide-react'
 import FolderCard from './FolderCard'
 
-export default function FolderGrid({ folders, counts, onSelect, onEditFolder, onDeleteFolder }) {
+export default function FolderGrid({
+  folders,
+  counts,
+  onSelect,
+  onEditFolder,
+  onDeleteFolder,
+  onOpenAtalaya,
+}) {
   const topLevel = folders.filter((f) => !f.parentId)
 
   const folderCards = topLevel.map((f) => {
@@ -17,7 +24,7 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder, on
 
   return (
     <div className="max-w-4xl">
-      <div className="grid grid-cols-2 gap-3.5 mb-7">
+      <div className="grid grid-cols-2 gap-3.5 mb-3.5">
         <button
           onClick={() => onSelect(null)}
           className="flex flex-col items-start gap-3 p-5 rounded-2xl text-left bg-leather text-parchment
@@ -47,6 +54,23 @@ export default function FolderGrid({ folders, counts, onSelect, onEditFolder, on
           </span>
         </button>
       </div>
+
+      {onOpenAtalaya && (
+        <button
+          onClick={onOpenAtalaya}
+          className="w-full flex items-center gap-4 p-5 mb-7 rounded-2xl text-left
+                     bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10
+                     hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
+        >
+          <Newspaper className="w-6 h-6 shrink-0 text-leather dark:text-gilt-soft" strokeWidth={1.75} />
+          <span className="min-w-0">
+            <span className="block font-display text-base text-ink dark:text-night-text">La Atalaya</span>
+            <span className="block text-xs text-ink-soft/60 dark:text-night-text/40 mt-0.5">
+              Prepara el estudio desde el PDF
+            </span>
+          </span>
+        </button>
+      )}
 
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft/60 dark:text-night-text/40">
