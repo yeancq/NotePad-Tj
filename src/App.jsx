@@ -12,6 +12,7 @@ import NoteEditor from './components/NoteEditor'
 import ImportBible from './components/ImportBible'
 import ImportProgram from './components/ImportProgram'
 import ImportOutline from './components/ImportOutline'
+import AtalayaSection from './components/AtalayaSection' // ATALAYA
 import Settings from './components/Settings'
 import SplashScreen from './components/SplashScreen'
 import { folders as defaultFolders, notes as initialNotes } from './data/mockNotes'
@@ -57,6 +58,7 @@ export default function App() {
   const [showImport, setShowImport] = useState(false)
   const [showImportProgram, setShowImportProgram] = useState(false)
   const [showImportOutline, setShowImportOutline] = useState(false)
+  const [showAtalaya, setShowAtalaya] = useState(false) // ATALAYA
   const [showNewFolder, setShowNewFolder] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showHome, setShowHome] = useState(true)
@@ -116,6 +118,7 @@ export default function App() {
   useBackHandler(showImportOutline, () => setShowImportOutline(false))
   useBackHandler(showImportProgram, () => setShowImportProgram(false))
   useBackHandler(showImport, () => setShowImport(false))
+  useBackHandler(showAtalaya, () => setShowAtalaya(false)) // ATALAYA
   useBackHandler(!showHome, () => setShowHome(true))
 
   const togglePin = (id) => {
@@ -320,6 +323,8 @@ export default function App() {
     ? 'importProgram'
     : showImport
     ? 'import'
+    : showAtalaya // ATALAYA
+    ? 'atalaya'
     : openNote
     ? 'note'
     : 'home'
@@ -377,6 +382,18 @@ export default function App() {
           exit="exit"
         >
           <ImportBible onBack={() => setShowImport(false)} onImported={() => setShowImport(false)} />
+        </motion.div>
+      )}
+
+      {screen === 'atalaya' && ( // ATALAYA
+        <motion.div
+          key="atalaya"
+          variants={pushVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        >
+          <AtalayaSection onBack={() => setShowAtalaya(false)} />
         </motion.div>
       )}
 
@@ -493,6 +510,7 @@ export default function App() {
                       }}
                       onEditFolder={setEditingFolderId}
                       onDeleteFolder={deleteFolderAndContents}
+                      onOpenAtalaya={() => setShowAtalaya(true)} // ATALAYA
                     />
                   </main>
                 </motion.div>
@@ -624,4 +642,4 @@ export default function App() {
       )}
     </AnimatePresence>
   )
-}
+      }
