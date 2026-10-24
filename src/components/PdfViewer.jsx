@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { getPdfData } from '../lib/atalayaStore'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { getPdfData, getToc, saveToc } from '../lib/atalayaStore'
 import { loadPdfjs } from '../lib/pdfjsLoader'
+import { extractToc, TOC_VERSION } from '../lib/pdfToc'
 
 const GAP = 12 // separación entre páginas (px) y margen superior
 const SIDE = 16 // margen total a los lados al 100% de zoom (px)
@@ -17,6 +18,8 @@ export default function PdfViewer({ entry, onBack }) {
   const [scrollEl, setScrollEl] = useState(null)
   const [boxWidth, setBoxWidth] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
+  const [toc, setToc] = useState(null) // null = buscando, [] = no se detectó nada
+  const [showIndex, setShowIndex] = useState(true) // se muestra al abrir el PDF
   const rafRef = useRef(0)
 
   // Carga del documento desde IndexedDB y medida de todas las páginas.
@@ -59,6 +62,33 @@ export default function PdfViewer({ entry, onBack }) {
     }
   }, [entry.id])
 
+  // Índice de artículos: se calcula una sola vez por PDF y se guarda.
+  useEffect(() => {
+    if (!pdf) return
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const cached = await getToc(entry.id)
+        if (cached && cached.v === TOC_VERSION) {
+          if (!cancelled) setToc(cached.items)
+          return
+        }
+        const items = await extractToc(pdf)
+        if (cancelled) return
+        setToc(items)
+        await saveToc(entry.id, { v: TOC_VERSION, items })
+      } catch (err) {
+        console.error(err)
+        if (!cancelled) setToc([])
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [pdf, entry.id])
+
   // Ancho disponible (cambia al girar el móvil).
   useEffect(() => {
     if (!scrollEl) return
@@ -80,7 +110,7 @@ export default function PdfViewer({ entry, onBack }) {
       let y = GAP
       let found = ratios.length
       for (let i = 0; i < ratios.length; i++) {
-        y += ratios[i] * pageWidth + GAP
+        y += Math.round(ratios[i] * pageWidth) + GAP
         if (mid < y) {
           found = i + 1
           break
@@ -92,15 +122,40 @@ export default function PdfViewer({ entry, onBack }) {
 
   useEffect(() => () => cancelAnimationFrame(rafRef.current), [])
 
+  const scrollToPage = useCallback(
+    (n) => {
+      if (!scrollEl || ratios.length === 0 || pageWidth === 0) return
+      const target = Math.min(Math.max(1, n), ratios.length)
+      let top = 0
+      for (let i = 0; i < target - 1; i++) top += Math.round(ratios[i] * pageWidth) + GAP
+      scrollEl.scrollTo({ top, behavior: 'auto' })
+    },
+    [scrollEl, ratios, pageWidth]
+  )
+
   const goToPage = () => {
-    if (!scrollEl || ratios.length === 0) return
+    if (ratios.length === 0) return
     const answer = window.prompt(`Ir a la página (1-${ratios.length})`, String(currentPage))
     const n = parseInt(answer, 10)
     if (Number.isNaN(n) || n < 1 || n > ratios.length) return
-    let top = GAP
-    for (let i = 0; i < n - 1; i++) top += ratios[i] * pageWidth + GAP
-    scrollEl.scrollTo({ top: top - GAP, behavior: 'auto' })
+    scrollToPage(n)
   }
+
+  const openIndexItem = (item) => {
+    scrollToPage(item.page)
+    setShowIndex(false)
+  }
+
+  // Artículo en el que estamos: el último del índice que empieza en esta
+  // página o antes.
+  const currentTocIndex = useMemo(() => {
+    if (!toc || toc.length === 0) return -1
+    let idx = -1
+    toc.forEach((item, i) => {
+      if (item.page <= currentPage) idx = i
+    })
+    return idx
+  }, [toc, currentPage])
 
   const changeZoom = (delta) => {
     setZoom((z) => {
@@ -123,12 +178,20 @@ export default function PdfViewer({ entry, onBack }) {
         <div className="flex-1 min-w-0">
           <p className="font-display text-sm truncate leading-tight">{entry.name}</p>
           {status === 'ready' && (
-            <button
-              onClick={goToPage}
-              className="text-[11px] text-ink-soft/70 dark:text-night-text/50 underline decoration-dotted underline-offset-2"
-            >
-              Página {currentPage} / {ratios.length}
-            </button>
+            <div className="flex items-center gap-3 mt-0.5">
+              <button
+                onClick={goToPage}
+                className="text-[11px] text-ink-soft/70 dark:text-night-text/50 underline decoration-dotted underline-offset-2"
+              >
+                Página {currentPage} / {ratios.length}
+              </button>
+              <button
+                onClick={() => setShowIndex((s) => !s)}
+                className="text-[11px] font-medium text-leather dark:text-gilt-soft"
+              >
+                Índice {showIndex ? '▴' : '▾'}
+              </button>
+            </div>
           )}
         </div>
 
@@ -159,6 +222,44 @@ export default function PdfViewer({ entry, onBack }) {
           </button>
         </div>
       </header>
+
+      {status === 'ready' && showIndex && (
+        <div className="shrink-0 z-10 max-h-[42vh] overflow-y-auto bg-parchment dark:bg-night border-b border-ink/10 dark:border-night-text/10 px-2 py-2">
+          {toc === null ? (
+            <p className="text-xs text-ink-soft/60 dark:text-night-text/40 px-3 py-2">
+              Buscando artículos…
+            </p>
+          ) : toc.length === 0 ? (
+            <p className="text-xs text-ink-soft/70 dark:text-night-text/50 px-3 py-2 leading-relaxed">
+              No pude detectar los artículos en este PDF. Puedes saltar tocando “Página X / N”.
+            </p>
+          ) : (
+            toc.map((item, i) => (
+              <button
+                key={`${item.kind}-${item.page}`}
+                onClick={() => openIndexItem(item)}
+                className={`w-full text-left px-3 py-2 rounded-lg flex items-start gap-3 transition-colors ${
+                  i === currentTocIndex
+                    ? 'bg-leather/10 dark:bg-gilt-soft/10'
+                    : 'hover:bg-ink/5 dark:hover:bg-night-text/5'
+                }`}
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-medium">{item.label}</span>
+                  {item.title && (
+                    <span className="block text-xs text-ink-soft/70 dark:text-night-text/50 leading-snug mt-0.5">
+                      {item.title}
+                    </span>
+                  )}
+                </span>
+                <span className="shrink-0 text-[11px] tabular-nums text-ink-soft/50 dark:text-night-text/40 pt-0.5">
+                  pág. {item.page}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
 
       <div
         ref={setScrollEl}
