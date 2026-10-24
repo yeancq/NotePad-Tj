@@ -34,17 +34,18 @@ function normalize(str) {
     .replace(WIDE_SPACE_CHARS, ' ') // NBSP y otros espacios anchos → espacio normal
 }
 
-// Construye, una sola vez, la lista de (abreviatura normalizada -> libro),
-// ordenada por longitud descendente para que "1 corintios" gane sobre "1 co".
-const bookLookup = (() => {
+// Construye, una sola vez, una lista de (abreviatura normalizada -> libro)
+// para los libros indicados, ordenada por longitud descendente para que
+// "1 corintios" gane sobre "1 co".
+function buildLookup(books) {
   const entries = []
-  bibleBooks.forEach((book) => {
+  books.forEach((book) => {
     const names = [book.name, ...book.abbrevs]
     names.forEach((n) => entries.push([normalize(n), book]))
   })
   entries.sort((a, b) => b[0].length - a[0].length)
   return entries
-})()
+}
 
 // Al construir el patrón de libros, además de escapar los caracteres
 // especiales de regex, cualquier espacio LITERAL dentro de una abreviatura
@@ -53,9 +54,24 @@ const bookLookup = (() => {
 // aparezca algún carácter de espacio que WIDE_SPACE_CHARS todavía no
 // contemple, el patrón lo sigue tolerando mientras JavaScript lo reconozca
 // como "\s" nativo.
-const bookPattern = bookLookup
-  .map(([n]) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+'))
-  .join('|')
+function buildBookPattern(lookup) {
+  return lookup
+    .map(([n]) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s+'))
+    .join('|')
+}
+
+// ── Todos los libros ────────────────────────────────────────────────────
+const bookLookup = buildLookup(bibleBooks)
+const bookPattern = buildBookPattern(bookLookup)
+
+// ── Libros de UN SOLO capítulo (Abdías, Filemón, 2 Juan, 3 Juan, Judas) ──
+// Se detectan automáticamente por chapters === 1, sin listarlos a mano.
+// En estos libros es común escribir solo el versículo ("Filemón 2") porque
+// no hay capítulos que distinguir; por eso tienen una regla propia más
+// abajo, que acepta "Libro versículo" y asume capítulo 1.
+const singleChapterBooks = bibleBooks.filter((b) => b.chapters === 1)
+const singleLookup = buildLookup(singleChapterBooks)
+const singlePattern = buildBookPattern(singleLookup)
 
 // Un "segmento" es "capítulo:versículo(s)", ej. "24:15" o "4:6, 7" o "13:4-8".
 // El separador de rango acepta el guion normal (-), pero también el guion
@@ -70,9 +86,22 @@ const REFERENCE_REGEX = new RegExp(
   'gi'
 )
 
-function normalizeMatchToBook(matchedText) {
+// Referencia a un libro de un solo capítulo SIN capítulo: "Filemón 2",
+// "Judas 3, 5", "3 Juan 4-6". Solo versículos.
+//
+// El lookahead final (?!\s*:|\d) evita dos falsos positivos:
+//  - que "Judas 1:3" se capture aquí como "Judas 1" (esa forma completa ya
+//    la resuelve REFERENCE_REGEX).
+//  - que se corte un número a la mitad ("Judas 123" no debe leerse "12").
+const SINGLE_VERSES = `\\d{1,3}(?:\\s*[-–—,]\\s*\\d{1,3})*`
+const SINGLE_CHAPTER_REGEX = new RegExp(
+  `\\b(${singlePattern})\\.?\\s+(${SINGLE_VERSES})(?!\\s*:|\\d)`,
+  'gi'
+)
+
+function normalizeMatchToBook(matchedText, lookup = bookLookup) {
   const norm = normalize(matchedText.trim())
-  const found = bookLookup.find(([n]) => n === norm)
+  const found = lookup.find(([n]) => n === norm)
   return found ? found[1] : null
 }
 
@@ -98,6 +127,8 @@ function expandVerses(str) {
 /**
  * Detecta referencias bíblicas en un texto, agrupando segmentos del mismo
  * libro escritos juntos y separados por ";" (ej. "Mateo 24:15; 8:6").
+ * También detecta, en libros de un solo capítulo, referencias que llevan
+ * solo el versículo (ej. "Filemón 2", "Judas 3, 5").
  *
  * Normaliza el texto de entrada antes de aplicar el regex para soportar
  * abreviaturas con tilde (Gál → gal, Éx → ex, Nú → nu, 1Pe → 1pe...) y para
@@ -121,6 +152,7 @@ export function detectReferences(text) {
   const results = []
   let match
 
+  // ── 1) Referencias normales: Libro capítulo:versículo(s) ───────────────
   REFERENCE_REGEX.lastIndex = 0
   while ((match = REFERENCE_REGEX.exec(normalizedText)) !== null) {
     const [rawNorm, bookRaw, segmentsRaw] = match
@@ -159,6 +191,50 @@ export function detectReferences(text) {
       segments,
     })
   }
+
+  // ── 2) Libros de un solo capítulo con solo el versículo: "Filemón 2" ───
+  // El capítulo es siempre 1 (el único que existe). Si por algún motivo
+  // esta coincidencia se solapa con una referencia ya detectada arriba, se
+  // descarta para no duplicar el mismo texto.
+  SINGLE_CHAPTER_REGEX.lastIndex = 0
+  while ((match = SINGLE_CHAPTER_REGEX.exec(normalizedText)) !== null) {
+    const [rawNorm, bookRaw, versesRaw] = match
+    const book = normalizeMatchToBook(bookRaw, singleLookup)
+    if (!book) continue
+
+    const start = match.index
+    const end = match.index + rawNorm.length
+    const overlaps = results.some((r) => start < r.end && end > r.start)
+    if (overlaps) continue
+
+    const verses = expandVerses(versesRaw)
+    if (verses.length === 0) continue
+
+    const compact = versesRaw.replace(/\s+/g, '')
+    const rawOriginal = text.slice(start, end).trim()
+
+    results.push({
+      book: book.id,
+      bookName: book.name,
+      raw: rawOriginal,
+      // Se muestra tal como se escribió ("Filemón 2"), sin inventar un
+      // "1:" que el usuario no puso.
+      label: `${book.name} ${compact}`,
+      start,
+      end,
+      segments: [
+        {
+          chapter: 1,
+          verses,
+          verseLabel: `1:${compact}`,
+        },
+      ],
+    })
+  }
+
+  // Las dos pasadas pueden devolver resultados mezclados; se ordenan por
+  // posición en el texto, como esperan VersePanel y linkifyHtml.
+  results.sort((a, b) => a.start - b.start)
 
   return results
 }
