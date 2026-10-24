@@ -5,6 +5,7 @@ import { get, set, del } from 'idb-keyval'
 // en una sola clave y cada archivo en su propia clave.
 const LIST_KEY = 'atalaya:list'
 const fileKey = (id) => `atalaya:file:${id}`
+const tocKey = (id) => `atalaya:toc:${id}`
 
 export async function listPdfs() {
   return (await get(LIST_KEY)) || []
@@ -31,9 +32,19 @@ export async function getPdfData(id) {
 
 export async function removePdf(id) {
   await del(fileKey(id))
+  await del(tocKey(id))
   const list = await listPdfs()
   await set(
     LIST_KEY,
     list.filter((p) => p.id !== id)
   )
+}
+
+// Índice de artículos detectado (ver pdfToc.js): { v: versión, items: [...] }
+export async function getToc(id) {
+  return (await get(tocKey(id))) || null
+}
+
+export async function saveToc(id, toc) {
+  await set(tocKey(id), toc)
 }
