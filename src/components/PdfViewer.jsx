@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import VerseCardBody from './VerseCardBody'
+import './pdfTextLayer.css'
 import { getPdfData, getToc, saveToc } from '../lib/atalayaStore'
 import { loadPdfjs } from '../lib/pdfjsLoader'
 import { dumpPageText, extractToc, TOC_VERSION } from '../lib/pdfToc'
+import { findPdfReferences, hitTestRef } from '../lib/pdfRefs'
+import { isBibleImported } from '../lib/epubBible'
+import { buildCopyText } from '../lib/verseCardHelpers'
+import { useVerseSegments } from '../hooks/useVerseSegments'
 
+const EASE = [0.2, 0, 0, 1]
 const GAP = 12 // separación entre páginas (px) y margen superior
 const SIDE = 16 // margen total a los lados al 100% de zoom (px)
 const MIN_ZOOM = 1
@@ -10,7 +18,7 @@ const MAX_ZOOM = 3
 const ZOOM_STEP = 0.25
 const MAX_CANVAS_PIXELS = 8_000_000 // tope por página, para no agotar la memoria del móvil
 
-export default function PdfViewer({ entry, onBack }) {
+export default function PdfViewer({ entry, onBack, onNeedImport, bibleTick = 0 }) {
   const [pdf, setPdf] = useState(null)
   const [ratios, setRatios] = useState([])
   const [status, setStatus] = useState('loading') // loading | ready | error
@@ -21,7 +29,28 @@ export default function PdfViewer({ entry, onBack }) {
   const [toc, setToc] = useState(null) // null = buscando, [] = no se detectó nada
   const [showIndex, setShowIndex] = useState(true) // se muestra al abrir el PDF
   const [diagMsg, setDiagMsg] = useState('')
+  const [activeRef, setActiveRef] = useState(null)
+  const [bibleReady, setBibleReady] = useState(true)
   const rafRef = useRef(0)
+
+  const { segmentTexts, footnotes } = useVerseSegments(activeRef, bibleReady)
+
+  // ¿Está importada la Biblia? Se vuelve a comprobar al regresar de importarla
+  // (bibleTick cambia), porque este visor sigue abierto mientras tanto.
+  useEffect(() => {
+    let cancelled = false
+    isBibleImported().then((v) => {
+      if (!cancelled) setBibleReady(v)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [bibleTick])
+
+  // Tocar una cita la abre; tocarla otra vez la cierra.
+  const handleOpenRef = useCallback((ref) => {
+    setActiveRef((cur) => (cur && cur._key === ref._key ? null : ref))
+  }, [])
 
   // Carga del documento desde IndexedDB y medida de todas las páginas.
   useEffect(() => {
@@ -316,11 +345,40 @@ export default function PdfViewer({ entry, onBack }) {
                 width={pageWidth}
                 ratio={ratio}
                 root={scrollEl}
+                onOpenRef={handleOpenRef}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Tarjeta del versículo (la misma del modo orador) */}
+      <AnimatePresence>
+        {activeRef && (
+          <motion.div
+            key={activeRef._key}
+            initial={{ y: '100%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0 }}
+            transition={{ duration: 0.4, ease: EASE }}
+            className="fixed inset-x-0 bottom-4 z-30 flex justify-center px-3"
+          >
+            <div className="w-full max-w-xl max-h-[45vh] flex flex-col bg-parchment/95 dark:bg-night-surface/95 backdrop-blur-md border border-ink/10 dark:border-night-text/10 rounded-2xl shadow-2xl overflow-hidden">
+              <VerseCardBody
+                activeRef={activeRef}
+                segmentTexts={segmentTexts}
+                footnotes={footnotes}
+                bibleReady={bibleReady}
+                onNeedImport={onNeedImport}
+                onCopy={() => {
+                  navigator.clipboard?.writeText(buildCopyText(activeRef, segmentTexts))
+                }}
+                onClose={() => setActiveRef(null)}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -328,13 +386,18 @@ export default function PdfViewer({ entry, onBack }) {
 /**
  * Una página del PDF. Reserva siempre su tamaño real (para que el scroll
  * no salte) pero solo dibuja el contenido mientras está cerca de la
- * pantalla; al alejarse libera el lienzo para no llenar la memoria del
- * móvil con un PDF de 30+ páginas.
+ * pantalla; al alejarse libera el lienzo y la capa de texto para no llenar
+ * la memoria del móvil con un PDF de 30+ páginas.
+ *
+ * Capas, de abajo hacia arriba: imagen de la página (canvas) → texto
+ * invisible seleccionable → marcas de las citas bíblicas detectadas.
  */
-function PdfPage({ pdf, pageNumber, width, ratio, root }) {
+function PdfPage({ pdf, pageNumber, width, ratio, root, onOpenRef }) {
   const holderRef = useRef(null)
   const canvasRef = useRef(null)
+  const textRef = useRef(null)
   const [visible, setVisible] = useState(false)
+  const [refRects, setRefRects] = useState([])
 
   useEffect(() => {
     const el = holderRef.current
@@ -349,20 +412,24 @@ function PdfPage({ pdf, pageNumber, width, ratio, root }) {
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas) return
+    const textEl = textRef.current
+    if (!canvas || !textEl) return
 
     if (!visible) {
       canvas.width = 0
       canvas.height = 0
+      textEl.replaceChildren()
+      setRefRects((r) => (r.length ? [] : r))
       return
     }
 
     let cancelled = false
     let task = null
+    let textLayer = null
 
     ;(async () => {
       try {
-        const page = await pdf.getPage(pageNumber)
+        const [page, pdfjs] = await Promise.all([pdf.getPage(pageNumber), loadPdfjs()])
         if (cancelled) return
 
         const base = page.getViewport({ scale: 1 })
@@ -375,13 +442,46 @@ function PdfPage({ pdf, pageNumber, width, ratio, root }) {
           outputScale *= Math.sqrt(MAX_CANVAS_PIXELS / (w * h))
         }
 
+        // 1) Imagen de la página
         const viewport = page.getViewport({ scale: cssScale * outputScale })
         canvas.width = Math.floor(viewport.width)
         canvas.height = Math.floor(viewport.height)
-
         const ctx = canvas.getContext('2d')
         task = page.render({ canvasContext: ctx, canvas, viewport })
-        await task.promise
+
+        // 2) Texto seleccionable (si falla, la página se sigue viendo bien)
+        const textPromise = (async () => {
+          try {
+            textEl.replaceChildren()
+            textEl.style.setProperty('--scale-factor', String(cssScale))
+            textEl.style.setProperty('--total-scale-factor', String(cssScale))
+            textEl.style.setProperty('--user-unit', '1')
+            textEl.style.setProperty('--scale-round-x', '1px')
+            textEl.style.setProperty('--scale-round-y', '1px')
+            textLayer = new pdfjs.TextLayer({
+              textContentSource: page.streamTextContent(),
+              container: textEl,
+              viewport: page.getViewport({ scale: cssScale }),
+            })
+            await textLayer.render()
+            return true
+          } catch (err) {
+            if (err?.name !== 'AbortException' && err?.name !== 'RenderingCancelledException') {
+              console.error('Capa de texto:', err)
+            }
+            return false
+          }
+        })()
+
+        const [, textOk] = await Promise.all([task.promise, textPromise])
+        if (cancelled || !textOk) return
+
+        // 3) Citas bíblicas
+        try {
+          setRefRects(findPdfReferences(textEl, holderRef.current, pageNumber))
+        } catch (err) {
+          console.error('Citas:', err)
+        }
       } catch (err) {
         if (err?.name !== 'RenderingCancelledException') console.error(err)
       }
@@ -390,16 +490,41 @@ function PdfPage({ pdf, pageNumber, width, ratio, root }) {
     return () => {
       cancelled = true
       if (task) task.cancel()
+      if (textLayer) textLayer.cancel()
     }
   }, [visible, width, pdf, pageNumber])
+
+  // Un toque sobre una cita la abre. Si hay texto seleccionado (el usuario
+  // acaba de mantener pulsado), se ignora el toque.
+  const handleClick = (e) => {
+    if (refRects.length === 0) return
+    const sel = window.getSelection()
+    if (sel && !sel.isCollapsed && sel.toString().trim()) return
+    const box = holderRef.current.getBoundingClientRect()
+    const hit = hitTestRef(refRects, e.clientX - box.left, e.clientY - box.top)
+    if (hit) onOpenRef(hit)
+  }
 
   return (
     <div
       ref={holderRef}
+      onClick={handleClick}
       className="relative bg-white shadow-md shrink-0"
       style={{ width, height: Math.round(width * ratio) }}
     >
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+      <div ref={textRef} className="textLayer pdf-text-layer" />
+      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
+        {refRects.map(({ ref, rects }) =>
+          rects.map((r, i) => (
+            <div
+              key={`${ref._key}-${i}`}
+              className="pdf-ref-mark"
+              style={{ left: r.x, top: r.y, width: r.w, height: r.h }}
+            />
+          ))
+        )}
+      </div>
     </div>
   )
-}
+              }
