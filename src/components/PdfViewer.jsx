@@ -5,7 +5,7 @@ import './pdfTextLayer.css'
 import { getPdfData, getToc, saveToc } from '../lib/atalayaStore'
 import { loadPdfjs } from '../lib/pdfjsLoader'
 import { dumpPageText, extractToc, TOC_VERSION } from '../lib/pdfToc'
-import { findPdfReferences, hitTestRef } from '../lib/pdfRefs'
+import { debugPdfReferences, findPdfReferences, hitTestRef } from '../lib/pdfRefs'
 import { isBibleImported } from '../lib/epubBible'
 import { buildCopyText } from '../lib/verseCardHelpers'
 import { useVerseSegments } from '../hooks/useVerseSegments'
@@ -29,6 +29,7 @@ export default function PdfViewer({ entry, onBack, onNeedImport, bibleTick = 0 }
   const [toc, setToc] = useState(null) // null = buscando, [] = no se detectó nada
   const [showIndex, setShowIndex] = useState(true) // se muestra al abrir el PDF
   const [diagMsg, setDiagMsg] = useState('')
+  const [refsMsg, setRefsMsg] = useState('')
   const [activeRef, setActiveRef] = useState(null)
   const [bibleReady, setBibleReady] = useState(true)
   const rafRef = useRef(0)
@@ -190,6 +191,24 @@ export default function PdfViewer({ entry, onBack, onNeedImport, bibleTick = 0 }
     }
   }
 
+  // Copia un resumen de lo que lee la capa de texto de la página actual y
+  // de las citas que encuentra, para diagnosticar problemas de detección.
+  const copyRefsDiagnostic = async () => {
+    try {
+      const holder = scrollEl?.querySelector(`[data-page="${currentPage}"]`)
+      const layer = holder?.querySelector('.pdf-text-layer')
+      if (!layer || !layer.firstChild) {
+        setRefsMsg('Esta página aún no tiene texto cargado. Desplázate un poco y vuelve a intentar.')
+        return
+      }
+      await navigator.clipboard.writeText(debugPdfReferences(layer, currentPage))
+      setRefsMsg(`Copiado el diagnóstico de la página ${currentPage}. Pégalo en el chat.`)
+    } catch (err) {
+      console.error(err)
+      setRefsMsg('No se pudo copiar.')
+    }
+  }
+
   // Artículo en el que estamos: el último del índice que empieza en esta
   // página o antes.
   const currentTocIndex = useMemo(() => {
@@ -315,6 +334,18 @@ export default function PdfViewer({ entry, onBack, onNeedImport, bibleTick = 0 }
               </button>
             ))
           )}
+
+          <div className="px-3 pt-2 mt-1 border-t border-ink/10 dark:border-night-text/10">
+            <button
+              onClick={copyRefsDiagnostic}
+              className="text-[11px] text-ink-soft/60 dark:text-night-text/40 underline decoration-dotted underline-offset-2"
+            >
+              Copiar diagnóstico de citas (página {currentPage})
+            </button>
+            {refsMsg && (
+              <p className="text-[11px] text-ink-soft/60 dark:text-night-text/40 mt-1">{refsMsg}</p>
+            )}
+          </div>
         </div>
       )}
 
@@ -508,6 +539,7 @@ function PdfPage({ pdf, pageNumber, width, ratio, root, onOpenRef }) {
   return (
     <div
       ref={holderRef}
+      data-page={pageNumber}
       onClick={handleClick}
       className="relative bg-white shadow-md shrink-0"
       style={{ width, height: Math.round(width * ratio) }}
@@ -527,4 +559,4 @@ function PdfPage({ pdf, pageNumber, width, ratio, root, onOpenRef }) {
       </div>
     </div>
   )
-              }
+}
