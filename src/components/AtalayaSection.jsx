@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import PdfViewer from './PdfViewer'
+import ImportBible from './ImportBible'
 import { listPdfs, addPdf, removePdf } from '../lib/atalayaStore'
 import { loadPdfjs } from '../lib/pdfjsLoader'
 import { useBackHandler } from '../hooks/useBackHandler'
@@ -14,11 +15,21 @@ export default function AtalayaSection({ onBack }) {
   const [openEntry, setOpenEntry] = useState(null)
   const [importing, setImporting] = useState(false)
   const [error, setError] = useState(null)
+  const [showBible, setShowBible] = useState(false)
+  const [bibleTick, setBibleTick] = useState(0)
   const fileRef = useRef(null)
 
-  // El botón "atrás" del móvil cierra primero el visor y, si no hay
-  // ninguno abierto, esta sección (eso último lo maneja App.jsx).
+  // El botón "atrás" del móvil cierra primero la importación de la Biblia,
+  // luego el visor y, si no hay ninguno abierto, esta sección (eso último
+  // lo maneja App.jsx).
+  useBackHandler(showBible, () => closeBible())
   useBackHandler(Boolean(openEntry), () => setOpenEntry(null))
+
+  function closeBible() {
+    setShowBible(false)
+    // Avisa al visor para que vuelva a comprobar si la Biblia ya está importada.
+    setBibleTick((t) => t + 1)
+  }
 
   useEffect(() => {
     listPdfs().then(setItems)
@@ -57,77 +68,94 @@ export default function AtalayaSection({ onBack }) {
     setItems((prev) => (prev || []).filter((p) => p.id !== entry.id))
   }
 
-  if (openEntry) {
-    return <PdfViewer entry={openEntry} onBack={() => setOpenEntry(null)} />
-  }
-
   return (
-    <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex flex-col">
-      <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-3 flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-ink/5 dark:hover:bg-night-text/10"
-          aria-label="Volver"
-        >
-          ←
-        </button>
-        <h1 className="font-display text-lg">La Atalaya</h1>
-      </header>
-
-      <main className="flex-1 px-4 md:px-8 py-6 max-w-xl mx-auto w-full">
-        <div className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-5">
-          <p className="text-sm text-ink-soft dark:text-night-text/60">
-            Importa el <strong>PDF de La Atalaya</strong> del mes (descargado de jw.org) para
-            prepararlo aquí. El archivo se guarda solo en tu dispositivo.
-          </p>
-        </div>
-
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".pdf,application/pdf"
-          onChange={handleFile}
-          className="hidden"
+    <>
+      {openEntry ? (
+        <PdfViewer
+          entry={openEntry}
+          onBack={() => setOpenEntry(null)}
+          onNeedImport={() => setShowBible(true)}
+          bibleTick={bibleTick}
         />
-        <button
-          onClick={() => fileRef.current?.click()}
-          disabled={importing}
-          className="px-5 py-2.5 rounded-full bg-leather text-parchment text-sm font-medium hover:bg-leather-deep transition-colors disabled:opacity-40"
-        >
-          {importing ? 'Importando…' : 'Importar PDF'}
-        </button>
-        {error && <p className="text-sm text-leather mt-3">{error}</p>}
+      ) : (
+        <div className="min-h-screen bg-parchment dark:bg-night paper-texture text-ink dark:text-night-text flex flex-col">
+          <header className="sticky top-0 z-20 bg-parchment/90 dark:bg-night/90 backdrop-blur-sm border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-3 flex items-center gap-3">
+            <button
+              onClick={onBack}
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-ink/5 dark:hover:bg-night-text/10"
+              aria-label="Volver"
+            >
+              ←
+            </button>
+            <h1 className="font-display text-lg">La Atalaya</h1>
+          </header>
 
-        <div className="mt-6 space-y-2.5">
-          {items === null ? null : items.length === 0 ? (
-            <p className="text-sm text-ink-soft/60 dark:text-night-text/40">
-              Todavía no has importado ningún PDF.
-            </p>
-          ) : (
-            items.map((entry) => (
-              <div
-                key={entry.id}
-                className="flex items-center gap-2 bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl pl-4 pr-2 py-3"
-              >
-                <button onClick={() => setOpenEntry(entry)} className="flex-1 min-w-0 text-left">
-                  <p className="font-display text-[15px] truncate">{entry.name}</p>
-                  <p className="text-xs text-ink-soft/60 dark:text-night-text/40 mt-0.5">
-                    {entry.numPages} páginas · {formatSize(entry.size)}
-                  </p>
-                </button>
-                <button
-                  onClick={() => handleRemove(entry)}
-                  className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-ink-soft/50 dark:text-night-text/40 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
-                  aria-label={`Eliminar ${entry.name}`}
-                  title="Eliminar"
-                >
-                  🗑️
-                </button>
-              </div>
-            ))
-          )}
+          <main className="flex-1 px-4 md:px-8 py-6 max-w-xl mx-auto w-full">
+            <div className="bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl p-5 mb-5">
+              <p className="text-sm text-ink-soft dark:text-night-text/60">
+                Importa el <strong>PDF de La Atalaya</strong> del mes (descargado de jw.org) para
+                prepararlo aquí. El archivo se guarda solo en tu dispositivo.
+              </p>
+            </div>
+
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              onChange={handleFile}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={importing}
+              className="px-5 py-2.5 rounded-full bg-leather text-parchment text-sm font-medium hover:bg-leather-deep transition-colors disabled:opacity-40"
+            >
+              {importing ? 'Importando…' : 'Importar PDF'}
+            </button>
+            {error && <p className="text-sm text-leather mt-3">{error}</p>}
+
+            <div className="mt-6 space-y-2.5">
+              {items === null ? null : items.length === 0 ? (
+                <p className="text-sm text-ink-soft/60 dark:text-night-text/40">
+                  Todavía no has importado ningún PDF.
+                </p>
+              ) : (
+                items.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="flex items-center gap-2 bg-white/70 dark:bg-night-surface border border-ink/10 dark:border-night-text/10 rounded-xl pl-4 pr-2 py-3"
+                  >
+                    <button
+                      onClick={() => setOpenEntry(entry)}
+                      className="flex-1 min-w-0 text-left"
+                    >
+                      <p className="font-display text-[15px] truncate">{entry.name}</p>
+                      <p className="text-xs text-ink-soft/60 dark:text-night-text/40 mt-0.5">
+                        {entry.numPages} páginas · {formatSize(entry.size)}
+                      </p>
+                    </button>
+                    <button
+                      onClick={() => handleRemove(entry)}
+                      className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-ink-soft/50 dark:text-night-text/40 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+                      aria-label={`Eliminar ${entry.name}`}
+                      title="Eliminar"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </main>
         </div>
-      </main>
-    </div>
+      )}
+
+      {/* Importar Biblia por encima, sin cerrar el visor */}
+      {showBible && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-parchment dark:bg-night">
+          <ImportBible onBack={closeBible} onImported={closeBible} />
+        </div>
+      )}
+    </>
   )
 }
