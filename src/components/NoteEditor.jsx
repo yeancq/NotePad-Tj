@@ -266,14 +266,31 @@ export default function NoteEditor({
         )}
       </header>
 
+      {/* Barra de herramientas del editor: vive FUERA del área con scroll
+          (es un hijo más de la columna principal, con shrink-0), así que
+          queda siempre visible sin importar cuán larga sea la nota. Antes
+          iba dentro de una franja `sticky` dentro del scroll, que no se
+          mantenía visible de forma fiable en todos los casos. */}
+      <div className="shrink-0 min-w-0 bg-parchment dark:bg-night border-b border-ink/10 dark:border-night-text/10 px-4 md:px-8 py-2">
+        <div className="max-w-3xl w-full mx-auto min-w-0">
+          <RichEditorToolbar
+            heading={heading}
+            onHeadingChange={handleHeadingChange}
+            disabled={note.trashed}
+            editorRef={richEditorRef}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            canUndo={canUndo}
+            canRedo={canRedo}
+          />
+        </div>
+      </div>
+
       <div className="flex-1 min-h-0 min-w-0 overflow-y-auto px-4 md:px-8 pb-24">
         <div className="max-w-3xl w-full mx-auto">
-          {/* Título y barra de herramientas: van dentro de una franja
-              `sticky` que arranca justo en el borde superior del área con
-              scroll (top-0) y trae su propio padding-top (en vez de que ese
-              espacio esté en el contenedor), así su fondo cubre toda la
-              zona y no se alcanza a ver el texto de atrás al hacer scroll. */}
-          <div className="sticky top-0 z-10 bg-parchment/95 dark:bg-night/95 backdrop-blur-sm pt-6 pb-3 border-b border-ink/10 dark:border-night-text/10">
+          {/* Título: ahora va dentro del scroll (se desplaza junto con la
+              nota); la barra de herramientas quedó fija arriba. */}
+          <div className="pt-6 pb-3">
             {note.trashed && (
               <div className="mb-4 text-sm px-3 py-2 rounded-lg bg-leather/10 text-leather dark:text-gilt-soft">
                 Esta nota está en la papelera. Restáurala para poder editarla.
@@ -284,17 +301,7 @@ export default function NoteEditor({
               onChange={(e) => setTitle(e.target.value)}
               disabled={note.trashed}
               placeholder="Título de la nota"
-              className="w-full font-display text-2xl md:text-3xl bg-transparent focus:outline-none text-ink dark:text-night-text placeholder:text-ink-soft/40 mb-3 disabled:opacity-60"
-            />
-            <RichEditorToolbar
-              heading={heading}
-              onHeadingChange={handleHeadingChange}
-              disabled={note.trashed}
-              editorRef={richEditorRef}
-              onUndo={handleUndo}
-              onRedo={handleRedo}
-              canUndo={canUndo}
-              canRedo={canRedo}
+              className="w-full font-display text-2xl md:text-3xl bg-transparent focus:outline-none text-ink dark:text-night-text placeholder:text-ink-soft/40 disabled:opacity-60"
             />
           </div>
 
