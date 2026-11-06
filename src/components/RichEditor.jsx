@@ -1,5 +1,5 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
-import { Undo2, Redo2 } from 'lucide-react'
+import { Undo2, Redo2, AlignLeft, AlignCenter, AlignRight } from 'lucide-react'
 import { sanitizePastedHtml, escapeHtml } from '../lib/htmlUtils'
 
 const HIGHLIGHTS = [
@@ -33,9 +33,9 @@ function highlight(color) {
  * Barra de herramientas del editor enriquecido.
  *
  * Se separó del área editable (más abajo) para que NoteEditor pueda
- * colocarla, junto con el título, dentro de una franja `sticky` y así
- * queden siempre visibles al hacer scroll en notas largas. Los botones de
- * negrita/cursiva/subrayado/resaltado siguen actuando directo sobre
+ * colocarla en una franja FIJA (fuera del área con scroll) y así quede
+ * siempre visible en notas largas. Los botones de
+ * negrita/cursiva/subrayado/alineación/resaltado actúan directo sobre
  * `document.execCommand` (no dependen de ninguna referencia local); el
  * cambio de encabezado se delega al padre, que lo aplica sobre el editor
  * a través de `editorRef` (ver RichEditor más abajo).
@@ -44,6 +44,10 @@ function highlight(color) {
  * NoteEditor.jsx, que mantiene el historial de "fotos" del cuerpo de la
  * nota — aquí solo se dibujan los botones y se reflejan como
  * habilitados/deshabilitados según canUndo/canRedo.
+ *
+ * La barra va en UNA sola fila con scroll horizontal (sin barra visible):
+ * en pantallas angostas de móvil, con tantos botones, si se dejara partir
+ * en varias líneas ocuparía demasiado alto de pantalla.
  */
 export function RichEditorToolbar({
   heading,
@@ -56,7 +60,9 @@ export function RichEditorToolbar({
 }) {
   return (
     <div
-      className={`flex items-center gap-1 flex-wrap ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
+      className={`flex items-center gap-1 flex-nowrap overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+        disabled ? 'opacity-60 pointer-events-none' : ''
+      }`}
     >
       <ToolButton onClick={onUndo} label="Deshacer" disabled={!canUndo}>
         <Undo2 className="w-4 h-4" strokeWidth={2} />
@@ -65,7 +71,7 @@ export function RichEditorToolbar({
         <Redo2 className="w-4 h-4" strokeWidth={2} />
       </ToolButton>
 
-      <span className="w-px h-5 bg-ink/10 dark:bg-night-text/15 mx-1" />
+      <span className="w-px h-5 shrink-0 bg-ink/10 dark:bg-night-text/15 mx-1" />
 
       <ToolButton onClick={() => exec('bold')} label="Negrita">
         <strong>B</strong>
@@ -77,7 +83,19 @@ export function RichEditorToolbar({
         <span className="underline">U</span>
       </ToolButton>
 
-      <span className="w-px h-5 bg-ink/10 dark:bg-night-text/15 mx-1" />
+      <span className="w-px h-5 shrink-0 bg-ink/10 dark:bg-night-text/15 mx-1" />
+
+      <ToolButton onClick={() => exec('justifyLeft')} label="Alinear a la izquierda">
+        <AlignLeft className="w-4 h-4" strokeWidth={2} />
+      </ToolButton>
+      <ToolButton onClick={() => exec('justifyCenter')} label="Centrar">
+        <AlignCenter className="w-4 h-4" strokeWidth={2} />
+      </ToolButton>
+      <ToolButton onClick={() => exec('justifyRight')} label="Alinear a la derecha">
+        <AlignRight className="w-4 h-4" strokeWidth={2} />
+      </ToolButton>
+
+      <span className="w-px h-5 shrink-0 bg-ink/10 dark:bg-night-text/15 mx-1" />
 
       {HIGHLIGHTS.map((h) => (
         <button
@@ -94,12 +112,12 @@ export function RichEditorToolbar({
         <span className="text-[11px]">✕</span>
       </ToolButton>
 
-      <span className="w-px h-5 bg-ink/10 dark:bg-night-text/15 mx-1" />
+      <span className="w-px h-5 shrink-0 bg-ink/10 dark:bg-night-text/15 mx-1" />
 
       <select
         value={heading}
         onChange={(e) => onHeadingChange(e.target.value)}
-        className="text-xs bg-transparent border border-ink/15 dark:border-night-text/15 rounded-full px-2 py-1
+        className="shrink-0 text-xs bg-transparent border border-ink/15 dark:border-night-text/15 rounded-full px-2 py-1
                    text-ink dark:text-night-text focus:outline-none"
       >
         {HEADINGS.map((h) => (
@@ -304,7 +322,7 @@ function ToolButton({ onClick, label, children, disabled }) {
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="w-8 h-8 flex items-center justify-center rounded-lg text-sm
+      className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-sm
                  text-ink-soft dark:text-night-text/70 hover:bg-ink/5 dark:hover:bg-night-text/10 transition-colors
                  disabled:opacity-30 disabled:pointer-events-none"
     >
