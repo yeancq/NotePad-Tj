@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
+import { FileDown } from 'lucide-react'
 import VersePanel from './VersePanel'
 import SpeakerMode from './SpeakerMode'
 import SpeakerIcon from './SpeakerIcon'
 import RichEditor, { RichEditorToolbar } from './RichEditor'
 import NoteLinkDialog from './NoteLinkDialog'
 import { ensureHtml } from '../lib/htmlUtils'
+import { exportNoteToDocx } from '../lib/exportDocx'
 import { useBackHandler } from '../hooks/useBackHandler'
 
 // Cuántas "fotos" del contenido guardamos como máximo en el historial de
@@ -43,6 +45,7 @@ export default function NoteEditor({
   const [hasActiveVerse, setHasActiveVerse] = useState(false)
   const [showSpeaker, setShowSpeaker] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [showLinkDialog, setShowLinkDialog] = useState(false)
   const [heading, setHeading] = useState('P')
 
@@ -153,6 +156,23 @@ export default function NoteEditor({
     richEditorRef.current?.applyHeading(value)
   }
 
+  // Exporta la nota a un archivo .docx. Usa el título y el cuerpo que se ven
+  // AHORA en el editor (los estados `title` y `body`), no la última versión
+  // guardada: así el archivo incluye lo último que escribiste aunque el
+  // autoguardado (1 s de pausa) todavía no haya corrido.
+  const handleExportDocx = async () => {
+    if (exporting) return
+    setExporting(true)
+    try {
+      await exportNoteToDocx({ title, html: body })
+    } catch (err) {
+      console.error('Error al exportar la nota a .docx', err)
+      window.alert('No se pudo exportar la nota a .docx. Inténtalo de nuevo.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   // ── Etiquetas ────────────────────────────────────────────────────────────
   // Limpia el texto escrito (quita espacios sobrantes, pasa a minúsculas y
   // elimina un "#" inicial si el usuario lo escribió por costumbre) y evita
@@ -214,7 +234,23 @@ export default function NoteEditor({
             ))}
         </select>
 
-        <div className="flex-1 min-w-0" />
+        {/* Exportar a .docx: es el primer botón del lado derecho, así que
+            lleva ml-auto (empuja todo el grupo a la derecha). Antes había un
+            <div> separador vacío con flex-1 para eso, pero en un flex con
+            gap ese div también suma un hueco de 8px — en pantallas
+            angostas ese espacio le sirve más al selector de carpeta. */}
+        <button
+          onClick={handleExportDocx}
+          disabled={exporting}
+          className="ml-auto shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-ink-soft dark:text-night-text/60 hover:bg-ink/5 dark:hover:bg-night-text/10 disabled:opacity-40 disabled:cursor-default"
+          title="Exportar como .docx"
+          aria-label="Exportar como .docx"
+        >
+          <FileDown
+            className={`w-[18px] h-[18px] ${exporting ? 'animate-pulse' : ''}`}
+            strokeWidth={2}
+          />
+        </button>
 
         {!note.trashed && (
           <button
@@ -451,7 +487,7 @@ function FolderOptionGroup({ folder, folders }) {
       </option>
       {children.map((c) => (
         <option key={c.id} value={c.id}>
-          {'\u00A0\u00A0'}↳ {c.name}
+          {'  '}↳ {c.name}
         </option>
       ))}
     </>
